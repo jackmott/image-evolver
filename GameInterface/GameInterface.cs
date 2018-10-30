@@ -4,17 +4,15 @@ using Microsoft.Xna.Framework.Graphics;
 using System;
 
 namespace GameInterface
-{
-    [Serializable]
+{    
     public class GameState
     {
-        public Vector2 PlayerPos;
-        public float jumpStart;
+        public Texture2D tex;
     }
 
     public interface IGameInterface
     {        
-        GameState Update(KeyboardState keyboard, GameTime gameTime);
+        GameState Update(KeyboardState keyboard, GameTime gameTime, GraphicsDevice g);
         void SetState(GameState state);
     }
 

@@ -16,13 +16,13 @@ namespace GameLogic
     public class StackMachine
     {
         List<Instruction> instructions;
-        float[] stack;
+        public int nodeCount;
         
         public StackMachine(AptNode node)
         {
-            instructions = new List<Instruction>(node.Count());            
-            BuildInstructions(node);
-            stack = new float[node.LeafCount()];            
+            nodeCount = node.Count();
+            instructions = new List<Instruction>(nodeCount);            
+            BuildInstructions(node);                               
         }
 
         public void BuildInstructions(AptNode node) {
@@ -45,7 +45,7 @@ namespace GameLogic
             }
         }
 
-        public float Execute(float x, float y)
+        public float Execute(float x, float y, float[] stack)
         {
             unsafe
             {

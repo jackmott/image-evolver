@@ -55,7 +55,6 @@
     <Reference Include="System" />
   </ItemGroup>
   <ItemGroup>
-    <Content Include="Content\effect.fx" />
     <Content Include="Icon.ico" />
   </ItemGroup>
   <ItemGroup>

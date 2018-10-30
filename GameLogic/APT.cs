@@ -4,17 +4,60 @@ using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
+using Microsoft.Xna.Framework.Graphics;
+using Microsoft.Xna.Framework;
+using System.Collections.Concurrent;
 
 namespace GameLogic
 {
     public enum NodeType : byte { EMPTY = 0, CONSTANT, X, Y, ADD, SUB,MUL,DIV,SIN };
+
+    public class RGBTree {
+        public StackMachine R;
+        public StackMachine G;
+        public StackMachine B;
+
+        public Texture2D ToTexture(GraphicsDevice graphics, int w, int h)
+        {
+            Color[] colors = new Color[w * h];
+            var scale = (float)(255 / 2);
+            var offset = -1.0f * scale;
+            var partition = Partitioner.Create(0, h);
+            Parallel.ForEach(
+                partition,
+                (range, state) =>
+                {
+                    var rStack = new float[R.nodeCount];
+                    var gStack = new float[G.nodeCount];
+                    var bStack = new float[B.nodeCount];
+                    for (int y = range.Item1; y < range.Item2; y++)
+                    {
+                        float yf = ((float)y / (float)h) * 2.0f - 1.0f;
+                        int yw = y * w;
+                        for (int x = 0; x < 1920; x++)
+                        {
+                            float xf = ((float)x / (float)w) * 2.0f - 1.0f;
+                            var r = (byte)(R.Execute(xf, yf,rStack) * scale - offset);
+                            var g = (byte)(G.Execute(xf, yf,gStack) * scale - offset);
+                            var b = (byte)(B.Execute(xf, yf,bStack) * scale - offset);
+                            colors[yw + x] = new Color(r, g, b, (byte)255);
+                        }
+                    }
+                });                           
+            Texture2D tex = new Texture2D(graphics, w, h);
+            tex.SetData(colors);            
+            return tex;
+        }
+    }
+
     public struct AptNode
     {
         const int NUM_LEAF_TYPES = 4;        
         public NodeType type;        
         public AptNode[] children;        
-        public float value;        
-                        
+        public float value;
+
+      
 
         public bool IsLeaf() {
             return !IsEmpty() && (int)type < NUM_LEAF_TYPES;

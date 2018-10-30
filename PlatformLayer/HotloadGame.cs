@@ -15,8 +15,7 @@ namespace HotloadPong
         SpriteBatch spriteBatch;
         Hotloader hotloader;
         GameState state;        
-
-        Texture2D playerTex;
+        
         int screenWidth;
         int screenHeight;
 
@@ -50,9 +49,7 @@ namespace HotloadPong
         {
             hotloader = new Hotloader(Content, GraphicsDevice);
             // Create a new SpriteBatch, which can be used to draw textures.
-            spriteBatch = new SpriteBatch(GraphicsDevice);
-            playerTex = Content.Load<Texture2D>("mage");            
-            hotloader.AddShader("effect");
+            spriteBatch = new SpriteBatch(GraphicsDevice);                                
             // TODO: use this.Content to load your game content here
         }
 
@@ -80,7 +77,7 @@ namespace HotloadPong
 #if DEBUG
             hotloader.CheckShaders();
 #endif
-            state = hotloader.Update(Keyboard.GetState(),gameTime);
+            state = hotloader.Update(Keyboard.GetState(),gameTime,GraphicsDevice);
             base.Update(gameTime);
         }
 
@@ -91,8 +88,8 @@ namespace HotloadPong
         protected override void Draw(GameTime gameTime)
         {
             GraphicsDevice.Clear(Color.Black);            
-            spriteBatch.Begin(effect: hotloader.GetShader("effect"));  
-            spriteBatch.Draw(playerTex, new Vector2(state.PlayerPos.X * screenWidth, state.PlayerPos.Y * screenHeight - 100.0f), Color.White);            
+            spriteBatch.Begin();  
+            spriteBatch.Draw(state.tex, new Vector2(0.0f,0.0f), Color.White);            
             spriteBatch.End();
 
             // TODO: Add your drawing code here

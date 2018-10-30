@@ -4,7 +4,7 @@
   <Platform>Windows</Platform>
   <Config />
   <SourceFiles>
-    <File>C:/projects/monogame-hotload/PlatformLayer/Content/effect.fx</File>
+    <File>C:/projects/image-evolver/PlatformLayer/Content/effect.fx</File>
   </SourceFiles>
   <DestFiles>
     <File xsi:nil="true" />
