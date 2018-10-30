@@ -1,0 +1,40 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 15
+VisualStudioVersion = 15.0.28010.2046
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PlatformLayer", "PlatformLayer\PlatformLayer.csproj", "{343792F2-8F96-4677-AE71-2FD9A0595A88}"
+	ProjectSection(ProjectDependencies) = postProject
+		{7D67509B-0D3A-44B6-9EA3-5A931ED557BA} = {7D67509B-0D3A-44B6-9EA3-5A931ED557BA}
+	EndProjectSection
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GameLogic", "GameLogic\GameLogic.csproj", "{7D67509B-0D3A-44B6-9EA3-5A931ED557BA}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GameInterface", "GameInterface\GameInterface.csproj", "{49C8C828-7FC1-4751-AF09-905F3D8032E9}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|x64 = Debug|x64
+		Release|x64 = Release|x64
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{343792F2-8F96-4677-AE71-2FD9A0595A88}.Debug|x64.ActiveCfg = Debug|x64
+		{343792F2-8F96-4677-AE71-2FD9A0595A88}.Debug|x64.Build.0 = Debug|x64
+		{343792F2-8F96-4677-AE71-2FD9A0595A88}.Release|x64.ActiveCfg = Release|x64
+		{343792F2-8F96-4677-AE71-2FD9A0595A88}.Release|x64.Build.0 = Release|x64
+		{7D67509B-0D3A-44B6-9EA3-5A931ED557BA}.Debug|x64.ActiveCfg = Debug|x64
+		{7D67509B-0D3A-44B6-9EA3-5A931ED557BA}.Debug|x64.Build.0 = Debug|x64
+		{7D67509B-0D3A-44B6-9EA3-5A931ED557BA}.Release|x64.ActiveCfg = Release|x64
+		{7D67509B-0D3A-44B6-9EA3-5A931ED557BA}.Release|x64.Build.0 = Release|x64
+		{49C8C828-7FC1-4751-AF09-905F3D8032E9}.Debug|x64.ActiveCfg = Debug|x64
+		{49C8C828-7FC1-4751-AF09-905F3D8032E9}.Debug|x64.Build.0 = Debug|x64
+		{49C8C828-7FC1-4751-AF09-905F3D8032E9}.Release|x64.ActiveCfg = Release|x64
+		{49C8C828-7FC1-4751-AF09-905F3D8032E9}.Release|x64.Build.0 = Release|x64
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {2C7982F0-3410-4CD9-981B-F15E49C94247}
+	EndGlobalSection
+EndGlobal
