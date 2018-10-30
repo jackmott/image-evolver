@@ -15,6 +15,7 @@ namespace GameLogic
         public TokenType type;
         public int start;
         public int len;
+        
     }
 
     public ref struct Lexer
@@ -22,11 +23,11 @@ namespace GameLogic
         public ReadOnlySpan<char> input;
         int start;
         int pos;     
-        List<Token> tokens;
+        Queue<Token> tokens;
 
         public void BeginLexing(string s)
         {
-            this = new Lexer { input = s.AsSpan(), tokens = new List<Token>(8) };
+            this = new Lexer { input = s.AsSpan(), tokens = new Queue<Token>(8) };
             var state = DetermineToken();
             do
             {
@@ -46,6 +47,61 @@ namespace GameLogic
                 }
             } while (state != State.EOF);
             
+        }
+
+        public static AptNode stringToNode(string s)
+        {            
+            switch (s) {
+                case "+":                    
+                    return new AptNode { type = NodeType.ADD, children = new AptNode[2]};                    
+                case "-":
+                    return new AptNode { type = NodeType.SUB, children = new AptNode[2] };
+                case "*":
+                    return new AptNode { type = NodeType.MUL, children = new AptNode[2] };
+                case "/":
+                    return new AptNode { type = NodeType.DIV, children = new AptNode[2] };
+                case "Sin":
+                    return new AptNode { type = NodeType.SIN, children = new AptNode[1] };
+                case "X":
+                    return new AptNode { type = NodeType.X};                    
+                case "Y":
+                    return new AptNode { type = NodeType.Y};
+                default:
+                    throw new Exception("Parse error, op:'" + s + "' unknown");
+            }
+            
+        }
+
+        public AptNode Parse()
+        {
+            while(true)
+            {
+                var t = tokens.Dequeue();
+                switch (t.type) {
+                    case TokenType.OP:
+                        {
+                            var node = stringToNode(input.Slice(t.start, t.len).ToString());
+                            if (node.children != null) {
+                                for (int i = 0; i < node.children.Length; i++)
+                                {
+                                    node.children[i] = Parse();
+                                }
+                            }
+                            return node;
+                        }
+                    case TokenType.CONSTANT:
+                        {
+                            var node = new AptNode { type = NodeType.CONSTANT };
+                            string numStr = input.Slice(t.start, t.len).ToString();
+                            float num = float.Parse(numStr);
+                            node.value = num;
+                            return node;
+                        }
+                    case TokenType.CLOSE_PAREN:
+                    case TokenType.OPEN_PAREN:
+                        continue;                    
+                }
+            }
         }
 
         public override string ToString()
@@ -129,7 +185,7 @@ namespace GameLogic
 
         public void emit(TokenType type)
         {
-            tokens.Add(new Token { type = type, start = start, len = pos-start});
+            tokens.Enqueue(new Token { type = type, start = start, len = pos-start});
         }
 
         public char next()

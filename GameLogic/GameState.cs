@@ -22,12 +22,13 @@ namespace GameLogic
 
         public GameState Update(KeyboardState keyboard, GameTime gameTime)
         {
-            var tree = AptNode.GenerateTree(30, new Random());
+            var tree = AptNode.GenerateTree(35, new Random());
             string lisp = tree.ToLisp();
             Console.WriteLine(lisp);
             Lexer lexer = new Lexer{ };
             lexer.BeginLexing(lisp);
-            Console.WriteLine(lexer.ToString());
+            AptNode newTree = lexer.Parse();            
+            Console.WriteLine(newTree.ToLisp());
 
 
             var stackmachine = new StackMachine(tree);
