@@ -43,8 +43,11 @@
     <Reference Include="System.Net.Http" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="APT.cs" />
     <Compile Include="GameInterface.cs" />
+    <Compile Include="Pic.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="StackMachine.cs" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="MonoGame.Framework.WindowsDX">

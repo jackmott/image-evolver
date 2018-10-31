@@ -4,6 +4,7 @@ using Microsoft.Xna.Framework.Graphics;
 using System;
 using GameInterface;
 using System.Diagnostics;
+using System.Collections.Generic;
 
 namespace GameLogic
 {
@@ -23,27 +24,29 @@ namespace GameLogic
         public GameState Update(KeyboardState keyboard, GameTime gameTime, GraphicsDevice g)
         {
             if (state == null)
-            {
+            {                
                 state = new GameState();
-            }
-            if (state.tex == null)
-            {
+                state.populationSize = 9;
+                state.pictures = new List<Pic>();
                 Random r = new Random();
-                var rTree = AptNode.GenerateTree(15, r);
-                var rStackmachine = new StackMachine(rTree);
 
-                var gTree = AptNode.GenerateTree(15, r);
-                var gStackmachine = new StackMachine(gTree);
+                for (int i = 0; i < state.populationSize; i++)
+                {
+                    int chooser = r.Next(0, 2);
+                    if (chooser == 0)
+                    {
+                        var rgbTree = new RGBTree(3, 30, r);
+                        state.pictures.Add(rgbTree);
+                    }
+                    else
+                    {
+                        var hsvTree = new HSVTree(3, 30, r);
+                        state.pictures.Add(hsvTree);
+                    }
+                }
 
-                var bTree = AptNode.GenerateTree(15, r);
-                var bStackmachine = new StackMachine(bTree);
-
-                var rgbTree = new RGBTree();
-                rgbTree.R = rStackmachine;
-                rgbTree.G = gStackmachine;
-                rgbTree.B = bStackmachine;
-                state.tex = rgbTree.ToTexture(g, 1920, 1080);
             }
+            
             return state;
         }
     }

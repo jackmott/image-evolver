@@ -23,6 +23,7 @@ namespace HotloadPong
         public HotloadGame()
         {
             graphics = new GraphicsDeviceManager(this);
+            Window.AllowUserResizing = true;
             Content.RootDirectory = "Content";
         }
 
@@ -87,9 +88,38 @@ namespace HotloadPong
         /// <param name="gameTime">Provides a snapshot of timing values.</param>
         protected override void Draw(GameTime gameTime)
         {
+            int winW = GraphicsDevice.Viewport.Width;
+            int winH = GraphicsDevice.Viewport.Height;
+
+            int hSpace = (int)(winW * GameState.HORIZONTAL_SPACING);
+            int vSpace = (int)(winW * GameState.VERTICAL_SPACING);
+
+            int numPerRow = (int)Math.Sqrt(state.populationSize);
+            int spaceRemaining = winW - hSpace * (numPerRow + 1);
+            int picW = spaceRemaining / numPerRow;
+
+            spaceRemaining = winH - vSpace * (numPerRow + 1);
+            int picH = spaceRemaining / numPerRow;
+
+
             GraphicsDevice.Clear(Color.Black);            
-            spriteBatch.Begin();  
-            spriteBatch.Draw(state.tex, new Vector2(0.0f,0.0f), Color.White);            
+            spriteBatch.Begin();
+            var pos = new Vector2(0,0);
+            int index = 0;
+            for (int y = 0; y < numPerRow; y++)
+            {
+                pos.Y += vSpace;
+                for (int x = 0; x < numPerRow; x++)
+                {
+                    pos.X += hSpace;
+                    spriteBatch.Draw(state.pictures[index].GetTex(GraphicsDevice, picW, picH), pos, Color.White);
+                    index++;
+                    pos.X += picW;
+                }
+                pos.Y += picH;
+                pos.X = 0;
+            }
+            
             spriteBatch.End();
 
             // TODO: Add your drawing code here
