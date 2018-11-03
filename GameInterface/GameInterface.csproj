@@ -33,6 +33,7 @@
     <ErrorReport>prompt</ErrorReport>
     <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
     <LangVersion>7.3</LangVersion>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
@@ -44,6 +45,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="APT.cs" />
+    <Compile Include="FastNoise.cs" />
     <Compile Include="GameInterface.cs" />
     <Compile Include="Pic.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

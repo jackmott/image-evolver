@@ -74,6 +74,11 @@ namespace HotloadPong
             return proxy.Update(keyboard,gameTime,g);
         }
 
+        public void Draw(GraphicsDevice g,SpriteBatch batch, GameTime gameTime)
+        {
+            proxy.Draw(g,batch, gameTime);
+        }
+
         public void SetState(GameState state)
         {
             proxy.SetState(state);

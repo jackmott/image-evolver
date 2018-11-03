@@ -50,9 +50,12 @@
     <Reference Include="System.Net.Http" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="APTFunctions.cs" />
     <Compile Include="GameState.cs" />
     <Compile Include="Lexer.cs" />
+    <Compile Include="PicFunctions.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="StackMachineFunctions.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />

@@ -10,26 +10,26 @@ using System.Collections.Concurrent;
 
 namespace GameInterface
 {
-    public enum NodeType : byte { EMPTY = 0, CONSTANT, X, Y, ADD, SUB,MUL,DIV,SIN };
+    public enum NodeType : byte { EMPTY = 0, CONSTANT, X, Y, PICTURE, ABS, WRAP, CLIP,NEGATE,ADD, SUB, MUL, DIV, SIN, COS, LOG, ATAN, ATAN2, SQRT, FLOOR, CEIL, MAX, MIN, MOD, SQUARE,FBM, BILLOW,CELL1};
 
-    
-
- 
 
     public struct AptNode
     {
-        const int NUM_LEAF_TYPES = 4;        
-        public NodeType type;        
-        public AptNode[] children;        
+        const int NUM_LEAF_TYPES = 5;
+        public NodeType type;
+        public AptNode[] children;
         public float value;
 
-      
 
-        public bool IsLeaf() {
+
+        public bool IsLeaf()
+        {
+
             return !IsEmpty() && (int)type < NUM_LEAF_TYPES;
         }
 
-        public bool IsEmpty() {
+        public bool IsEmpty()
+        {
             return type == NodeType.EMPTY;
         }
 
@@ -46,7 +46,69 @@ namespace GameInterface
             return count;
 
         }
+        public (AptNode, int) GetNthNode(int n)
+        {
+            if (n == 0) return (this, n);
+            AptNode node = new AptNode { type = NodeType.EMPTY };
 
+            if (children != null)
+            {
+                foreach (var child in children) {
+                    (node, n) = child.GetNthNode(n - 1);
+                    if (node.type != NodeType.EMPTY)
+                    {
+                        return (node, n);
+                    }
+                }             
+            }
+            return (new AptNode { type = NodeType.EMPTY }, n);
+
+        }
+
+        public static (bool, int) ReplaceNthNode(ref AptNode node, AptNode newNode, int n)
+        {
+            bool replaced = false;
+            if (n == 0)
+            {
+                node = newNode;
+                return (true, n);
+            }
+            else if (node.children != null) 
+            {
+                for (int i =0; i < node.children.Length;i++)  {
+                    (replaced, n) = ReplaceNthNode(ref node.children[i], newNode, n - 1);
+                    if (replaced)
+                    {
+                        return (replaced, n);
+                    }
+                }
+            }
+            return (false, n);
+        }
+
+        public void BreedWith(AptNode partner, Random r)
+        {
+            var (nodeToSwapIn,n) = partner.GetNthNode(r.Next(0, partner.Count()));
+            ReplaceNthNode(ref this, nodeToSwapIn, r.Next(0, this.Count()));
+        }
+
+        public void Mutate(Random r)
+        {
+            var nodeIndex = r.Next(0, this.Count());                        
+            int choose = r.Next(0, 2);
+            if (choose == 0)
+            {
+                var newNode = GetRandomNode(r);
+                ReplaceNthNode(ref this, newNode, nodeIndex);
+                while (this.AddLeaf(GetRandomLeaf(r))) { };
+            }
+            else
+            {
+                var newLeaf = GetRandomLeaf(r);
+                ReplaceNthNode(ref this, newLeaf, nodeIndex);
+            }
+        }
+        
         public int LeafCount()
         {
             int count = 0;
@@ -62,7 +124,7 @@ namespace GameInterface
                 }
             }
             return count;
-            
+
         }
 
         // Note: assumes you are adding to a non leaf node, always
@@ -91,7 +153,7 @@ namespace GameInterface
                 else if (!children[i].IsLeaf() && children[i].AddLeaf(leafToAdd))
                 {
                     return true;
-                }                    
+                }
             }
             return false;
         }
@@ -101,15 +163,21 @@ namespace GameInterface
             switch (type)
             {
                 case NodeType.EMPTY:
-                    return "EMPTY";                    
+                    return "EMPTY";
                 case NodeType.X:
-                    return "X";                    
+                    return "X";
                 case NodeType.Y:
-                    return "Y";                    
+                    return "Y";
                 case NodeType.CONSTANT:
-                    return value.ToString();                    
+                    return value.ToString();
+                case NodeType.ABS:
+                    return "Abs";
+                case NodeType.CLIP:
+                    return "Clip";
+                case NodeType.NEGATE:
+                    return "Negate";
                 case NodeType.ADD:
-                    return "+";                    
+                    return "+";
                 case NodeType.SUB:
                     return "-";
                 case NodeType.MUL:
@@ -117,16 +185,49 @@ namespace GameInterface
                 case NodeType.DIV:
                     return "/";
                 case NodeType.SIN:
-                    return "Sin";                
+                    return "Sin";
+                case NodeType.COS:
+                    return "Cos";
+                case NodeType.ATAN:
+                    return "Atan";
+                case NodeType.ATAN2:
+                    return "Atan2";
+                case NodeType.CEIL:
+                    return "Ceil";
+                case NodeType.FLOOR:
+                    return "Floor";
+                case NodeType.LOG:
+                    return "Log";
+                case NodeType.SQRT:
+                    return "Sqrt";
+                case NodeType.MOD:
+                    return "%";
+                case NodeType.MAX:
+                    return "Max";
+                case NodeType.MIN:
+                    return "Min";
+                case NodeType.WRAP:
+                    return "Wrap";
+                case NodeType.SQUARE:
+                    return "Square";
+                case NodeType.FBM:
+                    return "FBM";
+                case NodeType.BILLOW:
+                    return "Billow";                
+                case NodeType.CELL1:
+                    return "Cell1";
+                case NodeType.PICTURE:
+                    return "Picture-" + ((int)value).ToString();
                 default:
                     throw new Exception("corrupt node type in OpString()");
             }
         }
 
-       
+
         public string ToLisp()
         {
-            switch (type) {
+            switch (type)
+            {
                 case NodeType.EMPTY:
                 case NodeType.X:
                 case NodeType.Y:
@@ -138,8 +239,8 @@ namespace GameInterface
                     {
                         result += children[i].ToLisp() + " ";
                     }
-                    return result +")";                
-                    
+                    return result + ")";
+
             }
         }
 
@@ -148,13 +249,33 @@ namespace GameInterface
             var enum_size = Enum.GetNames(typeof(NodeType)).Length;
             var typeNum = r.Next(AptNode.NUM_LEAF_TYPES, enum_size);
             var type = (NodeType)typeNum;
-            switch (type) {
+            switch (type)
+            {
+                case NodeType.FBM:                
+                case NodeType.BILLOW:
+                case NodeType.CELL1:
+                    return new AptNode { type = type, children = new AptNode[3] };                    
                 case NodeType.ADD:
                 case NodeType.SUB:
                 case NodeType.MUL:
                 case NodeType.DIV:
-                    return new AptNode { type = type, children = new AptNode[2] };
+                case NodeType.ATAN2:
+                case NodeType.MIN:
+                case NodeType.MAX:
+                case NodeType.MOD:
+                case NodeType.CLIP:                          
+                    return new AptNode { type = type, children = new AptNode[2] };                
                 case NodeType.SIN:
+                case NodeType.COS:
+                case NodeType.ATAN:
+                case NodeType.SQUARE:
+                case NodeType.LOG:
+                case NodeType.FLOOR:
+                case NodeType.CEIL:
+                case NodeType.SQRT:
+                case NodeType.ABS:
+                case NodeType.NEGATE:
+                case NodeType.WRAP:
                     return new AptNode { type = type, children = new AptNode[1] };
                 default:
                     throw new Exception("GetRandomNode failed to match the switch");
@@ -166,9 +287,15 @@ namespace GameInterface
         {
             //We start at 1 because 0 is EMPTY
             var type = (NodeType)r.Next(1, AptNode.NUM_LEAF_TYPES);
-            switch (type) {
+            switch (type)
+            {
+                case NodeType.PICTURE:
+                    var p = new AptNode { type = type, children = new AptNode[2], value = r.Next(0, 3) };
+                    p.children[0] = new AptNode { type = NodeType.X };
+                    p.children[1] = new AptNode { type = NodeType.Y };
+                    return p;
                 case NodeType.CONSTANT:
-                    return new AptNode { type = type, value = (float)r.NextDouble() };
+                    return new AptNode { type = type, value = (float)r.NextDouble()*2.0f - 1.0f };
                 default:
                     return new AptNode { type = type };
             }
@@ -181,35 +308,15 @@ namespace GameInterface
             {
                 first.AddRandom(GetRandomNode(r), r);
             }
-            while (first.AddLeaf(GetRandomLeaf(r))) {
-                //just keepa adding leaves until we can't 
+            while (first.AddLeaf(GetRandomLeaf(r)))
+            {
+                //just keep adding leaves until we can't 
             };
+            
+
             return first;
         }
-
-        public float Eval(float x, float y)
-        {
-            switch (type) {
-                case NodeType.X:
-                    return x;
-                case NodeType.Y:
-                    return y;
-                case NodeType.CONSTANT:
-                    return value;
-                case NodeType.ADD:
-                    return children[0].Eval(x, y) + children[1].Eval(x, y);
-                case NodeType.SUB:
-                    return children[0].Eval(x, y) - children[1].Eval(x, y);
-                case NodeType.MUL:
-                    return children[0].Eval(x, y) * children[1].Eval(x, y);
-                case NodeType.DIV:
-                    return children[0].Eval(x, y) / children[1].Eval(x, y);
-                case NodeType.SIN:
-                    return (float)Math.Sin(children[0].Eval(x, y));
-                default:
-                    throw new Exception("Eval found a bad node");
-            }
-        }        
+              
     }
 
 }

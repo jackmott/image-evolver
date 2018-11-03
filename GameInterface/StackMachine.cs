@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-
+using Microsoft.Xna.Framework;
 namespace GameInterface
 {    
     public struct Instruction
@@ -15,14 +15,18 @@ namespace GameInterface
 
     public class StackMachine
     {
-        List<Instruction> instructions;
+        public Instruction[] instructions;
+        public int inPtr;
         public int nodeCount;
-        
-        public StackMachine(AptNode node)
+        public List<ExternalImage> images;
+                
+        public StackMachine(AptNode node, List<ExternalImage> images)
         {
             nodeCount = node.Count();
-            instructions = new List<Instruction>(nodeCount);            
-            BuildInstructions(node);                               
+            instructions = new Instruction[nodeCount];
+            inPtr = 0;
+            BuildInstructions(node);
+            this.images = images;
         }
 
         public void BuildInstructions(AptNode node) {
@@ -37,63 +41,18 @@ namespace GameInterface
                 case NodeType.EMPTY:
                     throw new Exception("can't BuildInstructions with a non finished APT");
                 case NodeType.CONSTANT:
-                    instructions.Add(new Instruction { type = node.type, value = node.value });
-                    break;
+                case NodeType.PICTURE:
+                    instructions[inPtr] = new Instruction { type = node.type, value = node.value };
+                    inPtr++;
+                    break;                
                 default:                
-                    instructions.Add(new Instruction { type = node.type });
+                    instructions[inPtr] = new Instruction { type = node.type };
+                    inPtr++;
                     break;
             }
         }
 
-        public float Execute(float x, float y, float[] stack)
-        {
-            unsafe
-            {
-                fixed (float* stackPointer = stack) //this fails with an implicit cast error
-                {
-                    int sp = 0;
-                    for (int i = 0; i < instructions.Count; i++)
-                    {
-                        var ins = instructions[i];
-                        switch (ins.type)
-                        {
-                            case NodeType.X:
-                                sp++;
-                                stackPointer[sp] = x;
-                                break;
-                            case NodeType.Y:
-                                sp++;
-                                stackPointer[sp] = y;
-                                break;
-                            case NodeType.CONSTANT:
-                                sp++;
-                                stackPointer[sp] = ins.value;
-                                break;
-                            case NodeType.ADD:
-                                stackPointer[sp - 1] = stackPointer[sp] + stackPointer[sp - 1];
-                                sp--;
-                                break;
-                            case NodeType.SUB:
-                                stackPointer[sp - 1] = stackPointer[sp] - stackPointer[sp - 1];
-                                sp--;
-                                break;
-                            case NodeType.MUL:
-                                stackPointer[sp - 1] = stackPointer[sp] * stackPointer[sp - 1];
-                                sp--;
-                                break;
-                            case NodeType.DIV:
-                                stackPointer[sp - 1] = stackPointer[sp] / stackPointer[sp - 1];
-                                sp--;
-                                break;
-                            case NodeType.SIN:
-                                stackPointer[sp] = (float)Math.Sin(stackPointer[sp]);                                
-                                break;
-                        }
-                    }
-                    return stackPointer[sp];
-                }
-            }
-        }
+      
 
     }
 
