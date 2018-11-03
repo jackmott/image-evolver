@@ -69,9 +69,9 @@ namespace HotloadPong
             proxy = (IGameInterface)asm.CreateInstance("GameLogic.GameLogic");
         }
 
-        public GameState Update(KeyboardState keyboard, GameTime gameTime, GraphicsDevice g)
+        public GameState Update(KeyboardState keyboard, MouseState mouseState, MouseState prevMouseState,GameTime gameTime, GraphicsDevice g)
         {
-            return proxy.Update(keyboard,gameTime,g);
+            return proxy.Update(keyboard,mouseState,prevMouseState,gameTime,g);
         }
 
         public void Draw(GraphicsDevice g,SpriteBatch batch, GameTime gameTime)

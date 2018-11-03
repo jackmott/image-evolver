@@ -14,7 +14,8 @@ namespace HotloadPong
         GraphicsDeviceManager graphics;
         SpriteBatch spriteBatch;
         Hotloader hotloader;
-        GameState state;        
+        GameState state;
+        MouseState prevMouseState;
         
         int screenWidth;
         int screenHeight;
@@ -39,7 +40,8 @@ namespace HotloadPong
 
             base.Initialize();
             screenWidth = graphics.PreferredBackBufferWidth;
-            screenHeight = graphics.PreferredBackBufferHeight;                        
+            screenHeight = graphics.PreferredBackBufferHeight;
+            prevMouseState = Mouse.GetState();
         }
 
         /// <summary>
@@ -78,7 +80,9 @@ namespace HotloadPong
 #if DEBUG
             hotloader.CheckShaders();
 #endif
-            state = hotloader.Update(Keyboard.GetState(),gameTime,GraphicsDevice);
+            var mouse = Mouse.GetState();
+            state = hotloader.Update(Keyboard.GetState(),mouse,prevMouseState,gameTime,GraphicsDevice);
+            prevMouseState = mouse;
             base.Update(gameTime);
         }
 

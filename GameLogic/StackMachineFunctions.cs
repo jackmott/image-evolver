@@ -124,29 +124,15 @@ namespace GameLogic
                             case NodeType.PICTURE:
                                 {
                                     var image = images[(int)ins.value];
-                                    var xf = stackPointer[sp] / 2.0f + 0.5f;
-                                    if (float.IsNaN(xf))
-                                    {
-                                        xf = 0.0f;
-                                    }
-                                    var yf = stackPointer[sp - 1] / 2.0f + 0.5f;
-                                    if (float.IsNaN(yf))
-                                    {
-                                        xf = 0.0f;
-                                    }
-                                    xf = Wrap0To1(xf);
-                                    yf = Wrap0To1(yf);
+                                    var xf = (x + 1.0f) / 2.0f;
+                                    var yf = (y + 1.0f) / 2.0f;
                                     var xi = (int)(xf * image.w);
                                     var yi = (int)(yf * image.h);
-                                    var index = yi * image.w + xi;
-                                    if (index < 0)
-                                    {
-                                        Console.WriteLine("wat");
-                                    }
+                                    var index = yi * image.w + xi;                                    
                                     var c = image.data[index];
                                     var fc = (float)(c.R + c.G + c.B) / (255.0f * 3.0f);
-                                    stackPointer[sp - 1] = fc;
-                                    sp--;
+                                    sp++;
+                                    stackPointer[sp] = fc;                                    
                                     break;
                                 }
                             default:

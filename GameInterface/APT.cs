@@ -290,10 +290,7 @@ namespace GameInterface
             switch (type)
             {
                 case NodeType.PICTURE:
-                    var p = new AptNode { type = type, children = new AptNode[2], value = r.Next(0, 3) };
-                    p.children[0] = new AptNode { type = NodeType.X };
-                    p.children[1] = new AptNode { type = NodeType.Y };
-                    return p;
+                    return new AptNode { type = type, value = r.Next(0, 3) };                                        
                 case NodeType.CONSTANT:
                     return new AptNode { type = type, value = (float)r.NextDouble()*2.0f - 1.0f };
                 default:

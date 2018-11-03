@@ -14,7 +14,8 @@ namespace GameInterface
 {
     public abstract class Pic
     {
-        public Texture2D tex;        
+        public Texture2D tex;
+        public Rectangle bounds;
     }
 
     public class RGBTree : Pic

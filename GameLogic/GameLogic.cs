@@ -51,8 +51,10 @@ namespace GameLogic
                 {
                     pos.X += hSpace;
                     batch.Draw(GetTex(state.pictures[index],state.externalImages,g, picW, picH), pos, Color.White);
+                    state.pictures[index].bounds = new Rectangle((int)pos.X, (int)pos.Y, picW, picH);
                     index++;
                     pos.X += picW;
+                    
                 }
                 pos.Y += picH;
                 pos.X = 0;
@@ -65,7 +67,19 @@ namespace GameLogic
             
         }
 
-        public GameState Update(KeyboardState keyboard, GameTime gameTime, GraphicsDevice g)
+        public bool WasLeftClicked(Rectangle bounds, MouseState prev, MouseState current)
+        {
+            if (prev.LeftButton == ButtonState.Pressed && current.LeftButton == ButtonState.Released)
+            {
+                if (bounds.Contains(prev.Position) && bounds.Contains(current.Position))
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        public GameState Update(KeyboardState keyboard, MouseState mouseState, MouseState prevMouseState, GameTime gameTime, GraphicsDevice g)
         {
             
 
@@ -165,6 +179,14 @@ namespace GameLogic
                 Console.WriteLine("min:" + min + " max:" + max + " range:"+ (max - min));
                 */
                
+            }
+
+            foreach (var pic in state.pictures)
+            {
+                if (WasLeftClicked(pic.bounds, mouseState, prevMouseState))
+                {
+                    Console.WriteLine("CLICK");
+                }
             }
             
             return state;

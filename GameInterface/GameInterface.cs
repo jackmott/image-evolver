@@ -29,7 +29,7 @@ namespace GameInterface
 
     public interface IGameInterface
     {        
-        GameState Update(KeyboardState keyboard, GameTime gameTime, GraphicsDevice g);
+        GameState Update(KeyboardState keyboard, MouseState mouseState, MouseState prevMouseState, GameTime gameTime, GraphicsDevice g);
         void Draw(GraphicsDevice g, SpriteBatch batch, GameTime gameTime);
         void SetState(GameState state);
     }
