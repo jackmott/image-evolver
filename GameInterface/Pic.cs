@@ -16,6 +16,7 @@ namespace GameInterface
     {
         public Texture2D tex;
         public Rectangle bounds;
+        public bool selected;        
     }
 
     public class RGBTree : Pic
@@ -26,6 +27,10 @@ namespace GameInterface
         public StackMachine RSM;
         public StackMachine GSM;
         public StackMachine BSM;
+
+        public RGBTree()
+        {
+        }
 
         public RGBTree(int min, int max, Random rand, List<ExternalImage> images)
         {

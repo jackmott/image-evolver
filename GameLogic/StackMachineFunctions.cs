@@ -110,31 +110,48 @@ namespace GameLogic
                                 sp--;
                                 break;
                             case NodeType.FBM:
-                                stackPointer[sp - 2] = 9.0f * 0.3584f * FastNoise.SingleSimplexFractalFBM(stackPointer[sp], stackPointer[sp - 1], 5.0f * stackPointer[sp - 2], 1337, 3, 2.0f, 0.5f);
-                                sp -= 2;
-                                break;
+                                {                                    
+                                    stackPointer[sp - 2] = 2.0f * 0.3584f * FastNoise.SingleSimplexFractalFBM(stackPointer[sp], stackPointer[sp - 1], 2.0f*stackPointer[sp-2], 1337, 3, 2.0f, 0.5f);
+                                    sp -= 2;
+                                    break;
+                                }
                             case NodeType.BILLOW:
-                                stackPointer[sp - 2] = 2.0f * ((0.3496f * FastNoise.SingleSimplexFractalBillow(stackPointer[sp], stackPointer[sp - 1], 5.0f * stackPointer[sp - 2], 1337, 3, 2.0f, 0.5f)) + 0.6118f) - 1.0f;
-                                sp -= 2;
-                                break;
+                                {                                 
+                                    stackPointer[sp - 2] = 2.0f * ((0.3496f * FastNoise.SingleSimplexFractalBillow(stackPointer[sp], stackPointer[sp - 1], 2.0f*stackPointer[sp-2], 1337, 3, 2.0f, 0.5f)) + 0.6118f) - 1.0f;
+                                    sp -= 2;
+                                    break;
+                                }
                             case NodeType.CELL1:
-                                stackPointer[sp - 2] = 2.0f * 0.274f * FastNoise.SingleCellular2Edge(2.5f * stackPointer[sp], 2.5f * stackPointer[sp - 1], 2f * stackPointer[sp - 2], 1337, FastNoise.CellularDistanceFunction.Euclidean, FastNoise.CellularReturnType.Distance2Add) - 1.0f;
+                                var jitter = stackPointer[sp - 2];
+                                if (jitter < -0.4) jitter = -0.4f;
+                                if (jitter > 0.4) jitter = 0.4f;
+                                stackPointer[sp - 2] = 2.0f * 0.274f * FastNoise.SingleCellular2Edge(2.5f * stackPointer[sp], 2.5f * stackPointer[sp - 1],jitter, 1337, FastNoise.CellularDistanceFunction.Euclidean, FastNoise.CellularReturnType.Distance2Add) - 1.0f;
                                 sp -= 2;
                                 break;
+                            case NodeType.WARP1:
+                                {
+                                    var (xf,yf) = FastNoise.SingleGradientPerturb(stackPointer[sp], stackPointer[sp - 1],stackPointer[sp - 2]/100.0f,10.0f*stackPointer[sp-3], 1337, FastNoise.Interp.Hermite);
+                                    stackPointer[sp - 2] = xf;
+                                    stackPointer[sp - 3] = yf;
+                                    sp -= 2;
+                                    break;
+                                }
                             case NodeType.PICTURE:
                                 {
                                     var image = images[(int)ins.value];
-                                    var xf = (x + 1.0f) / 2.0f;
-                                    var yf = (y + 1.0f) / 2.0f;
+                                    var xf = (stackPointer[sp] + 1.0f) / 2.0f;
+                                    xf = PicFunctions.Wrap0To1(xf);
+                                    var yf = (stackPointer[sp-1] + 1.0f) / 2.0f;
+                                    yf = PicFunctions.Wrap0To1(yf);
                                     var xi = (int)(xf * image.w);
                                     var yi = (int)(yf * image.h);
                                     var index = yi * image.w + xi;                                    
                                     var c = image.data[index];
-                                    var fc = (float)(c.R + c.G + c.B) / (255.0f * 3.0f);
-                                    sp++;
-                                    stackPointer[sp] = fc;                                    
+                                    var fc = (float)(c.R + c.G + c.B) / (255.0f * 3.0f);                                    
+                                    stackPointer[sp-1] = fc;
+                                    sp--;
                                     break;
-                                }
+                                }                            
                             default:
                                 throw new Exception("Evexecute found a bad node");
 

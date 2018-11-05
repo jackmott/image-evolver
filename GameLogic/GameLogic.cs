@@ -11,7 +11,7 @@ using System.IO;
 
 namespace GameLogic
 {
-    
+
     public class GameLogic : IGameInterface
     {
         public GameState state;
@@ -24,7 +24,36 @@ namespace GameLogic
         private const float JUMP_DURATION = 1000.0f;
         private const float JUMP_SPEED = 0.02f;
 
-        public void Draw(GraphicsDevice g, SpriteBatch batch,GameTime gameTime)
+
+        public void Draw(GraphicsDevice g, SpriteBatch batch, GameTime gameTime)
+        {
+            if (state.screen == Screen.CHOOSE)
+            {
+                ChooseDraw(g, batch, gameTime);
+            }
+            else if (state.screen == Screen.ZOOM)
+            {
+                ZoomDraw(g, batch, gameTime);
+            }
+        }
+
+        public void ZoomDraw(GraphicsDevice g, SpriteBatch batch, GameTime gameTime)
+        {
+            int winW = g.Viewport.Width;
+            int winH = g.Viewport.Height;
+
+                       
+            g.Clear(Color.Black);
+            batch.Begin();
+            var pos = new Vector2(0, 0);                      
+            batch.Draw(GetTex(state.zoomedPic, state.externalImages, g, winW, winH), pos, Color.White);
+            state.zoomedPic.bounds = new Rectangle((int)pos.X, (int)pos.Y, winW, winH);           
+            batch.End();
+            // TODO: Add your drawing code here
+        }
+
+
+        public void ChooseDraw(GraphicsDevice g, SpriteBatch batch, GameTime gameTime)
         {
             int winW = g.Viewport.Width;
             int winH = g.Viewport.Height;
@@ -50,11 +79,18 @@ namespace GameLogic
                 for (int x = 0; x < numPerRow; x++)
                 {
                     pos.X += hSpace;
-                    batch.Draw(GetTex(state.pictures[index],state.externalImages,g, picW, picH), pos, Color.White);
+                    if (state.pictures[index].selected)
+                    {
+                        var borderPos = pos;
+                        borderPos.X -= hSpace / 2.0f;
+                        borderPos.Y -= vSpace / 2.0f;
+                        batch.Draw(GraphUtils.GetTexture(batch), new Rectangle((int)borderPos.X, (int)borderPos.Y, picW + hSpace, picH + vSpace), Color.Blue);
+                    }
+                    batch.Draw(GetTex(state.pictures[index], state.externalImages, g, picW, picH), pos, Color.White);
                     state.pictures[index].bounds = new Rectangle((int)pos.X, (int)pos.Y, picW, picH);
                     index++;
                     pos.X += picW;
-                    
+
                 }
                 pos.Y += picH;
                 pos.X = 0;
@@ -64,30 +100,41 @@ namespace GameLogic
 
             // TODO: Add your drawing code here
 
-            
+
         }
 
         public bool WasLeftClicked(Rectangle bounds, MouseState prev, MouseState current)
         {
-            if (prev.LeftButton == ButtonState.Pressed && current.LeftButton == ButtonState.Released)
+            if (prev.LeftButton == ButtonState.Released && current.LeftButton == ButtonState.Pressed)
             {
                 if (bounds.Contains(prev.Position) && bounds.Contains(current.Position))
                 {
+                    Debug.WriteLine("left click");
                     return true;
                 }
             }
             return false;
         }
 
-        public GameState Update(KeyboardState keyboard, MouseState mouseState, MouseState prevMouseState, GameTime gameTime, GraphicsDevice g)
+        public bool WasRightClicked(Rectangle bounds, MouseState prev, MouseState current)
+        {
+            if (prev.RightButton == ButtonState.Released && current.RightButton == ButtonState.Pressed)
+            {
+                if (bounds.Contains(prev.Position) && bounds.Contains(current.Position))
+                {
+                    Debug.WriteLine("right click");
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        public GameState Init(GraphicsDevice g)
         {
             
-
-            if (state == null)
-            {                
                 state = new GameState();
 
-                DirectoryInfo d = new DirectoryInfo(AppDomain.CurrentDomain.BaseDirectory+@"\Assets");
+                DirectoryInfo d = new DirectoryInfo(AppDomain.CurrentDomain.BaseDirectory + @"\Assets");
                 var files = d.GetFiles("*.jpg").AsEnumerable().Concat(d.GetFiles("*.png"));
                 state.externalImages = new List<ExternalImage>();
                 foreach (var file in files)
@@ -107,88 +154,131 @@ namespace GameLogic
                         throw e;
                     }
                 }
-
-                state.populationSize = 16;
+                
+                state.populationSize = 64;
                 state.pictures = new List<Pic>();
-                Random r = new Random();               
+                Random r = new Random();
                 for (int i = 0; i < state.populationSize; i++)
                 {
-                    /*
-                    var node = new AptNode { type = NodeType.CELL1, children = new AptNode[3] };
-                    node.children[0] = new AptNode { type = NodeType.X };
-                    node.children[1] = new AptNode { type = NodeType.Y };
-                    node.children[2] = new AptNode { type = NodeType.CONSTANT, value = (float)r.NextDouble() * 2.0f - 1.0f };
+                    
+                /*
+                var node = new AptNode { type = NodeType.PICTURE, value=2,children = new AptNode[1] };
+                node.children[0] = new AptNode { type = NodeType.WARP1, children = new AptNode[4] };
+                node.children[0].children[0] = new AptNode { type = NodeType.X };
+                node.children[0].children[1] = new AptNode { type = NodeType.Y };
+                
+                //    node.children[1] = new AptNode { type = NodeType.CONSTANT, value = 0.3f};
                     while (node.AddLeaf(AptNode.GetRandomLeaf(r))) { }
-                    var tree = new RGBTree(1, 1, r);
+                var s = node.ToLisp();
+                    var tree = new RGBTree();
                     tree.RTree = node;
                     tree.GTree = node;
                     tree.BTree = node;
-                    tree.RSM = new StackMachine(node);
-                    tree.GSM = new StackMachine(node);
-                    tree.BSM = new StackMachine(node);
+                    tree.RSM = new StackMachine(node,state.externalImages);
+                    tree.GSM = new StackMachine(node, state.externalImages);
+                    tree.BSM = new StackMachine(node, state.externalImages);
                     state.pictures.Add(tree);
-                    */
                     
+                */
+                
                     int chooser = r.Next(0, 2);
                     if (chooser == 0)
                     {
-                        var rgbTree = new RGBTree(2, 2,r,state.externalImages);
-                        state.pictures.Add(rgbTree);                        
+                        var rgbTree = new RGBTree(1, 5, r, state.externalImages);
+                        state.pictures.Add(rgbTree);
                     }
                     else
                     {
-                        var hsvTree = new HSVTree(2, 2, r,state.externalImages);
+                        var hsvTree = new HSVTree(1, 5, r, state.externalImages);
                         state.pictures.Add(hsvTree);
                     }
                 }
 
-                /*
-                float min = float.MaxValue;
-                float max = float.MinValue;
-                float[] stack = new float[10];
-                for (float y =  -1.0f; y <= 1.0f; y = y + 0.001f)
+            /*
+            float min = float.MaxValue;
+            float max = float.MinValue;
+            float[] stack = new float[10];
+            for (float y =  -1.0f; y <= 1.0f; y = y + 0.001f)
+            {
+                for (float x = -1.0f; x <= 1.0f; x+= 0.001f)
                 {
-                    for (float x = -1.0f; x <= 1.0f; x+= 0.001f)
-                    {
-                        var pic = (RGBTree)state.pictures[0];
-                        var f = pic.BSM.Execute(x, y, stack);
-                        if (f < min) min = f;
-                        if (f > max) max = f;
+                    var pic = (RGBTree)state.pictures[0];
+                    var f = pic.BSM.Execute(x, y, stack);
+                    if (f < min) min = f;
+                    if (f > max) max = f;
 
-                        pic = (RGBTree)state.pictures[2];
-                        f = pic.BSM.Execute(x, y, stack);
-                        if (f < min) min = f;
-                        if (f > max) max = f;
+                    pic = (RGBTree)state.pictures[2];
+                    f = pic.BSM.Execute(x, y, stack);
+                    if (f < min) min = f;
+                    if (f > max) max = f;
 
-                        pic = (RGBTree)state.pictures[3];
-                        f = pic.BSM.Execute(x, y, stack);
-                        if (f < min) min = f;
-                        if (f > max) max = f;
+                    pic = (RGBTree)state.pictures[3];
+                    f = pic.BSM.Execute(x, y, stack);
+                    if (f < min) min = f;
+                    if (f > max) max = f;
 
-                        pic = (RGBTree)state.pictures[4];
-                        f = pic.BSM.Execute(x, y, stack);
-                        if (f < min) min = f;
-                        if (f > max) max = f;
+                    pic = (RGBTree)state.pictures[4];
+                    f = pic.BSM.Execute(x, y, stack);
+                    if (f < min) min = f;
+                    if (f > max) max = f;
 
-                        pic = (RGBTree)state.pictures[5];
-                        f = pic.BSM.Execute(x, y, stack);
-                        if (f < min) min = f;
-                        if (f > max) max = f;
-                    }
+                    pic = (RGBTree)state.pictures[5];
+                    f = pic.BSM.Execute(x, y, stack);
+                    if (f < min) min = f;
+                    if (f > max) max = f;
                 }
-                Console.WriteLine("min:" + min + " max:" + max + " range:"+ (max - min));
-                */
-               
             }
+            Console.WriteLine("min:" + min + " max:" + max + " range:"+ (max - min));
+       */
+
+            return state;
+        }
+
+        public GameState Update(KeyboardState keyboard, MouseState mouseState, MouseState prevMouseState, GameTime gameTime, GraphicsDevice g)
+        {
+           
+
+            if (state.screen == Screen.CHOOSE)
+            {
+                return ChooseUpdate(keyboard, mouseState, prevMouseState, gameTime, g);
+            }
+            else if (state.screen == Screen.ZOOM)
+            {
+                return ZoomUpdate(keyboard, mouseState, prevMouseState, gameTime, g);
+            }
+            return state;
+        }
+
+        public GameState ZoomUpdate(KeyboardState keyboard, MouseState mouseState, MouseState prevMouseState, GameTime gameTime, GraphicsDevice g)
+        {
+            if (WasRightClicked(state.zoomedPic.bounds, mouseState, prevMouseState))
+            {                
+                state.screen = Screen.CHOOSE;
+                state.zoomedPic = null;
+            }
+            return state;
+        }
+
+        public GameState ChooseUpdate(KeyboardState keyboard, MouseState mouseState, MouseState prevMouseState, GameTime gameTime, GraphicsDevice g)
+        {
+
+
+           
 
             foreach (var pic in state.pictures)
             {
                 if (WasLeftClicked(pic.bounds, mouseState, prevMouseState))
                 {
-                    Console.WriteLine("CLICK");
+                    pic.selected = !pic.selected;
+                }
+
+                if (WasRightClicked(pic.bounds, mouseState, prevMouseState))
+                {                    
+                    state.zoomedPic = pic;
+                    state.screen = Screen.ZOOM;
                 }
             }
-            
+
             return state;
         }
     }

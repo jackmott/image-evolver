@@ -39,6 +39,7 @@ namespace GameLogic
             var scale = (float)(255 / 2);
             var offset = -1.0f * scale;
             var partition = Partitioner.Create(0, h);
+
             Parallel.ForEach(
                 partition,
                 (range, state) =>
@@ -61,6 +62,37 @@ namespace GameLogic
                     }
 
                 });
+            Texture2D tex = new Texture2D(graphics, w, h);
+            var tex2 = new Texture2D(graphics, w, h);
+            tex.SetData(colors);
+            return tex;
+        }
+
+        public static Texture2D ToTextureSingleThread(RGBTree tree, List<ExternalImage> images, GraphicsDevice graphics, int w, int h)
+        {
+            Color[] colors = new Color[w * h];
+            var scale = (float)(255 / 2);
+            var offset = -1.0f * scale;
+            var partition = Partitioner.Create(0, h);
+
+                    var rStack = new float[tree.RSM.nodeCount];
+                    var gStack = new float[tree.GSM.nodeCount];
+                    var bStack = new float[tree.BSM.nodeCount];
+                    for (int y = 0; y < h; y++)
+                    {
+                        float yf = ((float)y / (float)h) * 2.0f - 1.0f;
+                        int yw = y * w;
+                        for (int x = 0; x < w; x++)
+                        {
+                            float xf = ((float)x / (float)w) * 2.0f - 1.0f;
+                            var r = (byte)(Execute(tree.RSM, xf, yf, rStack, images) * scale - offset);
+                            var g = (byte)(Execute(tree.GSM, xf, yf, gStack, images) * scale - offset);
+                            var b = (byte)(Execute(tree.BSM, xf, yf, bStack, images) * scale - offset);
+                            colors[yw + x] = new Color(r, g, b, (byte)255);
+                        }
+                    }
+
+            
             Texture2D tex = new Texture2D(graphics, w, h);
             var tex2 = new Texture2D(graphics, w, h);
             tex.SetData(colors);

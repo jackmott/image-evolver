@@ -45,7 +45,6 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="APT.cs" />
-    <Compile Include="FastNoise.cs" />
     <Compile Include="GameInterface.cs" />
     <Compile Include="Pic.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

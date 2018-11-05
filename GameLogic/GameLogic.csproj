@@ -51,7 +51,9 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="APTFunctions.cs" />
+    <Compile Include="FastNoise.cs" />
     <Compile Include="GameLogic.cs" />
+    <Compile Include="GraphUtils.cs" />
     <Compile Include="Lexer.cs" />
     <Compile Include="PicFunctions.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

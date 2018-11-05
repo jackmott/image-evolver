@@ -24,7 +24,7 @@ namespace HotloadPong
         public HotloadGame()
         {
             graphics = new GraphicsDeviceManager(this);
-            Window.AllowUserResizing = true;
+            Window.AllowUserResizing = true;            
             Content.RootDirectory = "Content";
         }
 
@@ -39,6 +39,7 @@ namespace HotloadPong
             // TODO: Add your initialization logic here
 
             base.Initialize();
+            this.IsMouseVisible = true;
             screenWidth = graphics.PreferredBackBufferWidth;
             screenHeight = graphics.PreferredBackBufferHeight;
             prevMouseState = Mouse.GetState();
@@ -51,6 +52,7 @@ namespace HotloadPong
         protected override void LoadContent()
         {
             hotloader = new Hotloader(Content, GraphicsDevice);
+            hotloader.Init(GraphicsDevice);
             // Create a new SpriteBatch, which can be used to draw textures.
             spriteBatch = new SpriteBatch(GraphicsDevice);                                
             // TODO: use this.Content to load your game content here
@@ -80,7 +82,7 @@ namespace HotloadPong
 #if DEBUG
             hotloader.CheckShaders();
 #endif
-            var mouse = Mouse.GetState();
+            MouseState mouse = Mouse.GetState();
             state = hotloader.Update(Keyboard.GetState(),mouse,prevMouseState,gameTime,GraphicsDevice);
             prevMouseState = mouse;
             base.Update(gameTime);

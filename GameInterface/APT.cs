@@ -10,7 +10,7 @@ using System.Collections.Concurrent;
 
 namespace GameInterface
 {
-    public enum NodeType : byte { EMPTY = 0, CONSTANT, X, Y, PICTURE, ABS, WRAP, CLIP,NEGATE,ADD, SUB, MUL, DIV, SIN, COS, LOG, ATAN, ATAN2, SQRT, FLOOR, CEIL, MAX, MIN, MOD, SQUARE,FBM, BILLOW,CELL1};
+    public enum NodeType : byte { EMPTY = 0, CONSTANT, X, Y, PICTURE, ABS, WRAP, CLIP,NEGATE,ADD, SUB, MUL, DIV, SIN, COS, LOG, ATAN, ATAN2, SQRT, FLOOR, CEIL, MAX, MIN, MOD, SQUARE,FBM, BILLOW,CELL1,WARP1};
 
 
     public struct AptNode
@@ -19,6 +19,7 @@ namespace GameInterface
         public NodeType type;
         public AptNode[] children;
         public float value;
+        public bool isWarp;
 
 
 
@@ -218,6 +219,8 @@ namespace GameInterface
                     return "Cell1";
                 case NodeType.PICTURE:
                     return "Picture-" + ((int)value).ToString();
+                case NodeType.WARP1:
+                    return "Warp1";
                 default:
                     throw new Exception("corrupt node type in OpString()");
             }
@@ -246,15 +249,18 @@ namespace GameInterface
 
         public static AptNode GetRandomNode(Random r)
         {
-            var enum_size = Enum.GetNames(typeof(NodeType)).Length;
-            var typeNum = r.Next(AptNode.NUM_LEAF_TYPES, enum_size);
+            var enum_size = Enum.GetNames(typeof(NodeType)).Length;            
+            bool isWarp = r.Next(0, 2) == 0;            
+            var typeNum = r.Next(AptNode.NUM_LEAF_TYPES, enum_size-1);
             var type = (NodeType)typeNum;
+            AptNode result;
             switch (type)
-            {
+            {                
                 case NodeType.FBM:                
                 case NodeType.BILLOW:
                 case NodeType.CELL1:
-                    return new AptNode { type = type, children = new AptNode[3] };                    
+                    result = new AptNode { type = type, children = new AptNode[3], isWarp = isWarp };
+                    break;
                 case NodeType.ADD:
                 case NodeType.SUB:
                 case NodeType.MUL:
@@ -264,7 +270,8 @@ namespace GameInterface
                 case NodeType.MAX:
                 case NodeType.MOD:
                 case NodeType.CLIP:                          
-                    return new AptNode { type = type, children = new AptNode[2] };                
+                    result = new AptNode { type = type, children = new AptNode[2], isWarp = isWarp };
+                    break;
                 case NodeType.SIN:
                 case NodeType.COS:
                 case NodeType.ATAN:
@@ -276,10 +283,23 @@ namespace GameInterface
                 case NodeType.ABS:
                 case NodeType.NEGATE:
                 case NodeType.WRAP:
-                    return new AptNode { type = type, children = new AptNode[1] };
+                    result = new AptNode { type = type, children = new AptNode[1], isWarp = isWarp };
+                    break;
                 default:
                     throw new Exception("GetRandomNode failed to match the switch");
             }
+
+            if (isWarp)
+            {
+                if (result.children.Length >= 2)
+                {
+                    var newChildren = new AptNode[result.children.Length - 1];
+                    result.children = newChildren;
+                }
+                var warpNode = new AptNode { type = NodeType.WARP1, children = new AptNode[4]};
+                result.children[0] = warpNode;
+            }
+            return result;
 
         }
 
@@ -290,7 +310,12 @@ namespace GameInterface
             switch (type)
             {
                 case NodeType.PICTURE:
-                    return new AptNode { type = type, value = r.Next(0, 3) };                                        
+                    {
+                        var result = new AptNode { type = type, children = new AptNode[2],value = r.Next(0, 5) };
+                        result.children[0] = new AptNode { type = NodeType.X };
+                        result.children[1] = new AptNode { type = NodeType.Y };
+                        return result;
+                    }
                 case NodeType.CONSTANT:
                     return new AptNode { type = type, value = (float)r.NextDouble()*2.0f - 1.0f };
                 default:
