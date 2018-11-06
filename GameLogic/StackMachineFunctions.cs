@@ -130,19 +130,26 @@ namespace GameLogic
                                 break;
                             case NodeType.WARP1:
                                 {
-                                    var (xf,yf) = FastNoise.SingleGradientPerturb(stackPointer[sp], stackPointer[sp - 1],stackPointer[sp - 2]/100.0f,10.0f*stackPointer[sp-3], 1337, FastNoise.Interp.Hermite);
-                                    stackPointer[sp - 2] = xf;
-                                    stackPointer[sp - 3] = yf;
-                                    sp -= 2;
+                                    var octaves = Math.Abs((int)stackPointer[sp - 4]);
+                                    if (octaves < 1) octaves = 1;
+                                    if (octaves > 3) octaves = 3;
+                                   var (xf, yf) = FastNoise.GradientPerturbFractal(stackPointer[sp], stackPointer[sp - 1], 2f * stackPointer[sp - 2], stackPointer[sp - 3] / 3.0f, 1337,octaves,2.0f,0.5f, FastNoise.Interp.Quintic);
+                                    stackPointer[sp - 3] = xf;
+                                    stackPointer[sp - 4] = yf;
+                                    sp -= 3;
                                     break;
                                 }
                             case NodeType.PICTURE:
                                 {
                                     var image = images[(int)ins.value];
                                     var xf = (stackPointer[sp] + 1.0f) / 2.0f;
-                                    xf = PicFunctions.Wrap0To1(xf);
+                                    //xf = PicFunctions.Wrap0To1(xf);
+                                    if (xf >= 1) xf = x/2.0f + 0.5f;
+                                    if (xf < 0) xf = x / 2.0f + 0.5f;
                                     var yf = (stackPointer[sp-1] + 1.0f) / 2.0f;
-                                    yf = PicFunctions.Wrap0To1(yf);
+                                    //yf = PicFunctions.Wrap0To1(yf);
+                                    if (yf >= 1) yf = y / 2.0f + 0.5f;
+                                    if (yf < 0) yf = y / 2.0f + 0.5f;
                                     var xi = (int)(xf * image.w);
                                     var yi = (int)(yf * image.h);
                                     var index = yi * image.w + xi;                                    

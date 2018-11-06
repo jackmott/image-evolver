@@ -24,6 +24,8 @@ namespace HotloadPong
         public HotloadGame()
         {
             graphics = new GraphicsDeviceManager(this);
+            graphics.PreferredBackBufferWidth = 1920;
+            graphics.PreferredBackBufferHeight = 1080;
             Window.AllowUserResizing = true;            
             Content.RootDirectory = "Content";
         }
@@ -40,6 +42,7 @@ namespace HotloadPong
 
             base.Initialize();
             this.IsMouseVisible = true;
+            
             screenWidth = graphics.PreferredBackBufferWidth;
             screenHeight = graphics.PreferredBackBufferHeight;
             prevMouseState = Mouse.GetState();

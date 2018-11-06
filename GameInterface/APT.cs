@@ -10,17 +10,15 @@ using System.Collections.Concurrent;
 
 namespace GameInterface
 {
-    public enum NodeType : byte { EMPTY = 0, CONSTANT, X, Y, PICTURE, ABS, WRAP, CLIP,NEGATE,ADD, SUB, MUL, DIV, SIN, COS, LOG, ATAN, ATAN2, SQRT, FLOOR, CEIL, MAX, MIN, MOD, SQUARE,FBM, BILLOW,CELL1,WARP1};
+    public enum NodeType : byte { EMPTY = 0, CONSTANT, X, Y, PICTURE, ABS, WRAP, CLIP, NEGATE, ADD, SUB, MUL, DIV, SIN, COS, LOG, ATAN, ATAN2, SQRT, FLOOR, CEIL, MAX, MIN, MOD, SQUARE, FBM, BILLOW, CELL1, WARP1 };
 
 
-    public struct AptNode
+    public class AptNode
     {
         const int NUM_LEAF_TYPES = 5;
         public NodeType type;
         public AptNode[] children;
         public float value;
-        public bool isWarp;
-
 
 
         public bool IsLeaf()
@@ -54,19 +52,20 @@ namespace GameInterface
 
             if (children != null)
             {
-                foreach (var child in children) {
+                foreach (var child in children)
+                {
                     (node, n) = child.GetNthNode(n - 1);
                     if (node.type != NodeType.EMPTY)
                     {
                         return (node, n);
                     }
-                }             
+                }
             }
             return (new AptNode { type = NodeType.EMPTY }, n);
 
         }
 
-        public static (bool, int) ReplaceNthNode(ref AptNode node, AptNode newNode, int n)
+        public static (bool, int) ReplaceNthNode(AptNode node, AptNode newNode, int n)
         {
             bool replaced = false;
             if (n == 0)
@@ -74,10 +73,11 @@ namespace GameInterface
                 node = newNode;
                 return (true, n);
             }
-            else if (node.children != null) 
+            else if (node.children != null)
             {
-                for (int i =0; i < node.children.Length;i++)  {
-                    (replaced, n) = ReplaceNthNode(ref node.children[i], newNode, n - 1);
+                for (int i = 0; i < node.children.Length; i++)
+                {
+                    (replaced, n) = ReplaceNthNode(node.children[i], newNode, n - 1);
                     if (replaced)
                     {
                         return (replaced, n);
@@ -89,27 +89,66 @@ namespace GameInterface
 
         public void BreedWith(AptNode partner, Random r)
         {
-            var (nodeToSwapIn,n) = partner.GetNthNode(r.Next(0, partner.Count()));
-            ReplaceNthNode(ref this, nodeToSwapIn, r.Next(0, this.Count()));
+            var (nodeToSwapIn, n) = partner.GetNthNode(r.Next(0, partner.Count()));
+            ReplaceNthNode(this, nodeToSwapIn, r.Next(0, this.Count()));
+        }
+
+        public void InsertWarp(Random r)
+        {
+            var node = this;
+            if (node.children == null) return;
+            
+            if (node.children.Length >= 2 && r.Next(0,0) == 0 && 
+                ((node.children[0].type == NodeType.X && node.children[1].type == NodeType.Y) ||
+                (node.children[1].type == NodeType.X && node.children[0].type == NodeType.Y)))
+            {                               
+               
+                    Console.WriteLine("WARP");
+                    var newChildren = new AptNode[node.children.Length - 1];
+                    var warp = new AptNode { type = NodeType.WARP1, children = new AptNode[5] };
+                    warp.children[0] = new AptNode { type = NodeType.X };
+                    warp.children[1] = new AptNode { type = NodeType.Y };
+                    warp.children[4] = new AptNode { type = NodeType.CONSTANT, value = (float)r.Next(1, 4) };
+                    
+                    //fill in the stuff the warp node needs
+                    while (warp.AddLeaf(GetRandomLeaf(r)))
+                    {
+                    }
+                    newChildren[0] = warp;
+                    for (int i = 1; i < newChildren.Length; i++)
+                    {
+                        newChildren[1] = node.children[i + 1];
+                    }
+                    node.children = newChildren;
+               
+            }
+            else
+            {
+                foreach (var child in node.children)
+                {
+                    child.InsertWarp(r);
+                }
+            }
+            
         }
 
         public void Mutate(Random r)
         {
-            var nodeIndex = r.Next(0, this.Count());                        
+            var nodeIndex = r.Next(0, this.Count());
             int choose = r.Next(0, 2);
             if (choose == 0)
             {
                 var newNode = GetRandomNode(r);
-                ReplaceNthNode(ref this, newNode, nodeIndex);
+                ReplaceNthNode(this, newNode, nodeIndex);
                 while (this.AddLeaf(GetRandomLeaf(r))) { };
             }
             else
             {
                 var newLeaf = GetRandomLeaf(r);
-                ReplaceNthNode(ref this, newLeaf, nodeIndex);
+                ReplaceNthNode(this, newLeaf, nodeIndex);
             }
         }
-        
+
         public int LeafCount()
         {
             int count = 0;
@@ -132,7 +171,7 @@ namespace GameInterface
         public void AddRandom(AptNode nodeToAdd, Random r)
         {
             var addIndex = r.Next(this.children.Length);
-            if (children[addIndex].type == NodeType.EMPTY)
+            if (children[addIndex] == null || children[addIndex].type == NodeType.EMPTY)
             {
                 children[addIndex] = nodeToAdd;
             }
@@ -146,7 +185,7 @@ namespace GameInterface
         {
             for (int i = 0; i < children.Length; i++)
             {
-                if (children[i].IsEmpty())
+                if (children[i] == null || children[i].IsEmpty())
                 {
                     children[i] = leafToAdd;
                     return true;
@@ -214,7 +253,7 @@ namespace GameInterface
                 case NodeType.FBM:
                     return "FBM";
                 case NodeType.BILLOW:
-                    return "Billow";                
+                    return "Billow";
                 case NodeType.CELL1:
                     return "Cell1";
                 case NodeType.PICTURE:
@@ -243,23 +282,22 @@ namespace GameInterface
                         result += children[i].ToLisp() + " ";
                     }
                     return result + ")";
-
             }
         }
 
         public static AptNode GetRandomNode(Random r)
         {
-            var enum_size = Enum.GetNames(typeof(NodeType)).Length;            
-            bool isWarp = r.Next(0, 2) == 0;            
-            var typeNum = r.Next(AptNode.NUM_LEAF_TYPES, enum_size-1);
+            var enum_size = Enum.GetNames(typeof(NodeType)).Length;
+            //-1 because we don't include warp
+            var typeNum = r.Next(AptNode.NUM_LEAF_TYPES, enum_size - 1);
             var type = (NodeType)typeNum;
             AptNode result;
             switch (type)
-            {                
-                case NodeType.FBM:                
+            {
+                case NodeType.FBM:
                 case NodeType.BILLOW:
                 case NodeType.CELL1:
-                    result = new AptNode { type = type, children = new AptNode[3], isWarp = isWarp };
+                    result = new AptNode { type = type, children = new AptNode[3] };
                     break;
                 case NodeType.ADD:
                 case NodeType.SUB:
@@ -269,8 +307,8 @@ namespace GameInterface
                 case NodeType.MIN:
                 case NodeType.MAX:
                 case NodeType.MOD:
-                case NodeType.CLIP:                          
-                    result = new AptNode { type = type, children = new AptNode[2], isWarp = isWarp };
+                case NodeType.CLIP:
+                    result = new AptNode { type = type, children = new AptNode[2] };
                     break;
                 case NodeType.SIN:
                 case NodeType.COS:
@@ -283,22 +321,13 @@ namespace GameInterface
                 case NodeType.ABS:
                 case NodeType.NEGATE:
                 case NodeType.WRAP:
-                    result = new AptNode { type = type, children = new AptNode[1], isWarp = isWarp };
+                    result = new AptNode { type = type, children = new AptNode[1] };
                     break;
                 default:
                     throw new Exception("GetRandomNode failed to match the switch");
             }
 
-            if (isWarp)
-            {
-                if (result.children.Length >= 2)
-                {
-                    var newChildren = new AptNode[result.children.Length - 1];
-                    result.children = newChildren;
-                }
-                var warpNode = new AptNode { type = NodeType.WARP1, children = new AptNode[4]};
-                result.children[0] = warpNode;
-            }
+
             return result;
 
         }
@@ -311,13 +340,13 @@ namespace GameInterface
             {
                 case NodeType.PICTURE:
                     {
-                        var result = new AptNode { type = type, children = new AptNode[2],value = r.Next(0, 5) };
+                        var result = new AptNode { type = type, children = new AptNode[2], value = r.Next(0, 5) };
                         result.children[0] = new AptNode { type = NodeType.X };
                         result.children[1] = new AptNode { type = NodeType.Y };
                         return result;
                     }
                 case NodeType.CONSTANT:
-                    return new AptNode { type = type, value = (float)r.NextDouble()*2.0f - 1.0f };
+                    return new AptNode { type = type, value = (float)r.NextDouble() * 2.0f - 1.0f };
                 default:
                     return new AptNode { type = type };
             }
@@ -334,11 +363,11 @@ namespace GameInterface
             {
                 //just keep adding leaves until we can't 
             };
-            
+            first.InsertWarp(r);
 
             return first;
         }
-              
+
     }
 
 }

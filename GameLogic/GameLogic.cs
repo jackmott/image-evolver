@@ -17,7 +17,7 @@ namespace GameLogic
         public GameState state;
         public void SetState(GameState state)
         {
-            this.state = state;
+            this.state = state;            
         }
 
         private const float MOVE_SPEED = 0.05f;
@@ -155,21 +155,18 @@ namespace GameLogic
                     }
                 }
                 
-                state.populationSize = 64;
+                state.populationSize = 100;
                 state.pictures = new List<Pic>();
                 Random r = new Random();
                 for (int i = 0; i < state.populationSize; i++)
                 {
                     
                 /*
-                var node = new AptNode { type = NodeType.PICTURE, value=2,children = new AptNode[1] };
-                node.children[0] = new AptNode { type = NodeType.WARP1, children = new AptNode[4] };
-                node.children[0].children[0] = new AptNode { type = NodeType.X };
-                node.children[0].children[1] = new AptNode { type = NodeType.Y };
-                
-                //    node.children[1] = new AptNode { type = NodeType.CONSTANT, value = 0.3f};
-                    while (node.AddLeaf(AptNode.GetRandomLeaf(r))) { }
-                var s = node.ToLisp();
+                var node = new AptNode { type = NodeType.PICTURE, value=2,children = new AptNode[2] };
+                node.children[0] = new AptNode { type = NodeType.X };
+                node.children[1] = new AptNode { type = NodeType.Y };
+                node.InsertWarp(r);
+                                                
                     var tree = new RGBTree();
                     tree.RTree = node;
                     tree.GTree = node;
@@ -178,20 +175,22 @@ namespace GameLogic
                     tree.GSM = new StackMachine(node, state.externalImages);
                     tree.BSM = new StackMachine(node, state.externalImages);
                     state.pictures.Add(tree);
+                Console.WriteLine(tree.ToLisp());
                     
                 */
                 
                     int chooser = r.Next(0, 2);
                     if (chooser == 0)
                     {
-                        var rgbTree = new RGBTree(1, 5, r, state.externalImages);
+                        var rgbTree = new RGBTree(1, 10, r, state.externalImages);
                         state.pictures.Add(rgbTree);
                     }
                     else
                     {
-                        var hsvTree = new HSVTree(1, 5, r, state.externalImages);
+                        var hsvTree = new HSVTree(1, 10, r, state.externalImages);
                         state.pictures.Add(hsvTree);
-                    }
+                    }             
+                  
                 }
 
             /*
@@ -275,6 +274,7 @@ namespace GameLogic
                 if (WasRightClicked(pic.bounds, mouseState, prevMouseState))
                 {                    
                     state.zoomedPic = pic;
+                    Console.WriteLine(state.zoomedPic.ToLisp());
                     state.screen = Screen.ZOOM;
                 }
             }

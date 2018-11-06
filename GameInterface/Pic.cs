@@ -16,7 +16,8 @@ namespace GameInterface
     {
         public Texture2D tex;
         public Rectangle bounds;
-        public bool selected;        
+        public bool selected;
+        public abstract string ToLisp();
     }
 
     public class RGBTree : Pic
@@ -28,10 +29,7 @@ namespace GameInterface
         public StackMachine GSM;
         public StackMachine BSM;
 
-        public RGBTree()
-        {
-        }
-
+        public RGBTree() { }
         public RGBTree(int min, int max, Random rand, List<ExternalImage> images)
         {
 
@@ -44,6 +42,14 @@ namespace GameInterface
             BTree = AptNode.GenerateTree(rand.Next(min, max), rand);
             BSM = new StackMachine(BTree, images);
 
+        }
+
+        public override string ToLisp()
+        {
+            string result = "( R " + RTree.ToLisp() + " )\n";
+            result += "( G " + GTree.ToLisp() + " )\n";
+            result += "( B " + BTree.ToLisp() + " )\n";
+            return result;
         }
 
     }
@@ -70,6 +76,14 @@ namespace GameInterface
             VTree = AptNode.GenerateTree(rand.Next(min, max), rand);
             VSM = new StackMachine(VTree,images);
 
-        }                  
+        }
+
+        public override string ToLisp()
+        {
+            string result = "( H " + HTree.ToLisp() + " )\n";
+            result += "( S " + STree.ToLisp() + " )\n";
+            result += "( V " + VTree.ToLisp() + " )\n";
+            return result;
+        }
     }
 }

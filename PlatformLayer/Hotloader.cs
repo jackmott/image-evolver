@@ -85,7 +85,7 @@ namespace HotloadPong
         }
 
         public void SetState(GameState state)
-        {
+        {           
             proxy.SetState(state);
         }
 
