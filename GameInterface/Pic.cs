@@ -19,6 +19,9 @@ namespace GameInterface
         public List<ExternalImage> images;
         public abstract string ToLisp();
         public abstract void Mutate(Random r);
+        public abstract Pic Clone();
+        public abstract void BreedWith(Pic partner, Random r);
+        public abstract (AptNode,StackMachine) GetRandomTree(Random r);
     }
 
     public class RGBTree : Pic
@@ -30,7 +33,9 @@ namespace GameInterface
         public StackMachine GSM;
         public StackMachine BSM;
 
-        public RGBTree() {
+        public RGBTree(List<ExternalImage> images)
+        {
+            this.images = images;
             button = new Button(null, new Rectangle());
         }
         public RGBTree(int min, int max, Random rand, List<ExternalImage> images)
@@ -48,16 +53,42 @@ namespace GameInterface
 
         }
 
+        public override (AptNode,StackMachine) GetRandomTree(Random r)
+        {
+            switch (r.Next(0, 3))
+            {
+                case 0:
+                    return (RTree,RSM);
+                case 1:
+                    return (GTree,GSM);
+                default:
+                    return (BTree,BSM);
+            }
+        }
+        public override void BreedWith(Pic partner, Random r)
+        {
+            var (ft, fs) = GetRandomTree(r);
+            var (st, ss) = partner.GetRandomTree(r);
+            ft.BreedWith(st, r);
+            fs.RebuildInstructions(ft);
+        }
+        public override Pic Clone()
+        {
+            var pic = new RGBTree(images);
+            pic.RTree = RTree.Clone();
+            pic.GTree = GTree.Clone();
+            pic.BTree = BTree.Clone();
+            pic.RSM = new StackMachine(RTree, images);
+            pic.GSM = new StackMachine(GTree, images);
+            pic.BSM = new StackMachine(BTree, images);
+            return pic;
+        }
+
         public override void Mutate(Random r)
         {
-            Console.WriteLine("Before:" + RTree.ToLisp());
-            RTree.Mutate(r);
-            Console.WriteLine("After:" + RTree.ToLisp());
-            GTree.Mutate(r);
-            BTree.Mutate(r);
-            RSM = new StackMachine(RTree, images);
-            GSM = new StackMachine(GTree, images);
-            BSM = new StackMachine(BTree, images);
+            var (t, s) = GetRandomTree(r);
+            t.Mutate(r);
+            s.RebuildInstructions(t);
         }
 
         public override string ToLisp()
@@ -69,8 +100,8 @@ namespace GameInterface
         }
 
     }
- 
-     
+
+
     public class HSVTree : Pic
     {
         public AptNode HTree;
@@ -80,28 +111,64 @@ namespace GameInterface
         public StackMachine SSM;
         public StackMachine VSM;
 
-        public HSVTree(int min, int max, Random rand,List<ExternalImage> images)
+        public HSVTree(List<ExternalImage> images)
+        {
+            this.images = images;
+            button = new Button(null, new Rectangle());
+        }
+
+        public HSVTree(int min, int max, Random rand, List<ExternalImage> images)
         {
             this.images = images;
             button = new Button(null, new Rectangle());
             HTree = AptNode.GenerateTree(rand.Next(min, max), rand);
-            HSM = new StackMachine(HTree,images);
+            HSM = new StackMachine(HTree, images);
 
             STree = AptNode.GenerateTree(rand.Next(min, max), rand);
-            SSM = new StackMachine(STree,images);
+            SSM = new StackMachine(STree, images);
 
             VTree = AptNode.GenerateTree(rand.Next(min, max), rand);
-            VSM = new StackMachine(VTree,images);
+            VSM = new StackMachine(VTree, images);
 
+        }
+
+        public override (AptNode,StackMachine) GetRandomTree(Random r)
+        {
+            switch (r.Next(0, 3))
+            {
+                case 0:
+                    return (HTree,HSM);
+                case 1:
+                    return (STree,SSM);
+                default:
+                    return (VTree,VSM);
+            }
+        }
+
+        public override void BreedWith(Pic partner, Random r)
+        {
+            var (ft,fs) = GetRandomTree(r);
+            var (st,ss) = partner.GetRandomTree(r);
+            ft.BreedWith(st, r);
+            fs.RebuildInstructions(ft);
+        }
+
+        public override Pic Clone()
+        {
+            var pic = new HSVTree(images);
+            pic.HTree = HTree.Clone();
+            pic.STree = STree.Clone();
+            pic.VTree = VTree.Clone();
+            pic.HSM = new StackMachine(HTree, images);
+            pic.SSM = new StackMachine(STree, images);
+            pic.VSM = new StackMachine(VTree, images);
+            return pic;
         }
         public override void Mutate(Random r)
         {
-            HTree.Mutate(r);
-            STree.Mutate(r);
-            VTree.Mutate(r);
-            HSM = new StackMachine(HTree, images);
-            SSM = new StackMachine(STree, images);
-            VSM = new StackMachine(VTree, images);
+            var (t, s) = GetRandomTree(r);
+            t.Mutate(r);
+            s.RebuildInstructions(t);            
         }
         public override string ToLisp()
         {

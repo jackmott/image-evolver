@@ -25,6 +25,7 @@ namespace GameLogic
         private const float JUMP_SPEED = 0.02f;
 
         private Button evolveButton;
+        private Button reRollButton;
 
         public void Draw(GraphicsDevice g, SpriteBatch batch, GameTime gameTime)
         {
@@ -76,7 +77,8 @@ namespace GameLogic
 
             g.Clear(Color.Black);
             batch.Begin();
-            evolveButton.Draw(batch,gameTime);
+            evolveButton.Draw(batch, gameTime);
+            reRollButton.Draw(batch, gameTime);
             var pos = new Vector2(0, 0);
             int index = 0;
             for (int y = 0; y < numPerRow; y++)
@@ -114,13 +116,13 @@ namespace GameLogic
 
 
         public GameState Init(GraphicsDevice g, SpriteBatch batch)
-        {            
+        {
             state = new GameState();
             state.r = new Random();
             int w = g.Viewport.Width;
             int h = g.Viewport.Height;
-            evolveButton = new Button(GraphUtils.GetTexture(batch), new Rectangle((int)(w*.001f), (int)(h*.91f), (int)(w * .1f), (int)(h * 0.05f)));
-
+            evolveButton = new Button(GraphUtils.GetTexture(batch), new Rectangle((int)(w * .001f), (int)(h * .91f), (int)(w * .1f), (int)(h * 0.05f)));
+            reRollButton = new Button(GraphUtils.GetTexture(batch), new Rectangle((int)(w * .2f), (int)(h * .91f), (int)(w * .1f), (int)(h * 0.05f)));
             DirectoryInfo d = new DirectoryInfo(AppDomain.CurrentDomain.BaseDirectory + @"\Assets");
             var files = d.GetFiles("*.jpg").AsEnumerable().Concat(d.GetFiles("*.png"));
             state.externalImages = new List<ExternalImage>();
@@ -142,7 +144,7 @@ namespace GameLogic
                 }
             }
 
-            state.populationSize = 100;
+            state.populationSize = 36;
             state.pictures = new List<Pic>();
             Random r = state.r;
             for (int i = 0; i < state.populationSize; i++)
@@ -167,15 +169,14 @@ namespace GameLogic
                 */
 
                 int chooser = r.Next(0, 2);
-                //todo put above back to 2
                 if (chooser == 0)
                 {
-                    var rgbTree = new RGBTree(1, 4, r, state.externalImages);
+                    var rgbTree = new RGBTree(1, 8, r, state.externalImages);
                     state.pictures.Add(rgbTree);
                 }
                 else
                 {
-                    var hsvTree = new HSVTree(1, 4, r, state.externalImages);
+                    var hsvTree = new HSVTree(1, 8, r, state.externalImages);
                     state.pictures.Add(hsvTree);
                 }
 
@@ -248,15 +249,76 @@ namespace GameLogic
 
         public GameState ChooseUpdate(KeyboardState keyboard, MouseState mouseState, MouseState prevMouseState, GameTime gameTime, GraphicsDevice g)
         {
-
-            if (evolveButton.WasLeftClicked(mouseState,prevMouseState))
+            var r = state.r;
+            if (reRollButton.WasLeftClicked(mouseState, prevMouseState))
             {
+                for (int i = 0; i < state.pictures.Count(); i++)
+                {
+                    state.pictures[i].button.tex.Dispose();
+                    state.pictures[i].button.tex = null;
+
+                    int chooser = r.Next(0, 2);
+                    if (chooser == 0)
+                    {
+                        var rgbTree = new RGBTree(1, 8, r, state.externalImages);
+                        state.pictures[i] = rgbTree;
+                    }
+                    else
+                    {
+                        var hsvTree = new HSVTree(1, 8, r, state.externalImages);
+                        state.pictures[i] = hsvTree;
+                    }
+                }
+            }
+
+            if (evolveButton.WasLeftClicked(mouseState, prevMouseState))
+            {
+
                 foreach (var pic in state.pictures)
                 {
-                    pic.Mutate(state.r);
                     pic.button.tex.Dispose();
                     pic.button.tex = null;
                 }
+
+                List<Pic> nextGeneration = new List<Pic>(state.pictures.Count());
+                foreach (var old in state.pictures)
+                {
+                    if (old.selected)
+                    {
+                        nextGeneration.Add(old);
+                        old.selected = false;
+                    }
+                }
+                int selectedCount = nextGeneration.Count();
+                if (selectedCount == 0) return state;
+                while (nextGeneration.Count() < state.pictures.Count())
+                {
+                    var first = nextGeneration[state.r.Next(0, selectedCount)];
+                    var second = nextGeneration[state.r.Next(0, selectedCount)];
+                    var chooser = state.r.Next(0, 3);
+                    if (chooser == 0)
+                    {
+                        var clone = first.Clone();
+                        clone.Mutate(state.r);
+                        nextGeneration.Add(clone);
+                    }
+                    else if (chooser == 1)
+                    {
+                        var clone = first.Clone();
+                        clone.BreedWith(second, state.r);                        
+                        clone.Mutate(state.r);                        
+                        nextGeneration.Add(clone);
+                    }
+                    else if (chooser == 2)
+                    {
+                        var clone = first.Clone();
+                        clone.BreedWith(second, state.r);                        
+                        nextGeneration.Add(clone);
+                    }
+                }
+                state.pictures = nextGeneration;
+
+
             }
             foreach (var pic in state.pictures)
             {

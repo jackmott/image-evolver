@@ -126,6 +126,7 @@ namespace GameLogic
                             case NodeType.CELL1:
                                 var jitter = stackPointer[sp - 2] / 2.0f;                                
                                 stackPointer[sp - 2] = 2.0f * 0.274f * FastNoise.SingleCellular2Edge(2.5f * stackPointer[sp], 2.5f * stackPointer[sp - 1],jitter, 1337, FastNoise.CellularDistanceFunction.Euclidean, FastNoise.CellularReturnType.Distance2Add) - 1.0f;
+                                stackPointer[sp - 2] *= -1;
                                 sp -= 2;
                                 break;
                             case NodeType.WARP1:
@@ -133,7 +134,7 @@ namespace GameLogic
                                     var octaves = (int)(Math.Abs(stackPointer[sp - 4]) * 2.0f + 1.0f);                                    
                                     var (xf, yf) = FastNoise.GradientPerturbFractal(stackPointer[sp], stackPointer[sp - 1], 2f * stackPointer[sp - 2], stackPointer[sp - 3] / 3.0f, 1337,octaves,2.0f,0.5f, FastNoise.Interp.Quintic);
                                     stackPointer[sp - 3] = xf;
-                                    stackPointer[sp - 4] = yf;
+                                    stackPointer[sp - 4] = Constrain(yf,-1.0f,1.0f);
                                     sp -= 3;
                                     break;
                                 }

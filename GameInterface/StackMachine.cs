@@ -29,7 +29,15 @@ namespace GameInterface
             this.images = images;
         }
 
-        public void BuildInstructions(AptNode node) {
+        public void RebuildInstructions(AptNode node)
+        {
+            nodeCount = node.Count();
+            instructions = new Instruction[nodeCount];
+            inPtr = 0;
+            BuildInstructions(node);
+        }
+
+        public void BuildInstructions(AptNode node) {            
             if (node.children != null)
             {
                 for (int i = node.children.Length-1; i >= 0; i--)
