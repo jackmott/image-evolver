@@ -167,14 +167,15 @@ namespace GameLogic
                 */
 
                 int chooser = r.Next(0, 2);
+                //todo put above back to 2
                 if (chooser == 0)
                 {
-                    var rgbTree = new RGBTree(1, 6, r, state.externalImages);
+                    var rgbTree = new RGBTree(1, 4, r, state.externalImages);
                     state.pictures.Add(rgbTree);
                 }
                 else
                 {
-                    var hsvTree = new HSVTree(1, 6, r, state.externalImages);
+                    var hsvTree = new HSVTree(1, 4, r, state.externalImages);
                     state.pictures.Add(hsvTree);
                 }
 

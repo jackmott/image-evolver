@@ -10,7 +10,7 @@ using System.Collections.Concurrent;
 
 namespace GameInterface
 {
-    public enum NodeType : byte { EMPTY = 0, CONSTANT, X, Y, PICTURE, ABS, WRAP, CLIP, NEGATE, ADD, SUB, MUL, DIV, SIN, COS, LOG, ATAN, ATAN2, SQRT, FLOOR, CEIL, MAX, MIN, MOD, SQUARE, FBM, BILLOW, CELL1, WARP1 };
+    public enum NodeType : byte { EMPTY = 0, CONSTANT, X, Y, PICTURE, ABS, CLIP, NEGATE, ADD, SUB, MUL, DIV, SIN, COS, LOG, ATAN, ATAN2, SQRT, FLOOR, CEIL, MAX, MIN, MOD, SQUARE, FBM, BILLOW, CELL1, WARP1 };
 
 
     public class AptNode
@@ -245,9 +245,7 @@ namespace GameInterface
                 case NodeType.MAX:
                     return "Max";
                 case NodeType.MIN:
-                    return "Min";
-                case NodeType.WRAP:
-                    return "Wrap";
+                    return "Min";                
                 case NodeType.SQUARE:
                     return "Square";
                 case NodeType.FBM:
@@ -323,8 +321,7 @@ namespace GameInterface
                 case NodeType.CEIL:
                 case NodeType.SQRT:
                 case NodeType.ABS:
-                case NodeType.NEGATE:
-                case NodeType.WRAP:
+                case NodeType.NEGATE:                
                     result = new AptNode { type = type, children = new AptNode[1] };
                     break;
                 default:
@@ -339,7 +336,19 @@ namespace GameInterface
         public static AptNode GetRandomLeaf(Random r)
         {
             //We start at 1 because 0 is EMPTY
-            var type = (NodeType)r.Next(1, AptNode.NUM_LEAF_TYPES);
+            //todo remove minus one to put pictures back
+
+            var picChance = r.Next(0, 3);
+            NodeType type;
+            if (picChance == 0)
+            {
+                type = (NodeType)r.Next(1, AptNode.NUM_LEAF_TYPES);
+            }
+            else
+            {
+                type = (NodeType)r.Next(1, AptNode.NUM_LEAF_TYPES-1);
+            }
+
             switch (type)
             {
                 case NodeType.PICTURE:

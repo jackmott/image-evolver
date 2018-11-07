@@ -37,6 +37,7 @@ using FN_DECIMAL = System.Single;
 
 using System;
 using System.Runtime.CompilerServices;
+using static GameLogic.MathUtils;
 
 public class FastNoise
 {
@@ -261,10 +262,7 @@ public class FastNoise
         new Float3(0.2178065647f, -0.9698322841f, -0.1094789531f), new Float3(-0.1518031304f, -0.7788918132f, -0.6085091231f), new Float3(-0.2600384876f, -0.4755398075f, -0.8403819825f), new Float3(0.572313509f, -0.7474340931f, -0.3373418503f), new Float3(-0.7174141009f, 0.1699017182f, -0.6756111411f), new Float3(-0.684180784f, 0.02145707593f, -0.7289967412f), new Float3(-0.2007447902f, 0.06555605789f, -0.9774476623f), new Float3(-0.1148803697f, -0.8044887315f, 0.5827524187f),
         new Float3(-0.7870349638f, 0.03447489231f, 0.6159443543f), new Float3(-0.2015596421f, 0.6859872284f, 0.6991389226f), new Float3(-0.08581082512f, -0.10920836f, -0.9903080513f), new Float3(0.5532693395f, 0.7325250401f, -0.396610771f), new Float3(-0.1842489331f, -0.9777375055f, -0.1004076743f), new Float3(0.0775473789f, -0.9111505856f, 0.4047110257f), new Float3(0.1399838409f, 0.7601631212f, -0.6344734459f), new Float3(0.4484419361f, -0.845289248f, 0.2904925424f),
     };
-
-    [MethodImplAttribute(FN_INLINE)]
-    private static int FastFloor(FN_DECIMAL f) { return (f >= 0 ? (int)f : (int)f - 1); }
-
+    
     [MethodImplAttribute(FN_INLINE)]
     private static int FastRound(FN_DECIMAL f) { return (f >= 0) ? (int)(f + (FN_DECIMAL)0.5) : (int)(f - (FN_DECIMAL)0.5); }
 

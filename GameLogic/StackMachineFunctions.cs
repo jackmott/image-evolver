@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using static GameLogic.PicFunctions;
+using static GameLogic.MathUtils;
 using GameInterface;
 using Microsoft.Xna.Framework;
 
@@ -47,8 +48,10 @@ namespace GameLogic
                                 sp--;
                                 break;
                             case NodeType.DIV:
-                                stackPointer[sp - 1] = stackPointer[sp] / stackPointer[sp - 1];
-                                sp--;
+                                {                                    
+                                    stackPointer[sp - 1] = stackPointer[sp] / stackPointer[sp-1];
+                                    sp--;
+                                }
                                 break;
                             case NodeType.SIN:
                                 stackPointer[sp] = (float)Math.Sin(stackPointer[sp]);
@@ -76,7 +79,7 @@ namespace GameLogic
                                 stackPointer[sp] = (float)Math.Ceiling(stackPointer[sp]);
                                 break;
                             case NodeType.FLOOR:
-                                stackPointer[sp] = (float)Math.Floor(stackPointer[sp]);
+                                stackPointer[sp] = FastFloor(stackPointer[sp]);
                                 break;
                             case NodeType.MIN:
                                 stackPointer[sp - 1] = Math.Min(stackPointer[sp], stackPointer[sp - 1]);
@@ -96,13 +99,7 @@ namespace GameLogic
                                 break;
                             case NodeType.NEGATE:
                                 stackPointer[sp] = -1.0f * stackPointer[sp];
-                                break;
-                            case NodeType.WRAP:
-                                var f = stackPointer[sp];
-                                var temp = (f - -1.0f) / (2.0f);
-                                f = -1.0f + 2.0f * (temp - (float)Math.Floor(temp));
-                                stackPointer[sp] = f;
-                                break;
+                                break;                            
                             case NodeType.ABS:
                                 stackPointer[sp] = (float)Math.Abs(stackPointer[sp]);
                                 break;
@@ -112,33 +109,29 @@ namespace GameLogic
                                 break;
                             case NodeType.FBM:
                                 {
-                                    var lac = MathHelper.Clamp(Math.Abs(stackPointer[sp - 3]), 1.25f, 5.0f);
-                                    var gain = MathHelper.Clamp(Math.Abs(stackPointer[sp - 4]), 0.25f, 1.5f);
-                                    stackPointer[sp - 4] = 2.0f * 0.3584f * FastNoise.SingleSimplexFractalFBM(stackPointer[sp], stackPointer[sp - 1], 2.0f*stackPointer[sp-2], 1337, 3, lac, gain);
+                                    var lac = stackPointer[sp - 3] * 4.0f + 1.5f;
+                                    var gain = stackPointer[sp - 4] * 1.0f + 0.3f;
+                                    stackPointer[sp - 4] = 2.0f * 0.3584f * FastNoise.SingleSimplexFractalFBM(stackPointer[sp], stackPointer[sp - 1], stackPointer[sp-2], 1337, 3, lac, gain);
                                     sp -= 4;
                                     break;
                                 }
                             case NodeType.BILLOW:
                                 {
-                                    var lac = MathHelper.Clamp(Math.Abs(stackPointer[sp - 3]), 1.25f, 6.0f);
-                                    var gain = MathHelper.Clamp(Math.Abs(stackPointer[sp - 4]), 0.25f, 1.5f);
-                                    stackPointer[sp - 4] = 2.0f * ((0.3496f * FastNoise.SingleSimplexFractalBillow(stackPointer[sp], stackPointer[sp - 1], 2.0f*stackPointer[sp-2], 1337, 3, lac, gain)) + 0.6118f) - 1.0f;
+                                    var lac = stackPointer[sp - 3] * 5.0f + 1.25f;
+                                    var gain = stackPointer[sp - 4] * 1.0f + 0.3f;
+                                    stackPointer[sp - 4] = 2.0f * ((0.3496f * FastNoise.SingleSimplexFractalBillow(stackPointer[sp], stackPointer[sp - 1], stackPointer[sp-2], 1337, 3, lac, gain)) + 0.6118f) - 1.0f;
                                     sp -= 4;
                                     break;
                                 }
                             case NodeType.CELL1:
-                                var jitter = stackPointer[sp - 2];
-                                if (jitter < -0.4) jitter = -0.4f;
-                                if (jitter > 0.4) jitter = 0.4f;
+                                var jitter = stackPointer[sp - 2] / 2.0f;                                
                                 stackPointer[sp - 2] = 2.0f * 0.274f * FastNoise.SingleCellular2Edge(2.5f * stackPointer[sp], 2.5f * stackPointer[sp - 1],jitter, 1337, FastNoise.CellularDistanceFunction.Euclidean, FastNoise.CellularReturnType.Distance2Add) - 1.0f;
                                 sp -= 2;
                                 break;
                             case NodeType.WARP1:
                                 {
-                                    var octaves = Math.Abs((int)stackPointer[sp - 4]);
-                                    if (octaves < 1) octaves = 1;
-                                    if (octaves > 3) octaves = 3;
-                                   var (xf, yf) = FastNoise.GradientPerturbFractal(stackPointer[sp], stackPointer[sp - 1], 2f * stackPointer[sp - 2], stackPointer[sp - 3] / 3.0f, 1337,octaves,2.0f,0.5f, FastNoise.Interp.Quintic);
+                                    var octaves = (int)(Math.Abs(stackPointer[sp - 4]) * 2.0f + 1.0f);                                    
+                                    var (xf, yf) = FastNoise.GradientPerturbFractal(stackPointer[sp], stackPointer[sp - 1], 2f * stackPointer[sp - 2], stackPointer[sp - 3] / 3.0f, 1337,octaves,2.0f,0.5f, FastNoise.Interp.Quintic);
                                     stackPointer[sp - 3] = xf;
                                     stackPointer[sp - 4] = yf;
                                     sp -= 3;
@@ -149,26 +142,25 @@ namespace GameLogic
                                     var image = images[(int)ins.value];
                                     var xf = (stackPointer[sp] + 1.0f) / 2.0f;
                                     //xf = PicFunctions.Wrap0To1(xf);
-                                    if (xf >= 1) xf = x/2.0f + 0.5f;
-                                    if (xf < 0) xf = x / 2.0f + 0.5f;
+                                    //if (xf >= 1) xf = x/2.0f + 0.5f;
+                                    //if (xf < 0) xf = x / 2.0f + 0.5f;
                                     var yf = (stackPointer[sp-1] + 1.0f) / 2.0f;
                                     //yf = PicFunctions.Wrap0To1(yf);
-                                    if (yf >= 1) yf = y / 2.0f + 0.5f;
-                                    if (yf < 0) yf = y / 2.0f + 0.5f;
+                                    //if (yf >= 1) yf = y / 2.0f + 0.5f;
+                                    //if (yf < 0) yf = y / 2.0f + 0.5f;
                                     var xi = (int)(xf * image.w);
                                     var yi = (int)(yf * image.h);
                                     var index = yi * image.w + xi;                                    
                                     var c = image.data[index];
-                                    var fc = (float)(c.R + c.G + c.B) / (255.0f * 3.0f);                                    
-                                    stackPointer[sp-1] = fc;
+                                    var fc = (float)(c.R + c.G + c.B) / (255.0f * 3.0f);                                                                        
                                     sp--;
+                                    stackPointer[sp] = fc;
                                     break;
                                 }                            
                             default:
-                                throw new Exception("Evexecute found a bad node");
-
-
+                                throw new Exception("Evexecute found a bad node");                            
                         }
+                        stackPointer[sp] = Constrain(stackPointer[sp], -1.0f, 1.0f);                        
                     }
                     return stackPointer[sp];
                 }

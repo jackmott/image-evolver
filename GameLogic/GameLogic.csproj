@@ -55,6 +55,7 @@
     <Compile Include="GameLogic.cs" />
     <Compile Include="GraphUtils.cs" />
     <Compile Include="Lexer.cs" />
+    <Compile Include="MathUtils.cs" />
     <Compile Include="PicFunctions.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="StackMachineFunctions.cs" />
