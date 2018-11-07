@@ -15,22 +15,22 @@ namespace GameLogic
 
         public static Texture2D GetTex(Pic p,List<ExternalImage> images, GraphicsDevice graphics, int width, int height)
         {
-            if (p.tex == null || (p.tex.Width != width || p.tex.Height != height))
+            if (p.button.tex == null || (p.button.tex.Width != width || p.button.tex.Height != height))
             {
-                if (p.tex != null) { p.tex.Dispose(); }
+                if (p.button.tex != null) { p.button.tex.Dispose(); }
                 if (p is RGBTree)
                 {
                     var rgb = (RGBTree)p;
-                    p.tex = ToTexture(rgb,images, graphics, width, height);
+                    p.button.tex = ToTexture(rgb,images, graphics, width, height);
                 }
                 else if (p is HSVTree)
                 {
                     var hsv = (HSVTree)p;
-                    p.tex = ToTexture(hsv, images,graphics, width, height);
+                    p.button.tex = ToTexture(hsv, images,graphics, width, height);
                 }
             }
             
-            return p.tex;
+            return p.button.tex;
         }
 
         public static Texture2D ToTexture(RGBTree tree,List<ExternalImage> images, GraphicsDevice graphics, int w, int h)

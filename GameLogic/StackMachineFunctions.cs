@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using static GameLogic.PicFunctions;
 using GameInterface;
+using Microsoft.Xna.Framework;
 
 namespace GameLogic
 {
@@ -110,15 +111,19 @@ namespace GameLogic
                                 sp--;
                                 break;
                             case NodeType.FBM:
-                                {                                    
-                                    stackPointer[sp - 2] = 2.0f * 0.3584f * FastNoise.SingleSimplexFractalFBM(stackPointer[sp], stackPointer[sp - 1], 2.0f*stackPointer[sp-2], 1337, 3, 2.0f, 0.5f);
-                                    sp -= 2;
+                                {
+                                    var lac = MathHelper.Clamp(Math.Abs(stackPointer[sp - 3]), 1.25f, 5.0f);
+                                    var gain = MathHelper.Clamp(Math.Abs(stackPointer[sp - 4]), 0.25f, 1.5f);
+                                    stackPointer[sp - 4] = 2.0f * 0.3584f * FastNoise.SingleSimplexFractalFBM(stackPointer[sp], stackPointer[sp - 1], 2.0f*stackPointer[sp-2], 1337, 3, lac, gain);
+                                    sp -= 4;
                                     break;
                                 }
                             case NodeType.BILLOW:
-                                {                                 
-                                    stackPointer[sp - 2] = 2.0f * ((0.3496f * FastNoise.SingleSimplexFractalBillow(stackPointer[sp], stackPointer[sp - 1], 2.0f*stackPointer[sp-2], 1337, 3, 2.0f, 0.5f)) + 0.6118f) - 1.0f;
-                                    sp -= 2;
+                                {
+                                    var lac = MathHelper.Clamp(Math.Abs(stackPointer[sp - 3]), 1.25f, 6.0f);
+                                    var gain = MathHelper.Clamp(Math.Abs(stackPointer[sp - 4]), 0.25f, 1.5f);
+                                    stackPointer[sp - 4] = 2.0f * ((0.3496f * FastNoise.SingleSimplexFractalBillow(stackPointer[sp], stackPointer[sp - 1], 2.0f*stackPointer[sp-2], 1337, 3, lac, gain)) + 0.6118f) - 1.0f;
+                                    sp -= 4;
                                     break;
                                 }
                             case NodeType.CELL1:

@@ -98,7 +98,7 @@ namespace GameInterface
             var node = this;
             if (node.children == null) return;
             
-            if (node.children.Length >= 2 && r.Next(0,0) == 0 && 
+            if (node.children.Length >= 2 && r.Next(0,3) == 0 && 
                 ((node.children[0].type == NodeType.X && node.children[1].type == NodeType.Y) ||
                 (node.children[1].type == NodeType.X && node.children[0].type == NodeType.Y)))
             {                               
@@ -296,6 +296,10 @@ namespace GameInterface
             {
                 case NodeType.FBM:
                 case NodeType.BILLOW:
+                    result = new AptNode { type = type, children = new AptNode[5] };
+                    //result.children[3] = new AptNode { type = NodeType.CONSTANT, value = (float)r.NextDouble() * 7.0f + 1.0f };
+                    //result.children[4] = new AptNode { type = NodeType.CONSTANT, value = (float)r.NextDouble() * 2.0f + .1f };
+                    break;
                 case NodeType.CELL1:
                     result = new AptNode { type = type, children = new AptNode[3] };
                     break;
@@ -363,7 +367,7 @@ namespace GameInterface
             {
                 //just keep adding leaves until we can't 
             };
-            first.InsertWarp(r);
+           // first.InsertWarp(r);
 
             return first;
         }

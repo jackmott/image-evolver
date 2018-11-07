@@ -17,13 +17,14 @@ namespace GameLogic
         public GameState state;
         public void SetState(GameState state)
         {
-            this.state = state;            
+            this.state = state;
         }
 
         private const float MOVE_SPEED = 0.05f;
         private const float JUMP_DURATION = 1000.0f;
         private const float JUMP_SPEED = 0.02f;
 
+        private Button evolveButton;
 
         public void Draw(GraphicsDevice g, SpriteBatch batch, GameTime gameTime)
         {
@@ -42,12 +43,13 @@ namespace GameLogic
             int winW = g.Viewport.Width;
             int winH = g.Viewport.Height;
 
-                       
+
             g.Clear(Color.Black);
             batch.Begin();
-            var pos = new Vector2(0, 0);                      
-            batch.Draw(GetTex(state.zoomedPic, state.externalImages, g, winW, winH), pos, Color.White);
-            state.zoomedPic.bounds = new Rectangle((int)pos.X, (int)pos.Y, winW, winH);           
+            var pos = new Vector2(0, 0);
+            state.zoomedPic.button.bounds = new Rectangle((int)pos.X, (int)pos.Y, winW, winH);
+            GetTex(state.zoomedPic, state.externalImages, g, winW, winH);
+            state.zoomedPic.button.Draw(batch, gameTime);
             batch.End();
             // TODO: Add your drawing code here
         }
@@ -58,8 +60,11 @@ namespace GameLogic
             int winW = g.Viewport.Width;
             int winH = g.Viewport.Height;
 
+            int UISpace = (int)(winH * 0.1f);
+            winH -= UISpace;
+
             int hSpace = (int)(winW * GameState.HORIZONTAL_SPACING);
-            int vSpace = (int)(winW * GameState.VERTICAL_SPACING);
+            int vSpace = (int)(winH * GameState.VERTICAL_SPACING);
 
             int numPerRow = (int)Math.Sqrt(state.populationSize);
             int spaceRemaining = winW - hSpace * (numPerRow + 1);
@@ -71,6 +76,7 @@ namespace GameLogic
 
             g.Clear(Color.Black);
             batch.Begin();
+            evolveButton.Draw(batch,gameTime);
             var pos = new Vector2(0, 0);
             int index = 0;
             for (int y = 0; y < numPerRow; y++)
@@ -86,8 +92,10 @@ namespace GameLogic
                         borderPos.Y -= vSpace / 2.0f;
                         batch.Draw(GraphUtils.GetTexture(batch), new Rectangle((int)borderPos.X, (int)borderPos.Y, picW + hSpace, picH + vSpace), Color.Blue);
                     }
-                    batch.Draw(GetTex(state.pictures[index], state.externalImages, g, picW, picH), pos, Color.White);
-                    state.pictures[index].bounds = new Rectangle((int)pos.X, (int)pos.Y, picW, picH);
+
+                    state.pictures[index].button.bounds = new Rectangle((int)pos.X, (int)pos.Y, picW, picH);
+                    GetTex(state.pictures[index], state.externalImages, g, picW, picH);
+                    state.pictures[index].button.Draw(batch, gameTime);
                     index++;
                     pos.X += picW;
 
@@ -103,64 +111,43 @@ namespace GameLogic
 
         }
 
-        public bool WasLeftClicked(Rectangle bounds, MouseState prev, MouseState current)
-        {
-            if (prev.LeftButton == ButtonState.Released && current.LeftButton == ButtonState.Pressed)
+
+
+        public GameState Init(GraphicsDevice g, SpriteBatch batch)
+        {            
+            state = new GameState();
+            state.r = new Random();
+            int w = g.Viewport.Width;
+            int h = g.Viewport.Height;
+            evolveButton = new Button(GraphUtils.GetTexture(batch), new Rectangle((int)(w*.001f), (int)(h*.91f), (int)(w * .1f), (int)(h * 0.05f)));
+
+            DirectoryInfo d = new DirectoryInfo(AppDomain.CurrentDomain.BaseDirectory + @"\Assets");
+            var files = d.GetFiles("*.jpg").AsEnumerable().Concat(d.GetFiles("*.png"));
+            state.externalImages = new List<ExternalImage>();
+            foreach (var file in files)
             {
-                if (bounds.Contains(prev.Position) && bounds.Contains(current.Position))
+                try
                 {
-                    Debug.WriteLine("left click");
-                    return true;
+                    var tex = Texture2D.FromStream(g, new FileStream(file.FullName, FileMode.Open));
+                    Color[] colors = new Color[tex.Width * tex.Height];
+                    tex.GetData(colors);
+                    ExternalImage img = new ExternalImage { data = colors, w = tex.Width, h = tex.Height };
+                    state.externalImages.Add(img);
+                    tex.Dispose();
+                }
+                catch (Exception e)
+                {
+                    //do something
+                    throw e;
                 }
             }
-            return false;
-        }
 
-        public bool WasRightClicked(Rectangle bounds, MouseState prev, MouseState current)
-        {
-            if (prev.RightButton == ButtonState.Released && current.RightButton == ButtonState.Pressed)
+            state.populationSize = 100;
+            state.pictures = new List<Pic>();
+            Random r = state.r;
+            for (int i = 0; i < state.populationSize; i++)
             {
-                if (bounds.Contains(prev.Position) && bounds.Contains(current.Position))
-                {
-                    Debug.WriteLine("right click");
-                    return true;
-                }
-            }
-            return false;
-        }
 
-        public GameState Init(GraphicsDevice g)
-        {
-            
-                state = new GameState();
-
-                DirectoryInfo d = new DirectoryInfo(AppDomain.CurrentDomain.BaseDirectory + @"\Assets");
-                var files = d.GetFiles("*.jpg").AsEnumerable().Concat(d.GetFiles("*.png"));
-                state.externalImages = new List<ExternalImage>();
-                foreach (var file in files)
-                {
-                    try
-                    {
-                        var tex = Texture2D.FromStream(g, new FileStream(file.FullName, FileMode.Open));
-                        Color[] colors = new Color[tex.Width * tex.Height];
-                        tex.GetData(colors);
-                        ExternalImage img = new ExternalImage { data = colors, w = tex.Width, h = tex.Height };
-                        state.externalImages.Add(img);
-                        tex.Dispose();
-                    }
-                    catch (Exception e)
-                    {
-                        //do something
-                        throw e;
-                    }
-                }
-                
-                state.populationSize = 100;
-                state.pictures = new List<Pic>();
-                Random r = new Random();
-                for (int i = 0; i < state.populationSize; i++)
-                {
-                    
                 /*
                 var node = new AptNode { type = NodeType.PICTURE, value=2,children = new AptNode[2] };
                 node.children[0] = new AptNode { type = NodeType.X };
@@ -178,20 +165,20 @@ namespace GameLogic
                 Console.WriteLine(tree.ToLisp());
                     
                 */
-                
-                    int chooser = r.Next(0, 2);
-                    if (chooser == 0)
-                    {
-                        var rgbTree = new RGBTree(1, 10, r, state.externalImages);
-                        state.pictures.Add(rgbTree);
-                    }
-                    else
-                    {
-                        var hsvTree = new HSVTree(1, 10, r, state.externalImages);
-                        state.pictures.Add(hsvTree);
-                    }             
-                  
+
+                int chooser = r.Next(0, 2);
+                if (chooser == 0)
+                {
+                    var rgbTree = new RGBTree(1, 6, r, state.externalImages);
+                    state.pictures.Add(rgbTree);
                 }
+                else
+                {
+                    var hsvTree = new HSVTree(1, 6, r, state.externalImages);
+                    state.pictures.Add(hsvTree);
+                }
+
+            }
 
             /*
             float min = float.MaxValue;
@@ -235,7 +222,7 @@ namespace GameLogic
 
         public GameState Update(KeyboardState keyboard, MouseState mouseState, MouseState prevMouseState, GameTime gameTime, GraphicsDevice g)
         {
-           
+
 
             if (state.screen == Screen.CHOOSE)
             {
@@ -250,8 +237,8 @@ namespace GameLogic
 
         public GameState ZoomUpdate(KeyboardState keyboard, MouseState mouseState, MouseState prevMouseState, GameTime gameTime, GraphicsDevice g)
         {
-            if (WasRightClicked(state.zoomedPic.bounds, mouseState, prevMouseState))
-            {                
+            if (state.zoomedPic.button.WasRightClicked(mouseState, prevMouseState))
+            {
                 state.screen = Screen.CHOOSE;
                 state.zoomedPic = null;
             }
@@ -261,18 +248,24 @@ namespace GameLogic
         public GameState ChooseUpdate(KeyboardState keyboard, MouseState mouseState, MouseState prevMouseState, GameTime gameTime, GraphicsDevice g)
         {
 
-
-           
-
+            if (evolveButton.WasLeftClicked(mouseState,prevMouseState))
+            {
+                foreach (var pic in state.pictures)
+                {
+                    pic.Mutate(state.r);
+                    pic.button.tex.Dispose();
+                    pic.button.tex = null;
+                }
+            }
             foreach (var pic in state.pictures)
             {
-                if (WasLeftClicked(pic.bounds, mouseState, prevMouseState))
+                if (pic.button.WasLeftClicked(mouseState, prevMouseState))
                 {
                     pic.selected = !pic.selected;
                 }
 
-                if (WasRightClicked(pic.bounds, mouseState, prevMouseState))
-                {                    
+                if (pic.button.WasRightClicked(mouseState, prevMouseState))
+                {
                     state.zoomedPic = pic;
                     Console.WriteLine(state.zoomedPic.ToLisp());
                     state.screen = Screen.ZOOM;

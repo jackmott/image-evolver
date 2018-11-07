@@ -45,6 +45,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="APT.cs" />
+    <Compile Include="Button.cs" />
     <Compile Include="GameInterface.cs" />
     <Compile Include="Pic.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

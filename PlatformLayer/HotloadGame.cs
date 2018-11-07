@@ -54,11 +54,10 @@ namespace HotloadPong
         /// </summary>
         protected override void LoadContent()
         {
-            hotloader = new Hotloader(Content, GraphicsDevice);
-            hotloader.Init(GraphicsDevice);
-            // Create a new SpriteBatch, which can be used to draw textures.
-            spriteBatch = new SpriteBatch(GraphicsDevice);                                
-            // TODO: use this.Content to load your game content here
+            hotloader = new Hotloader(Content, GraphicsDevice);                        
+            spriteBatch = new SpriteBatch(GraphicsDevice);
+            hotloader.Init(GraphicsDevice, spriteBatch);
+            
         }
 
         /// <summary>

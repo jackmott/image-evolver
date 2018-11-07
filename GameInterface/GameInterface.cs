@@ -23,6 +23,7 @@ namespace GameInterface
     public class GameState
     {
         public Screen screen = Screen.CHOOSE;
+        public Random r;
         public const float HORIZONTAL_SPACING = .01f;
         public const float VERTICAL_SPACING = .01f;
         public int populationSize;
@@ -33,7 +34,7 @@ namespace GameInterface
 
     public interface IGameInterface
     {
-        GameState Init(GraphicsDevice g);
+        GameState Init(GraphicsDevice g,SpriteBatch batch);
         GameState Update(KeyboardState keyboard, MouseState mouseState, MouseState prevMouseState, GameTime gameTime, GraphicsDevice g);
         void Draw(GraphicsDevice g, SpriteBatch batch, GameTime gameTime);
         void SetState(GameState state);
