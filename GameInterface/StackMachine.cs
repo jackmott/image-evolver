@@ -18,15 +18,14 @@ namespace GameInterface
         public Instruction[] instructions;
         public int inPtr;
         public int nodeCount;
-        public List<ExternalImage> images;
+        
                 
-        public StackMachine(AptNode node, List<ExternalImage> images)
+        public StackMachine(AptNode node)
         {
             nodeCount = node.Count();
             instructions = new Instruction[nodeCount];
             inPtr = 0;
-            BuildInstructions(node);
-            this.images = images;
+            BuildInstructions(node);        
         }
 
         public void RebuildInstructions(AptNode node)

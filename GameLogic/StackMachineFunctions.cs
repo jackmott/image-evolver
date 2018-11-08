@@ -12,7 +12,7 @@ namespace GameLogic
 {
     public static class StackMachineFunctions
     {
-        public static float Execute(StackMachine sm, float x, float y, float[] stack, List<ExternalImage> images)
+        public static float Execute(StackMachine sm, float x, float y, float[] stack)
         {
             unsafe
             {
@@ -140,7 +140,7 @@ namespace GameLogic
                                 }
                             case NodeType.PICTURE:
                                 {
-                                    var image = images[(int)ins.value];
+                                    var image = GameState.externalImages[(int)ins.value];
                                     var xf = (stackPointer[sp] + 1.0f) / 2.0f;
                                     //xf = PicFunctions.Wrap0To1(xf);
                                     //if (xf >= 1) xf = x/2.0f + 0.5f;

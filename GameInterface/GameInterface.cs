@@ -29,7 +29,7 @@ namespace GameInterface
         public int populationSize;
         public List<Pic> pictures;
         public Pic zoomedPic;
-        public List<ExternalImage> externalImages;
+        public static List<ExternalImage> externalImages;
     }
 
     public interface IGameInterface

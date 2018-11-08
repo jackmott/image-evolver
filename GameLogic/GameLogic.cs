@@ -49,7 +49,7 @@ namespace GameLogic
             batch.Begin();
             var pos = new Vector2(0, 0);
             state.zoomedPic.button.bounds = new Rectangle((int)pos.X, (int)pos.Y, winW, winH);
-            GetTex(state.zoomedPic, state.externalImages, g, winW, winH);
+            GetTex(state.zoomedPic, g, winW, winH);
             state.zoomedPic.button.Draw(batch, gameTime);
             batch.End();
             // TODO: Add your drawing code here
@@ -96,7 +96,7 @@ namespace GameLogic
                     }
 
                     state.pictures[index].button.bounds = new Rectangle((int)pos.X, (int)pos.Y, picW, picH);
-                    GetTex(state.pictures[index], state.externalImages, g, picW, picH);
+                    GetTex(state.pictures[index], g, picW, picH);
                     state.pictures[index].button.Draw(batch, gameTime);
                     index++;
                     pos.X += picW;
@@ -125,7 +125,7 @@ namespace GameLogic
             reRollButton = new Button(GraphUtils.GetTexture(batch), new Rectangle((int)(w * .2f), (int)(h * .91f), (int)(w * .1f), (int)(h * 0.05f)));
             DirectoryInfo d = new DirectoryInfo(AppDomain.CurrentDomain.BaseDirectory + @"\Assets");
             var files = d.GetFiles("*.jpg").AsEnumerable().Concat(d.GetFiles("*.png"));
-            state.externalImages = new List<ExternalImage>();
+            GameState.externalImages = new List<ExternalImage>();
             foreach (var file in files)
             {
                 try
@@ -134,7 +134,7 @@ namespace GameLogic
                     Color[] colors = new Color[tex.Width * tex.Height];
                     tex.GetData(colors);
                     ExternalImage img = new ExternalImage { data = colors, w = tex.Width, h = tex.Height };
-                    state.externalImages.Add(img);
+                    GameState.externalImages.Add(img);
                     tex.Dispose();
                 }
                 catch (Exception e)
@@ -171,12 +171,12 @@ namespace GameLogic
                 int chooser = r.Next(0, 2);
                 if (chooser == 0)
                 {
-                    var rgbTree = new RGBTree(1, 8, r, state.externalImages);
+                    var rgbTree = new RGBTree(1, 8, r);
                     state.pictures.Add(rgbTree);
                 }
                 else
                 {
-                    var hsvTree = new HSVTree(1, 8, r, state.externalImages);
+                    var hsvTree = new HSVTree(1, 8, r);
                     state.pictures.Add(hsvTree);
                 }
 
@@ -260,12 +260,12 @@ namespace GameLogic
                     int chooser = r.Next(0, 2);
                     if (chooser == 0)
                     {
-                        var rgbTree = new RGBTree(1, 8, r, state.externalImages);
+                        var rgbTree = new RGBTree(1, 8, r);
                         state.pictures[i] = rgbTree;
                     }
                     else
                     {
-                        var hsvTree = new HSVTree(1, 8, r, state.externalImages);
+                        var hsvTree = new HSVTree(1, 8, r);
                         state.pictures[i] = hsvTree;
                     }
                 }
@@ -305,14 +305,14 @@ namespace GameLogic
                     else if (chooser == 1)
                     {
                         var clone = first.Clone();
-                        clone.BreedWith(second, state.r);                        
-                        clone.Mutate(state.r);                        
+                        clone.BreedWith(second, state.r);
+                        clone.Mutate(state.r);
                         nextGeneration.Add(clone);
                     }
                     else if (chooser == 2)
                     {
                         var clone = first.Clone();
-                        clone.BreedWith(second, state.r);                        
+                        clone.BreedWith(second, state.r);
                         nextGeneration.Add(clone);
                     }
                 }

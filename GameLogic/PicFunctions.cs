@@ -13,7 +13,7 @@ namespace GameLogic
     public static class PicFunctions
     {
 
-        public static Texture2D GetTex(Pic p,List<ExternalImage> images, GraphicsDevice graphics, int width, int height)
+        public static Texture2D GetTex(Pic p,GraphicsDevice graphics, int width, int height)
         {
             if (p.button.tex == null || (p.button.tex.Width != width || p.button.tex.Height != height))
             {
@@ -21,19 +21,19 @@ namespace GameLogic
                 if (p is RGBTree)
                 {
                     var rgb = (RGBTree)p;
-                    p.button.tex = ToTexture(rgb,images, graphics, width, height);
+                    p.button.tex = ToTexture(rgb,graphics, width, height);
                 }
                 else if (p is HSVTree)
                 {
                     var hsv = (HSVTree)p;
-                    p.button.tex = ToTexture(hsv, images,graphics, width, height);
+                    p.button.tex = ToTexture(hsv,graphics, width, height);
                 }
             }
             
             return p.button.tex;
         }
 
-        public static Texture2D ToTexture(RGBTree tree,List<ExternalImage> images, GraphicsDevice graphics, int w, int h)
+        public static Texture2D ToTexture(RGBTree pic,GraphicsDevice graphics, int w, int h)
         {
             Color[] colors = new Color[w * h];
             var scale = (float)(255 / 2);
@@ -44,9 +44,9 @@ namespace GameLogic
                 partition,
                 (range, state) =>
                 {
-                    var rStack = new float[tree.RSM.nodeCount];
-                    var gStack = new float[tree.GSM.nodeCount];
-                    var bStack = new float[tree.BSM.nodeCount];
+                    var rStack = new float[pic.Machines[0].nodeCount];
+                    var gStack = new float[pic.Machines[1].nodeCount];
+                    var bStack = new float[pic.Machines[2].nodeCount];
                     for (int y = range.Item1; y < range.Item2; y++)
                     {
                         float yf = ((float)y / (float)h) * 2.0f - 1.0f;
@@ -54,9 +54,9 @@ namespace GameLogic
                         for (int x = 0; x < w; x++)
                         {
                             float xf = ((float)x / (float)w) * 2.0f - 1.0f;
-                            var r = (byte)(Execute(tree.RSM, xf, yf, rStack,images) * scale - offset);
-                            var g = (byte)(Execute(tree.GSM, xf, yf, gStack,images) * scale - offset);
-                            var b = (byte)(Execute(tree.BSM, xf, yf, bStack,images) * scale - offset);
+                            var r = (byte)(Execute(pic.Machines[0], xf, yf, rStack) * scale - offset);
+                            var g = (byte)(Execute(pic.Machines[1], xf, yf, gStack) * scale - offset);
+                            var b = (byte)(Execute(pic.Machines[2], xf, yf, bStack) * scale - offset);
                             colors[yw + x] = new Color(r, g, b, (byte)255);
                         }
                     }
@@ -68,26 +68,26 @@ namespace GameLogic
             return tex;
         }
 
-        public static Texture2D ToTextureSingleThread(RGBTree tree, List<ExternalImage> images, GraphicsDevice graphics, int w, int h)
+        public static Texture2D ToTextureSingleThread(RGBTree pic, GraphicsDevice graphics, int w, int h)
         {
             Color[] colors = new Color[w * h];
             var scale = (float)(255 / 2);
             var offset = -1.0f * scale;
             var partition = Partitioner.Create(0, h);
 
-                    var rStack = new float[tree.RSM.nodeCount];
-                    var gStack = new float[tree.GSM.nodeCount];
-                    var bStack = new float[tree.BSM.nodeCount];
-                    for (int y = 0; y < h; y++)
+            var rStack = new float[pic.Machines[0].nodeCount];
+            var gStack = new float[pic.Machines[1].nodeCount];
+            var bStack = new float[pic.Machines[2].nodeCount];
+            for (int y = 0; y < h; y++)
                     {
                         float yf = ((float)y / (float)h) * 2.0f - 1.0f;
                         int yw = y * w;
                         for (int x = 0; x < w; x++)
                         {
                             float xf = ((float)x / (float)w) * 2.0f - 1.0f;
-                            var r = (byte)(Execute(tree.RSM, xf, yf, rStack, images) * scale - offset);
-                            var g = (byte)(Execute(tree.GSM, xf, yf, gStack, images) * scale - offset);
-                            var b = (byte)(Execute(tree.BSM, xf, yf, bStack, images) * scale - offset);
+                            var r = (byte)(Execute(pic.Machines[0], xf, yf, rStack) * scale - offset);
+                            var g = (byte)(Execute(pic.Machines[1], xf, yf, gStack) * scale - offset);
+                            var b = (byte)(Execute(pic.Machines[2], xf, yf, bStack) * scale - offset);
                             colors[yw + x] = new Color(r, g, b, (byte)255);
                         }
                     }
@@ -100,7 +100,7 @@ namespace GameLogic
         }
 
 
-        public static Texture2D ToTexture(HSVTree tree, List<ExternalImage> images,GraphicsDevice graphics, int width, int height)
+        public static Texture2D ToTexture(HSVTree pic,GraphicsDevice graphics, int width, int height)
         {
             Color[] colors = new Color[width * height];
             var scale = 0.5f;
@@ -110,9 +110,9 @@ namespace GameLogic
                 partition,
                 (range, state) =>
                 {
-                    var rStack = new float[tree.HSM.nodeCount];
-                    var gStack = new float[tree.SSM.nodeCount];
-                    var bStack = new float[tree.VSM.nodeCount];
+                    var rStack = new float[pic.Machines[0].nodeCount];
+                    var gStack = new float[pic.Machines[1].nodeCount];
+                    var bStack = new float[pic.Machines[2].nodeCount];
                     for (int y = range.Item1; y < range.Item2; y++)
                     {
                         float yf = ((float)y / (float)height) * 2.0f - 1.0f;
@@ -120,9 +120,9 @@ namespace GameLogic
                         for (int x = 0; x < width; x++)
                         {
                             float xf = ((float)x / (float)width) * 2.0f - 1.0f;
-                            var h = Wrap0To1(Execute(tree.HSM, xf, yf, rStack,images) * scale - scale);
-                            var s = Wrap0To1(Execute(tree.SSM, xf, yf, gStack,images) * scale - scale);
-                            var v = Wrap0To1(Execute(tree.VSM, xf, yf, bStack,images) * scale - scale);
+                            var h = Wrap0To1(Execute(pic.Machines[0], xf, yf, rStack) * scale - scale);
+                            var s = Wrap0To1(Execute(pic.Machines[1], xf, yf, gStack) * scale - scale);
+                            var v = Wrap0To1(Execute(pic.Machines[2], xf, yf, bStack) * scale - scale);
                             var (rf, gf, bf) = HSV2RGB(h, s, v);
                             byte r = (byte)(rf * 255.0f);
                             byte g = (byte)(gf * 255.0f);
