@@ -14,7 +14,7 @@ using Microsoft.Xna.Framework.Content;
 using Microsoft.Xna.Framework.Graphics;
 using System.Diagnostics;
 
-namespace HotloadPong
+namespace ImageEvolver
 {
     public class Hotloader : IGameInterface
     {

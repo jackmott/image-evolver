@@ -22,6 +22,8 @@ namespace GameInterface
     public enum Screen { CHOOSE, ZOOM };
     public class GameState
     {
+        public Button evolveButton;
+        public Button reRollButton;
         public Screen screen = Screen.CHOOSE;
         public Random r;        
         public int populationSize;

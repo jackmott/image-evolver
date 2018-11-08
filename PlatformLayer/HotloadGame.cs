@@ -4,7 +4,7 @@ using Microsoft.Xna.Framework.Input;
 using System;
 using GameInterface;
 
-namespace HotloadPong
+namespace ImageEvolver
 {
     /// <summary>
     /// This is the main type for your game.

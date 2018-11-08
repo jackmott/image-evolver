@@ -24,8 +24,7 @@ namespace GameLogic
         private const float JUMP_DURATION = 1000.0f;
         private const float JUMP_SPEED = 0.02f;
 
-        private Button evolveButton;
-        private Button reRollButton;
+       
 
         public void Draw(GraphicsDevice g, SpriteBatch batch, GameTime gameTime)
         {
@@ -77,8 +76,8 @@ namespace GameLogic
 
             g.Clear(Color.Black);
             batch.Begin();
-            evolveButton.Draw(batch, gameTime);
-            reRollButton.Draw(batch, gameTime);
+            state.evolveButton.Draw(batch, gameTime);
+            state.reRollButton.Draw(batch, gameTime);
             var pos = new Vector2(0, 0);
             int index = 0;
             for (int y = 0; y < numPerRow; y++)
@@ -121,8 +120,8 @@ namespace GameLogic
             state.r = new Random();
             int w = g.Viewport.Width;
             int h = g.Viewport.Height;
-            evolveButton = new Button(GraphUtils.GetTexture(batch), new Rectangle((int)(w * .001f), (int)(h * .91f), (int)(w * .1f), (int)(h * 0.05f)));
-            reRollButton = new Button(GraphUtils.GetTexture(batch), new Rectangle((int)(w * .2f), (int)(h * .91f), (int)(w * .1f), (int)(h * 0.05f)));
+            state.evolveButton = new Button(GraphUtils.GetTexture(batch), new Rectangle((int)(w * .001f), (int)(h * .91f), (int)(w * .1f), (int)(h * 0.05f)));
+            state.reRollButton = new Button(GraphUtils.GetTexture(batch), new Rectangle((int)(w * .2f), (int)(h * .91f), (int)(w * .1f), (int)(h * 0.05f)));
             DirectoryInfo d = new DirectoryInfo(AppDomain.CurrentDomain.BaseDirectory + @"\Assets");
             var files = d.GetFiles("*.jpg").AsEnumerable().Concat(d.GetFiles("*.png"));
             GameState.externalImages = new List<ExternalImage>();
@@ -212,13 +211,13 @@ namespace GameLogic
         public GameState ChooseUpdate(KeyboardState keyboard, MouseState mouseState, MouseState prevMouseState, GameTime gameTime, GraphicsDevice g)
         {
             var r = state.r;
-            if (reRollButton.WasLeftClicked(mouseState, prevMouseState))
+            if (state.reRollButton.WasLeftClicked(mouseState, prevMouseState))
             {
                
                 GenTrees(r);
             }
 
-            if (evolveButton.WasLeftClicked(mouseState, prevMouseState))
+            if (state.evolveButton.WasLeftClicked(mouseState, prevMouseState))
             {
 
                 foreach (var pic in state.pictures)

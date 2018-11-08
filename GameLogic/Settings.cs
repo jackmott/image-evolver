@@ -9,8 +9,8 @@ namespace GameLogic
     public static class Settings
     {
         public const int MIN_GEN_SIZE = 1;
-        public const int MAX_GEN_SIZE = 25;
-        public const int POP_SIZE = 9;
+        public const int MAX_GEN_SIZE = 20;
+        public const int POP_SIZE = 36;
 
         //note min gradients cannot be less than 2
         public const int MIN_GRADIENTS = 2;

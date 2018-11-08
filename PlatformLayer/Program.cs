@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace HotloadPong
+namespace ImageEvolver
 {
 #if WINDOWS || LINUX
     /// <summary>
