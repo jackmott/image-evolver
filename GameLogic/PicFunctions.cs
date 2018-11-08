@@ -21,12 +21,17 @@ namespace GameLogic
                 if (p is RGBTree)
                 {
                     var rgb = (RGBTree)p;
-                    p.button.tex = ToTexture(rgb,graphics, width, height);
+                    p.button.tex = ToTexture(rgb, graphics, width, height);
                 }
                 else if (p is HSVTree)
                 {
                     var hsv = (HSVTree)p;
-                    p.button.tex = ToTexture(hsv,graphics, width, height);
+                    p.button.tex = ToTexture(hsv, graphics, width, height);
+                }
+                else if (p is GradientTree)
+                {
+                    var grad = (GradientTree)p;
+                    grad.button.tex = ToTexture(grad, graphics, width, height);
                 }
             }
             
@@ -93,6 +98,53 @@ namespace GameLogic
                     }
 
             
+            Texture2D tex = new Texture2D(graphics, w, h);
+            var tex2 = new Texture2D(graphics, w, h);
+            tex.SetData(colors);
+            return tex;
+        }
+
+        public static Texture2D ToTexture(GradientTree pic, GraphicsDevice graphics, int w, int h)
+        {
+            Color[] colors = new Color[w * h];            
+            var partition = Partitioner.Create(0, h);
+
+            Parallel.ForEach(
+                partition,
+                (range, state) =>
+                {
+                    var stack = new float[pic.Machines[0].nodeCount];
+                    
+                    for (int y = range.Item1; y < range.Item2; y++)
+                    {
+                        float yf = ((float)y / (float)h) * 2.0f - 1.0f;
+                        int yw = y * w;
+                        for (int x = 0; x < w; x++)
+                        {
+                            float xf = ((float)x / (float)w) * 2.0f - 1.0f;
+                            var r = Execute(pic.Machines[0], xf, yf, stack);
+                            int i = 0;
+                            for (; i < pic.pos.Length-2; i++)
+                            {
+                                if (r >= pic.pos[i] && r <= pic.pos[i+1])
+                                {
+                                    break;
+                                }
+                            }
+                            
+
+                            var c1 = pic.gradients[i];
+                            var c2 = pic.gradients[i + 1];
+
+                            float posDiff = r - pic.pos[i];
+                            float totalDiff = pic.pos[i + 1] - pic.pos[i];
+                            float pct = posDiff / totalDiff;
+                            colors[yw + x] = Color.Lerp(c1, c2, pct);
+                                                        
+                        }
+                    }
+
+                });
             Texture2D tex = new Texture2D(graphics, w, h);
             var tex2 = new Texture2D(graphics, w, h);
             tex.SetData(colors);

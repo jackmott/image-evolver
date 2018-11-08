@@ -147,78 +147,7 @@ namespace GameLogic
             state.populationSize = 36;
             state.pictures = new List<Pic>();
             Random r = state.r;
-            for (int i = 0; i < state.populationSize; i++)
-            {
-
-                /*
-                var node = new AptNode { type = NodeType.PICTURE, value=2,children = new AptNode[2] };
-                node.children[0] = new AptNode { type = NodeType.X };
-                node.children[1] = new AptNode { type = NodeType.Y };
-                node.InsertWarp(r);
-                                                
-                    var tree = new RGBTree();
-                    tree.RTree = node;
-                    tree.GTree = node;
-                    tree.BTree = node;
-                    tree.RSM = new StackMachine(node,state.externalImages);
-                    tree.GSM = new StackMachine(node, state.externalImages);
-                    tree.BSM = new StackMachine(node, state.externalImages);
-                    state.pictures.Add(tree);
-                Console.WriteLine(tree.ToLisp());
-                    
-                */
-
-                int chooser = r.Next(0, 2);
-                if (chooser == 0)
-                {
-                    var rgbTree = new RGBTree(1, 8, r);
-                    state.pictures.Add(rgbTree);
-                }
-                else
-                {
-                    var hsvTree = new HSVTree(1, 8, r);
-                    state.pictures.Add(hsvTree);
-                }
-
-            }
-
-            /*
-            float min = float.MaxValue;
-            float max = float.MinValue;
-            float[] stack = new float[10];
-            for (float y =  -1.0f; y <= 1.0f; y = y + 0.001f)
-            {
-                for (float x = -1.0f; x <= 1.0f; x+= 0.001f)
-                {
-                    var pic = (RGBTree)state.pictures[0];
-                    var f = pic.BSM.Execute(x, y, stack);
-                    if (f < min) min = f;
-                    if (f > max) max = f;
-
-                    pic = (RGBTree)state.pictures[2];
-                    f = pic.BSM.Execute(x, y, stack);
-                    if (f < min) min = f;
-                    if (f > max) max = f;
-
-                    pic = (RGBTree)state.pictures[3];
-                    f = pic.BSM.Execute(x, y, stack);
-                    if (f < min) min = f;
-                    if (f > max) max = f;
-
-                    pic = (RGBTree)state.pictures[4];
-                    f = pic.BSM.Execute(x, y, stack);
-                    if (f < min) min = f;
-                    if (f > max) max = f;
-
-                    pic = (RGBTree)state.pictures[5];
-                    f = pic.BSM.Execute(x, y, stack);
-                    if (f < min) min = f;
-                    if (f > max) max = f;
-                }
-            }
-            Console.WriteLine("min:" + min + " max:" + max + " range:"+ (max - min));
-       */
-
+            GenTrees(r);
             return state;
         }
 
@@ -247,28 +176,45 @@ namespace GameLogic
             return state;
         }
 
+        public void GenTrees(Random r)
+        {
+            foreach (var pic in state.pictures) 
+            {
+                if (pic.button.tex != null)
+                {
+                    pic.button.tex.Dispose();
+                    pic.button.tex = null;
+                }
+            }
+
+            for (int i = 0; i < state.populationSize; i++)
+            {
+                int chooser = r.Next(0, 3);                
+                if (chooser == 0)
+                {
+                    var rgbTree = new RGBTree(1, 15, r);
+                    state.pictures.Add(rgbTree);
+                }
+                else if (chooser == 1)
+                {
+                    var hsvTree = new HSVTree(1, 15, r);
+                    state.pictures.Add(hsvTree);
+                }
+                else if (chooser == 2)
+                {
+                    var gradients = new GradientTree(1, 15, r);
+                    state.pictures.Add(gradients);
+                }
+            }
+        }
+
         public GameState ChooseUpdate(KeyboardState keyboard, MouseState mouseState, MouseState prevMouseState, GameTime gameTime, GraphicsDevice g)
         {
             var r = state.r;
             if (reRollButton.WasLeftClicked(mouseState, prevMouseState))
             {
-                for (int i = 0; i < state.pictures.Count(); i++)
-                {
-                    state.pictures[i].button.tex.Dispose();
-                    state.pictures[i].button.tex = null;
-
-                    int chooser = r.Next(0, 2);
-                    if (chooser == 0)
-                    {
-                        var rgbTree = new RGBTree(1, 8, r);
-                        state.pictures[i] = rgbTree;
-                    }
-                    else
-                    {
-                        var hsvTree = new HSVTree(1, 8, r);
-                        state.pictures[i] = hsvTree;
-                    }
-                }
+               
+                GenTrees(r);
             }
 
             if (evolveButton.WasLeftClicked(mouseState, prevMouseState))

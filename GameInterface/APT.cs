@@ -110,6 +110,7 @@ namespace GameInterface
             var node = this;
             if (node.children == null) return;
 
+            //1 in 3 chance of applying warp to a node that has an X and a Y as children
             if (node.children.Length >= 2 && r.Next(0, 3) == 0 &&
                 ((node.children[0].type == NodeType.X && node.children[1].type == NodeType.Y) ||
                 (node.children[1].type == NodeType.X && node.children[0].type == NodeType.Y)))
@@ -395,7 +396,7 @@ namespace GameInterface
             {
                 //just keep adding leaves until we can't 
             };
-            //first.InsertWarp(r);
+            first.InsertWarp(r);
 
             return first;
         }

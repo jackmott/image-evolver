@@ -20,6 +20,8 @@ namespace GameLogic
             }
 
             return _texture;
+        }
+
+        
     }
-}
 }
