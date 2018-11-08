@@ -12,33 +12,75 @@ namespace GameLogic
 {
     public static class PicFunctions
     {
+        public static Pic GenGradientPic(int min, int max, Random rand)
+        {
+            Pic pic = new Pic(PicType.GRADIENT);
+            
+            pic.Trees[0] = AptNode.GenerateTree(rand.Next(min, max), rand);
+            pic.Machines[0] = new StackMachine(pic.Trees[0]);
+
+            int numGradients = rand.Next(Settings.MIN_GRADIENTS,Settings.MAX_GRADIENTS);
+            pic.gradients = new Color[numGradients];
+            pic.pos = new float[numGradients];
+            for (int i = 0; i < pic.gradients.Length; i++)
+            {
+                pic.gradients[i] = GraphUtils.RandomColor(rand);
+                pic.pos[i] = (float)(rand.NextDouble() * 2.0 - 1.0);
+                Array.Sort(pic.pos);
+            }
+            pic.pos[0] = -1.0f;
+            pic.pos[pic.pos.Length - 1] = 1.0f;
+            return pic;
+        }
+
+        public static Pic GenRGBPic(int min, int max, Random rand)
+        {
+            Pic pic = new Pic(PicType.RGB);
+            for (int i = 0; i < 3; i++)
+            {
+                pic.Trees[i] = AptNode.GenerateTree(rand.Next(min, max), rand);
+                pic.Machines[i] = new StackMachine(pic.Trees[i]);
+            }
+            return pic;
+        }
+
+        public static Pic GenHSVPic(int min, int max, Random rand)
+        {
+            Pic pic = new Pic(PicType.HSV);
+            for (int i = 0; i < 3; i++)
+            {
+                pic.Trees[i] = AptNode.GenerateTree(rand.Next(min, max), rand);
+                pic.Machines[i] = new StackMachine(pic.Trees[i]);
+            }
+            return pic;
+        }
 
         public static Texture2D GetTex(Pic p,GraphicsDevice graphics, int width, int height)
         {
             if (p.button.tex == null || (p.button.tex.Width != width || p.button.tex.Height != height))
             {
                 if (p.button.tex != null) { p.button.tex.Dispose(); }
-                if (p is RGBTree)
-                {
-                    var rgb = (RGBTree)p;
-                    p.button.tex = ToTexture(rgb, graphics, width, height);
-                }
-                else if (p is HSVTree)
-                {
-                    var hsv = (HSVTree)p;
-                    p.button.tex = ToTexture(hsv, graphics, width, height);
-                }
-                else if (p is GradientTree)
-                {
-                    var grad = (GradientTree)p;
-                    grad.button.tex = ToTexture(grad, graphics, width, height);
-                }
+                p.button.tex = ToTexture(p, graphics, width, height);                
             }
             
             return p.button.tex;
         }
 
-        public static Texture2D ToTexture(RGBTree pic,GraphicsDevice graphics, int w, int h)
+        public static Texture2D ToTexture(Pic pic, GraphicsDevice graphics, int w, int h)
+        {
+            switch (pic.type) {
+                case PicType.RGB:
+                    return RGBToTexture(pic, graphics, w, h);
+                case PicType.HSV:
+                    return HSVToTexture(pic, graphics, w, h);
+                case PicType.GRADIENT:
+                    return GradientToTexture(pic, graphics, w, h);
+                default:
+                    throw new Exception("wat");
+
+           }
+        }
+        private static Texture2D RGBToTexture(Pic pic,GraphicsDevice graphics, int w, int h)
         {
             Color[] colors = new Color[w * h];
             var scale = (float)(255 / 2);
@@ -73,38 +115,9 @@ namespace GameLogic
             return tex;
         }
 
-        public static Texture2D ToTextureSingleThread(RGBTree pic, GraphicsDevice graphics, int w, int h)
-        {
-            Color[] colors = new Color[w * h];
-            var scale = (float)(255 / 2);
-            var offset = -1.0f * scale;
-            var partition = Partitioner.Create(0, h);
+       
 
-            var rStack = new float[pic.Machines[0].nodeCount];
-            var gStack = new float[pic.Machines[1].nodeCount];
-            var bStack = new float[pic.Machines[2].nodeCount];
-            for (int y = 0; y < h; y++)
-                    {
-                        float yf = ((float)y / (float)h) * 2.0f - 1.0f;
-                        int yw = y * w;
-                        for (int x = 0; x < w; x++)
-                        {
-                            float xf = ((float)x / (float)w) * 2.0f - 1.0f;
-                            var r = (byte)(Execute(pic.Machines[0], xf, yf, rStack) * scale - offset);
-                            var g = (byte)(Execute(pic.Machines[1], xf, yf, gStack) * scale - offset);
-                            var b = (byte)(Execute(pic.Machines[2], xf, yf, bStack) * scale - offset);
-                            colors[yw + x] = new Color(r, g, b, (byte)255);
-                        }
-                    }
-
-            
-            Texture2D tex = new Texture2D(graphics, w, h);
-            var tex2 = new Texture2D(graphics, w, h);
-            tex.SetData(colors);
-            return tex;
-        }
-
-        public static Texture2D ToTexture(GradientTree pic, GraphicsDevice graphics, int w, int h)
+        private static Texture2D GradientToTexture(Pic pic, GraphicsDevice graphics, int w, int h)
         {
             Color[] colors = new Color[w * h];            
             var partition = Partitioner.Create(0, h);
@@ -152,7 +165,7 @@ namespace GameLogic
         }
 
 
-        public static Texture2D ToTexture(HSVTree pic,GraphicsDevice graphics, int width, int height)
+        private static Texture2D HSVToTexture(Pic pic,GraphicsDevice graphics, int width, int height)
         {
             Color[] colors = new Color[width * height];
             var scale = 0.5f;

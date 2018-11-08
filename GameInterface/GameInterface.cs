@@ -23,9 +23,7 @@ namespace GameInterface
     public class GameState
     {
         public Screen screen = Screen.CHOOSE;
-        public Random r;
-        public const float HORIZONTAL_SPACING = .01f;
-        public const float VERTICAL_SPACING = .01f;
+        public Random r;        
         public int populationSize;
         public List<Pic> pictures;
         public Pic zoomedPic;

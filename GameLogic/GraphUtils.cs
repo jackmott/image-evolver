@@ -22,6 +22,9 @@ namespace GameLogic
             return _texture;
         }
 
-        
+        public static Color RandomColor(Random r)
+        {
+            return new Color((byte)r.Next(0, 256), (byte)r.Next(0, 256), (byte)r.Next(0, 256), (byte)255);
+        }
     }
 }

@@ -64,8 +64,8 @@ namespace GameLogic
             int UISpace = (int)(winH * 0.1f);
             winH -= UISpace;
 
-            int hSpace = (int)(winW * GameState.HORIZONTAL_SPACING);
-            int vSpace = (int)(winH * GameState.VERTICAL_SPACING);
+            int hSpace = (int)(winW * Settings.HORIZONTAL_SPACING);
+            int vSpace = (int)(winH * Settings.VERTICAL_SPACING);
 
             int numPerRow = (int)Math.Sqrt(state.populationSize);
             int spaceRemaining = winW - hSpace * (numPerRow + 1);
@@ -144,7 +144,7 @@ namespace GameLogic
                 }
             }
 
-            state.populationSize = 36;
+            state.populationSize = Settings.POP_SIZE;
             state.pictures = new List<Pic>();
             Random r = state.r;
             GenTrees(r);
@@ -186,23 +186,24 @@ namespace GameLogic
                     pic.button.tex = null;
                 }
             }
+            state.pictures.Clear();
 
             for (int i = 0; i < state.populationSize; i++)
             {
                 int chooser = r.Next(0, 3);                
                 if (chooser == 0)
                 {
-                    var rgbTree = new RGBTree(1, 15, r);
+                    var rgbTree = GenRGBPic(Settings.MIN_GEN_SIZE, Settings.MAX_GEN_SIZE, r);
                     state.pictures.Add(rgbTree);
                 }
                 else if (chooser == 1)
                 {
-                    var hsvTree = new HSVTree(1, 15, r);
+                    var hsvTree = GenHSVPic(Settings.MIN_GEN_SIZE, Settings.MAX_GEN_SIZE, r);
                     state.pictures.Add(hsvTree);
                 }
                 else if (chooser == 2)
                 {
-                    var gradients = new GradientTree(1, 15, r);
+                    var gradients = GenGradientPic(Settings.MIN_GEN_SIZE, Settings.MAX_GEN_SIZE, r);
                     state.pictures.Add(gradients);
                 }
             }
@@ -241,26 +242,11 @@ namespace GameLogic
                 {
                     var first = nextGeneration[state.r.Next(0, selectedCount)];
                     var second = nextGeneration[state.r.Next(0, selectedCount)];
-                    var chooser = state.r.Next(0, 3);
-                    if (chooser == 0)
-                    {
-                        var clone = first.Clone();
-                        clone.Mutate(state.r);
-                        nextGeneration.Add(clone);
-                    }
-                    else if (chooser == 1)
-                    {
-                        var clone = first.Clone();
-                        clone.BreedWith(second, state.r);
-                        clone.Mutate(state.r);
-                        nextGeneration.Add(clone);
-                    }
-                    else if (chooser == 2)
-                    {
-                        var clone = first.Clone();
-                        clone.BreedWith(second, state.r);
-                        nextGeneration.Add(clone);
-                    }
+                    
+                    var child = first.BreedWith(second, state.r);
+                    child = child.Mutate(state.r);
+                    nextGeneration.Add(child);
+                    
                 }
                 state.pictures = nextGeneration;
 
