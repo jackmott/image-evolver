@@ -16,19 +16,23 @@ namespace GameInterface
 
     public class Pic
     {
+        public Rectangle bounds;
         public PicType type;
         public AptNode[] Trees;
         public StackMachine[] Machines;
-        public Color[] gradients;
+        public (Color?,Color?)[] gradients;
         public float[] pos;
 
         public Button button;
+        public Button inject;
         public bool selected;
 
+        
         public Pic(PicType type)
         {
             this.type = type;
             button = new Button(null, new Rectangle());
+            inject = new Button(null, new Rectangle());
             switch (type)
             {
                 case PicType.RGB:
@@ -42,6 +46,10 @@ namespace GameInterface
                     break;
             }
         }
+
+      
+
+       
 
         public string ToLisp()
         {
@@ -69,14 +77,7 @@ namespace GameInterface
         }
 
 
-        public Pic Mutate(Random r)
-        {
-            var result = Clone();
-            var (t, s) = result.GetRandomTree(r);
-            t.Mutate(r);
-            s.RebuildInstructions(t);
-            return result;
-        }
+       
 
 
         public Pic Clone()
@@ -84,7 +85,7 @@ namespace GameInterface
             Pic pic = new Pic(type);
             if (gradients != null)
             {
-                var newGradients = new Color[gradients.Length];
+                var newGradients = new (Color?,Color?)[gradients.Length];
                 var newPos = new float[pos.Length];
 
                 for (int i = 0; i < newGradients.Length; i++)
@@ -103,15 +104,7 @@ namespace GameInterface
             return pic;
         }
 
-        public Pic BreedWith(Pic partner, Random r)
-        {
-            var result = Clone();
-            var (ft, fs) = result.GetRandomTree(r);
-            var (st, ss) = partner.GetRandomTree(r);
-            ft.BreedWith(st, r);
-            fs.RebuildInstructions(ft);
-            return result;
-        }
+       
 
         public (AptNode, StackMachine) GetRandomTree(Random r)
         {

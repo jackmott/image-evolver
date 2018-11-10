@@ -26,8 +26,19 @@ namespace ImageEvolver
             graphics = new GraphicsDeviceManager(this);
             graphics.PreferredBackBufferWidth = 1920;
             graphics.PreferredBackBufferHeight = 1080;
-            Window.AllowUserResizing = true;            
+            Window.AllowUserResizing = true;
+            Window.ClientSizeChanged += OnResize;
             Content.RootDirectory = "Content";
+        }
+
+
+        public void OnResize(Object sender, EventArgs e)
+        {
+            if (hotloader != null)
+            {
+                hotloader.OnResize();
+            }
+
         }
 
         /// <summary>
@@ -96,7 +107,7 @@ namespace ImageEvolver
         /// <param name="gameTime">Provides a snapshot of timing values.</param>
         protected override void Draw(GameTime gameTime)
         {
-            hotloader.Draw(GraphicsDevice, spriteBatch,gameTime);
+            hotloader.Draw(spriteBatch,gameTime);
 
             base.Draw(gameTime);
         }

@@ -22,6 +22,7 @@ namespace GameInterface
     public enum Screen { CHOOSE, ZOOM };
     public class GameState
     {
+        public GraphicsDevice g;
         public Button evolveButton;
         public Button reRollButton;
         public Screen screen = Screen.CHOOSE;
@@ -36,8 +37,9 @@ namespace GameInterface
     {
         GameState Init(GraphicsDevice g,SpriteBatch batch);
         GameState Update(KeyboardState keyboard, MouseState mouseState, MouseState prevMouseState, GameTime gameTime, GraphicsDevice g);
-        void Draw(GraphicsDevice g, SpriteBatch batch, GameTime gameTime);
+        void Draw(SpriteBatch batch, GameTime gameTime);
         void SetState(GameState state);
+        void OnResize();
     }
 
    

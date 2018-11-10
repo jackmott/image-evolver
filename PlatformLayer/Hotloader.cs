@@ -69,6 +69,11 @@ namespace ImageEvolver
             proxy = (IGameInterface)asm.CreateInstance("GameLogic.GameLogic");
         }
 
+        public void OnResize()
+        {
+            proxy.OnResize();
+        }
+
         public GameState Init(GraphicsDevice g, SpriteBatch batch)
         {
             return proxy.Init(g,batch);
@@ -79,9 +84,9 @@ namespace ImageEvolver
             return proxy.Update(keyboard,mouseState,prevMouseState,gameTime,g);
         }
 
-        public void Draw(GraphicsDevice g,SpriteBatch batch, GameTime gameTime)
+        public void Draw(SpriteBatch batch, GameTime gameTime)
         {
-            proxy.Draw(g,batch, gameTime);
+            proxy.Draw(batch, gameTime);
         }
 
         public void SetState(GameState state)

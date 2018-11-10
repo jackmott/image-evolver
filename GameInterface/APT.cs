@@ -150,23 +150,7 @@ namespace GameInterface
         }
 
         
-        public void Mutate(Random r)
-        {
-            var nodeIndex = r.Next(0, this.Count());
-            var (nodeToMutate,_) = this.GetNthNode(nodeIndex);
-            var leafChance = r.Next(0, 5);
-
-            AptNode newNode;
-            if (leafChance == 0)
-            {
-                newNode = GetRandomLeaf(r);
-            }
-            else
-            {
-                newNode = GetRandomNode(r);
-            }
-            ReplaceNode(nodeToMutate, newNode,r);            
-        }
+       
 
         public int LeafCount()
         {

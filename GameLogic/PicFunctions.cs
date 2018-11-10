@@ -12,6 +12,81 @@ namespace GameLogic
 {
     public static class PicFunctions
     {
+        public static void Draw(Pic pic, SpriteBatch batch, GameTime gameTime)
+        {
+            pic.button.Draw(batch, gameTime);
+            if (pic.selected)
+            {
+                Rectangle rect = new Rectangle(pic.bounds.X - 5, pic.bounds.Y - 5, pic.bounds.Width + 10, pic.bounds.Height + 10);
+                batch.Draw(GraphUtils.GetTexture(batch, Color.Yellow), rect, Color.White);
+            }
+
+        }
+
+        public static void SetNewBounds(Pic pic, Rectangle bounds, GraphicsDevice g)
+        {
+            pic.bounds = bounds;
+            pic.button.bounds = bounds;
+            if (pic.button.tex != null)
+            {
+                pic.button.tex.Dispose();
+
+            }
+            RegenTex(pic, g, pic.bounds.Width, pic.bounds.Height);
+            
+        }
+
+        public static Pic BreedWith(Pic pic, Pic partner, Random r)
+        {
+            
+            var result = pic.Clone();
+
+            if (result.type != partner.type && r.Next(0, Settings.CROSSOVER_ROOT_CHANCE) == 0)
+            {
+                result.type = partner.type;
+                if (result.Trees.Length != partner.Trees.Length)
+                {
+                    var newTrees = new AptNode[partner.Trees.Length];
+                    var newMachines = new StackMachine[partner.Trees.Length];
+                    for (int i = 0; i < partner.Trees.Length; i++)
+                    {
+                        var randomIndex = r.Next(0, result.Trees.Length);
+                        newTrees[i] = result.Trees[randomIndex];
+                        newMachines[i] = result.Machines[randomIndex];
+                    }
+                    result.Trees = newTrees;
+                    result.Machines = newMachines;
+                    if (partner.type == PicType.GRADIENT)
+                    {
+                        result.gradients = ((Color?,Color?)[])partner.gradients.Clone();
+                        result.pos = (float[])partner.pos.Clone();
+                    }
+                    
+                }
+                return result;
+            }
+            else
+            {
+
+                var (ft, fs) = result.GetRandomTree(r);
+                var (st, ss) = partner.GetRandomTree(r);
+                ft.BreedWith(st, r);
+                fs.RebuildInstructions(ft);
+                return result;
+            }
+        }
+
+        public static Pic Mutate(Pic p, Random r)
+        {
+            var result = p.Clone();
+            if (r.Next(0, Settings.MUTATE_CHANCE) == 0) {
+                var (t, s) = result.GetRandomTree(r);
+                APTFunctions.Mutate(t, r);
+                s.RebuildInstructions(t);
+            }
+            return result;
+        }
+
         public static Pic GenGradientPic(int min, int max, Random rand)
         {
             Pic pic = new Pic(PicType.GRADIENT);
@@ -20,11 +95,19 @@ namespace GameLogic
             pic.Machines[0] = new StackMachine(pic.Trees[0]);
 
             int numGradients = rand.Next(Settings.MIN_GRADIENTS,Settings.MAX_GRADIENTS);
-            pic.gradients = new Color[numGradients];
-            pic.pos = new float[numGradients];
+            pic.gradients = new (Color?,Color?)[numGradients];
+            pic.pos = new float[numGradients];            
             for (int i = 0; i < pic.gradients.Length; i++)
             {
-                pic.gradients[i] = GraphUtils.RandomColor(rand);
+                bool isSuddenShift = rand.Next(0, Settings.CHANCE_HARD_GRADIENT) == 0;
+                if (!isSuddenShift)
+                {
+                    pic.gradients[i] = (GraphUtils.RandomColor(rand), null);
+                }
+                else
+                {
+                    pic.gradients[i] = (GraphUtils.RandomColor(rand), GraphUtils.RandomColor(rand));
+                }
                 pic.pos[i] = (float)(rand.NextDouble() * 2.0 - 1.0);
                 Array.Sort(pic.pos);
             }
@@ -55,15 +138,10 @@ namespace GameLogic
             return pic;
         }
 
-        public static Texture2D GetTex(Pic p,GraphicsDevice graphics, int width, int height)
-        {
-            if (p.button.tex == null || (p.button.tex.Width != width || p.button.tex.Height != height))
-            {
+        public static void RegenTex(Pic p,GraphicsDevice graphics, int width, int height)
+        {            
                 if (p.button.tex != null) { p.button.tex.Dispose(); }
-                p.button.tex = ToTexture(p, graphics, width, height);                
-            }
-            
-            return p.button.tex;
+                p.button.tex = ToTexture(p, graphics, width, height);                                                    
         }
 
         public static Texture2D ToTexture(Pic pic, GraphicsDevice graphics, int w, int h)
@@ -146,13 +224,18 @@ namespace GameLogic
                             }
                             
 
-                            var c1 = pic.gradients[i];
-                            var c2 = pic.gradients[i + 1];
-
+                            var (c1a,c1b) = pic.gradients[i];
+                            var (c2a,c2b) = pic.gradients[i + 1];
+                            
                             float posDiff = r - pic.pos[i];
                             float totalDiff = pic.pos[i + 1] - pic.pos[i];
                             float pct = posDiff / totalDiff;
-                            colors[yw + x] = Color.Lerp(c1, c2, pct);
+
+                            Color c1;
+                            if (c1b == null) c1 = c1a.Value;
+                            else c1 = c1b.Value;
+                            
+                            colors[yw + x] = Color.Lerp(c1, c2a.Value, pct);
                                                         
                         }
                     }

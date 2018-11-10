@@ -10,16 +10,21 @@ namespace GameLogic
 {
     public static class GraphUtils
     {
-        private static Texture2D _texture;
-        public static Texture2D GetTexture(SpriteBatch spriteBatch)
+        private static Dictionary<Color, Texture2D> simple_textures = new Dictionary<Color, Texture2D>();
+        public static Texture2D GetTexture(SpriteBatch spriteBatch, Color color)
         {
-            if (_texture == null)
+            Texture2D tex;
+            if (simple_textures.TryGetValue(color, out tex))
             {
-                _texture = new Texture2D(spriteBatch.GraphicsDevice, 1, 1, false, SurfaceFormat.Color);
-                _texture.SetData(new[] { Color.White });
+                return tex;
             }
-
-            return _texture;
+            else
+            {
+                tex = new Texture2D(spriteBatch.GraphicsDevice, 1, 1, false, SurfaceFormat.Color);
+                tex.SetData(new[] { color });
+                simple_textures[color] = tex;
+                return tex;
+            }            
         }
 
         public static Color RandomColor(Random r)
