@@ -25,6 +25,7 @@ namespace GameInterface
 
         public Button button;
         public Button inject;
+        public Button equation;
 
         public bool selected = false;
         public bool zoomed = false;

@@ -1,6 +1,7 @@
 ﻿using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Input;
 using Microsoft.Xna.Framework.Graphics;
+using Microsoft.Xna.Framework.Content;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -23,6 +24,7 @@ namespace GameInterface
     public class GameState
     {
         public GraphicsDevice g;
+        public ContentManager content;
         public Button evolveButton;
         public Button reRollButton;
         public Screen screen = Screen.CHOOSE;
@@ -35,7 +37,7 @@ namespace GameInterface
 
     public interface IGameInterface
     {
-        GameState Init(GraphicsDevice g);
+        GameState Init(GraphicsDevice g, ContentManager content);
         GameState Update(KeyboardState keyboard, MouseState mouseState, MouseState prevMouseState, GameTime gameTime, GraphicsDevice g);
         void Draw(SpriteBatch batch, GameTime gameTime);
         void SetState(GameState state);

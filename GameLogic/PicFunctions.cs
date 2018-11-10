@@ -18,6 +18,7 @@ namespace GameLogic
             pic.type = type;
             pic.button = new Button(null, new Rectangle());
             pic.inject = new Button(Settings.injectTexture,new Rectangle());
+            pic.equation = new Button(Settings.equationTexture, new Rectangle());
             switch (type)
             {
                 case PicType.RGB:
@@ -67,6 +68,8 @@ namespace GameLogic
             
             pic.button.Draw(batch, gameTime);
             pic.inject.Draw(batch, gameTime);
+            pic.equation.Draw(batch, gameTime);
+            
             
         }
 
@@ -78,6 +81,8 @@ namespace GameLogic
                 pic.button.tex.Dispose();
             }
             pic.inject.bounds = new Rectangle(bounds.X, bounds.Y + bounds.Height + 5, 20, 20);
+            pic.equation.bounds = new Rectangle(bounds.X+30, bounds.Y + bounds.Height + 5, 20, 20);
+
             RegenTex(pic, g);            
             
         }

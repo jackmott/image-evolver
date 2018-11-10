@@ -10,6 +10,7 @@ using static GameLogic.PicFunctions;
 using System.Collections.Generic;
 using System.Linq;
 using System.IO;
+using Microsoft.Xna.Framework.Content;
 
 namespace GameLogic
 {
@@ -23,7 +24,7 @@ namespace GameLogic
         }
 
 
-        public GameState Init(GraphicsDevice g)
+        public GameState Init(GraphicsDevice g,ContentManager content)
         {
             state = new GameState();
             state.r = new Random();
@@ -31,6 +32,9 @@ namespace GameLogic
 
             Settings.injectTexture = GraphUtils.GetTexture(g, Color.Blue);
             Settings.selectedTexture = GraphUtils.GetTexture(g, Color.Yellow);
+            Settings.equationTexture = GraphUtils.GetTexture(g, Color.White);
+
+            Settings.equationFont = content.Load<SpriteFont>("equation-font");
 
             int w = g.Viewport.Width;
             int h = g.Viewport.Height;
@@ -286,6 +290,11 @@ namespace GameLogic
                     pic.button.tex.Dispose();
                     state.pictures[i] = GenTree(r);
                     SetNewBounds(state.pictures[i], pic.button.bounds, state.g);                    
+                }
+
+                if (pic.equation.WasLeftClicked(mouseState, prevMouseState))
+                {
+                    Console.WriteLine(pic.ToLisp());
                 }
 
                 if (pic.button.WasRightClicked(mouseState, prevMouseState))

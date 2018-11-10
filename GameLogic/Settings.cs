@@ -28,6 +28,9 @@ namespace GameLogic
         public const float VERTICAL_SPACING = .04f;
 
         public static Texture2D injectTexture;
+        public static Texture2D equationTexture;
         public static Texture2D selectedTexture;
+
+        public static SpriteFont equationFont;
     }
 }
