@@ -1,4 +1,4 @@
-﻿// TODO fix right click, resize big buttons onresize properly
+﻿// TODO resize big buttons onresize properly
 
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Input;
@@ -91,7 +91,7 @@ namespace GameLogic
                 {
                     pos.X += hSpace;
                     SetNewBounds(state.pictures[index],new Rectangle((int)pos.X, (int)pos.Y, picW, picH),g);                    
-                    RegenTex(state.pictures[index], g, picW, picH);                    
+                    //RegenTex(state.pictures[index], g, picW, picH);                    
                     index++;
                     pos.X += picW;
 
@@ -123,14 +123,9 @@ namespace GameLogic
         public void ZoomDraw(SpriteBatch batch, GameTime gameTime)
         {
 
-            int winW = state.g.Viewport.Width;
-            int winH = state.g.Viewport.Height;
-
+           
             state.g.Clear(Color.Black);
-            batch.Begin();
-            var pos = new Vector2(0, 0);
-            state.zoomedPic.button.bounds = new Rectangle((int)pos.X, (int)pos.Y, winW, winH);
-            RegenTex(state.zoomedPic, state.g, winW, winH);
+            batch.Begin();                        
             state.zoomedPic.button.Draw(batch, gameTime);
             batch.End();
             // TODO: Add your drawing code here
@@ -180,6 +175,7 @@ namespace GameLogic
             {
                 state.screen = Screen.CHOOSE;
                 state.zoomedPic = null;
+                LayoutUI();
             }
             return state;
         }
@@ -224,10 +220,16 @@ namespace GameLogic
             {
                
                 GenTrees(r);
+                LayoutUI();
             }
 
             if (state.evolveButton.WasLeftClicked(mouseState, prevMouseState))
             {
+                if (!state.pictures.Exists(p => p.selected))
+                {
+                    //no pics selected
+                    return state;
+                }
                 // Clear out all textures as they are about to get updated
                 foreach (var pic in state.pictures)
                 {
@@ -256,12 +258,12 @@ namespace GameLogic
                     var second = nextGeneration[state.r.Next(0, selectedCount)];
                     
                     var child = BreedWith(first,second, state.r);
-                    child = Mutate(child,state.r);
+                    child = Mutate(child,state.r);                    
                     nextGeneration.Add(child);
                     
                 }
                 state.pictures = nextGeneration;
-
+                LayoutUI();
 
             }
             foreach (var pic in state.pictures)
@@ -274,6 +276,7 @@ namespace GameLogic
                 if (pic.button.WasRightClicked(mouseState, prevMouseState))
                 {
                     state.zoomedPic = pic;
+                    SetNewBounds(pic, new Rectangle(0, 0, state.g.Viewport.Width, state.g.Viewport.Height), g);
                     Console.WriteLine(state.zoomedPic.ToLisp());
                     state.screen = Screen.ZOOM;
                 }

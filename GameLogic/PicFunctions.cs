@@ -14,13 +14,14 @@ namespace GameLogic
     {
         public static void Draw(Pic pic, SpriteBatch batch, GameTime gameTime)
         {
-            pic.button.Draw(batch, gameTime);
             if (pic.selected)
             {
                 Rectangle rect = new Rectangle(pic.bounds.X - 5, pic.bounds.Y - 5, pic.bounds.Width + 10, pic.bounds.Height + 10);
                 batch.Draw(GraphUtils.GetTexture(batch, Color.Yellow), rect, Color.White);
             }
 
+            pic.button.Draw(batch, gameTime);
+            
         }
 
         public static void SetNewBounds(Pic pic, Rectangle bounds, GraphicsDevice g)
