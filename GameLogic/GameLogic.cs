@@ -23,15 +23,19 @@ namespace GameLogic
         }
 
 
-        public GameState Init(GraphicsDevice g, SpriteBatch batch)
+        public GameState Init(GraphicsDevice g)
         {
             state = new GameState();
             state.r = new Random();
             state.g = g;
+
+            Settings.injectTexture = GraphUtils.GetTexture(g, Color.Blue);
+            Settings.selectedTexture = GraphUtils.GetTexture(g, Color.Yellow);
+
             int w = g.Viewport.Width;
             int h = g.Viewport.Height;
-            state.evolveButton = new Button(GraphUtils.GetTexture(batch, Color.Red), new Rectangle((int)(w * .001f), (int)(h * .91f), (int)(w * .1f), (int)(h * 0.05f)));
-            state.reRollButton = new Button(GraphUtils.GetTexture(batch, Color.Blue), new Rectangle((int)(w * .2f), (int)(h * .91f), (int)(w * .1f), (int)(h * 0.05f)));
+            state.evolveButton = new Button(GraphUtils.GetTexture(g, Color.Red), new Rectangle((int)(w * .001f), (int)(h * .91f), (int)(w * .1f), (int)(h * 0.05f)));
+            state.reRollButton = new Button(GraphUtils.GetTexture(g, Color.Blue), new Rectangle((int)(w * .2f), (int)(h * .91f), (int)(w * .1f), (int)(h * 0.05f)));
             DirectoryInfo d = new DirectoryInfo(AppDomain.CurrentDomain.BaseDirectory + @"\Assets");
             var files = d.GetFiles("*.jpg").AsEnumerable().Concat(d.GetFiles("*.png"));
             GameState.externalImages = new List<ExternalImage>();
@@ -90,8 +94,7 @@ namespace GameLogic
                 for (int x = 0; x < Settings.POP_SIZE_COLUMNS; x++)
                 {
                     pos.X += hSpace;
-                    SetNewBounds(state.pictures[index],new Rectangle((int)pos.X, (int)pos.Y, picW, picH),g);                    
-                    //RegenTex(state.pictures[index], g, picW, picH);                    
+                    SetNewBounds(state.pictures[index],new Rectangle((int)pos.X, (int)pos.Y, picW, picH),g);                                       
                     index++;
                     pos.X += picW;
 
@@ -174,12 +177,31 @@ namespace GameLogic
             if (state.zoomedPic.button.WasRightClicked(mouseState, prevMouseState))
             {
                 state.screen = Screen.CHOOSE;
-                state.zoomedPic = null;
+                state.zoomedPic.zoomed = false;
+                state.zoomedPic = null;                
                 LayoutUI();
             }
             return state;
         }
-
+        public Pic GenTree(Random r)
+        {
+            int chooser = r.Next(0, 3);
+            if (chooser == 0)
+            {
+                return GenRGBPic(Settings.MIN_GEN_SIZE, Settings.MAX_GEN_SIZE, r);                
+            }
+            else if (chooser == 1)
+            {
+                return GenHSVPic(Settings.MIN_GEN_SIZE, Settings.MAX_GEN_SIZE, r);
+                
+            }
+            else if (chooser == 2)
+            {
+                var gradients = GenGradientPic(Settings.MIN_GEN_SIZE, Settings.MAX_GEN_SIZE, r);
+                return gradients;
+            }
+            throw new Exception("Choose");
+        }
         public void GenTrees(Random r)
         {
             foreach (var pic in state.pictures) 
@@ -194,22 +216,7 @@ namespace GameLogic
 
             for (int i = 0; i < state.populationSize; i++)
             {
-                int chooser = r.Next(0, 3);                
-                if (chooser == 0)
-                {
-                    var rgbTree = GenRGBPic(Settings.MIN_GEN_SIZE, Settings.MAX_GEN_SIZE, r);
-                    state.pictures.Add(rgbTree);
-                }
-                else if (chooser == 1)
-                {
-                    var hsvTree = GenHSVPic(Settings.MIN_GEN_SIZE, Settings.MAX_GEN_SIZE, r);
-                    state.pictures.Add(hsvTree);
-                }
-                else if (chooser == 2)
-                {
-                    var gradients = GenGradientPic(Settings.MIN_GEN_SIZE, Settings.MAX_GEN_SIZE, r);
-                    state.pictures.Add(gradients);
-                }
+                state.pictures.Add(GenTree(r));
             }
         }
 
@@ -266,16 +273,25 @@ namespace GameLogic
                 LayoutUI();
 
             }
-            foreach (var pic in state.pictures)
+            for(int i = 0; i< state.pictures.Count(); i++)
             {
+                var pic = state.pictures[i];
                 if (pic.button.WasLeftClicked(mouseState, prevMouseState))
                 {
                     pic.selected = !pic.selected;
                 }
 
+                if (pic.inject.WasLeftClicked(mouseState, prevMouseState))
+                {
+                    pic.button.tex.Dispose();
+                    state.pictures[i] = GenTree(r);
+                    SetNewBounds(state.pictures[i], pic.button.bounds, state.g);                    
+                }
+
                 if (pic.button.WasRightClicked(mouseState, prevMouseState))
                 {
                     state.zoomedPic = pic;
+                    pic.zoomed = true;
                     SetNewBounds(pic, new Rectangle(0, 0, state.g.Viewport.Width, state.g.Viewport.Height), g);
                     Console.WriteLine(state.zoomedPic.ToLisp());
                     state.screen = Screen.ZOOM;

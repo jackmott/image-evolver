@@ -74,9 +74,9 @@ namespace ImageEvolver
             proxy.OnResize();
         }
 
-        public GameState Init(GraphicsDevice g, SpriteBatch batch)
+        public GameState Init(GraphicsDevice g)
         {
-            return proxy.Init(g,batch);
+            return proxy.Init(g);
         }
 
         public GameState Update(KeyboardState keyboard, MouseState mouseState, MouseState prevMouseState,GameTime gameTime, GraphicsDevice g)

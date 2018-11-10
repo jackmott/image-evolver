@@ -67,7 +67,7 @@ namespace ImageEvolver
         {
             hotloader = new Hotloader(Content, GraphicsDevice);                        
             spriteBatch = new SpriteBatch(GraphicsDevice);
-            hotloader.Init(GraphicsDevice, spriteBatch);
+            hotloader.Init(GraphicsDevice);
             
         }
 

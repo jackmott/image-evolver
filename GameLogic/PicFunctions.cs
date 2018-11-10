@@ -12,35 +12,80 @@ namespace GameLogic
 {
     public static class PicFunctions
     {
+        public static Pic NewPic(PicType type)
+        {
+            Pic pic = new Pic();
+            pic.type = type;
+            pic.button = new Button(null, new Rectangle());
+            pic.inject = new Button(Settings.injectTexture,new Rectangle());
+            switch (type)
+            {
+                case PicType.RGB:
+                case PicType.HSV:
+                    pic.Trees = new AptNode[3];
+                    pic.Machines = new StackMachine[3];
+                    break;
+                case PicType.GRADIENT:
+                    pic.Trees = new AptNode[1];
+                    pic.Machines = new StackMachine[1];
+                    break;
+            }
+            return pic;
+        }
+
+        public static Pic Clone(Pic toClone)
+        {
+            Pic pic = NewPic(toClone.type);
+            if (toClone.gradients != null)
+            {
+                var newGradients = new (Color?, Color?)[toClone.gradients.Length];
+                var newPos = new float[toClone.pos.Length];
+
+                for (int i = 0; i < newGradients.Length; i++)
+                {
+                    newGradients[i] = toClone.gradients[i];
+                    newPos[i] = toClone.pos[i];
+                }
+                pic.gradients = newGradients;
+                pic.pos = newPos;
+            }
+            for (int i = 0; i < toClone.Trees.Length; i++)
+            {
+                pic.Trees[i] = toClone.Trees[i].Clone();
+                pic.Machines[i] = new StackMachine(toClone.Trees[i]);
+            }
+            return pic;
+        }
+
         public static void Draw(Pic pic, SpriteBatch batch, GameTime gameTime)
         {
             if (pic.selected)
             {
-                Rectangle rect = new Rectangle(pic.bounds.X - 5, pic.bounds.Y - 5, pic.bounds.Width + 10, pic.bounds.Height + 10);
-                batch.Draw(GraphUtils.GetTexture(batch, Color.Yellow), rect, Color.White);
+                Rectangle rect = new Rectangle(pic.button.bounds.X - 5, pic.button.bounds.Y - 5, pic.button.bounds.Width + 10, pic.button.bounds.Height + 10);
+                batch.Draw(Settings.selectedTexture, rect, Color.White);
             }
-
+            
             pic.button.Draw(batch, gameTime);
+            pic.inject.Draw(batch, gameTime);
             
         }
 
         public static void SetNewBounds(Pic pic, Rectangle bounds, GraphicsDevice g)
-        {
-            pic.bounds = bounds;
+        {            
             pic.button.bounds = bounds;
             if (pic.button.tex != null)
             {
                 pic.button.tex.Dispose();
-
             }
-            RegenTex(pic, g, pic.bounds.Width, pic.bounds.Height);
+            pic.inject.bounds = new Rectangle(bounds.X, bounds.Y + bounds.Height + 5, 20, 20);
+            RegenTex(pic, g);            
             
         }
 
         public static Pic BreedWith(Pic pic, Pic partner, Random r)
         {
             
-            var result = pic.Clone();
+            var result = Clone(pic);
 
             if (result.type != partner.type && r.Next(0, Settings.CROSSOVER_ROOT_CHANCE) == 0)
             {
@@ -79,7 +124,7 @@ namespace GameLogic
 
         public static Pic Mutate(Pic p, Random r)
         {
-            var result = p.Clone();
+            var result = Clone(p);
             if (r.Next(0, Settings.MUTATE_CHANCE) == 0) {
                 var (t, s) = result.GetRandomTree(r);
                 APTFunctions.Mutate(t, r);
@@ -90,7 +135,7 @@ namespace GameLogic
 
         public static Pic GenGradientPic(int min, int max, Random rand)
         {
-            Pic pic = new Pic(PicType.GRADIENT);
+            Pic pic = NewPic(PicType.GRADIENT);
             
             pic.Trees[0] = AptNode.GenerateTree(rand.Next(min, max), rand);
             pic.Machines[0] = new StackMachine(pic.Trees[0]);
@@ -119,7 +164,7 @@ namespace GameLogic
 
         public static Pic GenRGBPic(int min, int max, Random rand)
         {
-            Pic pic = new Pic(PicType.RGB);
+            Pic pic = NewPic(PicType.RGB);
             for (int i = 0; i < 3; i++)
             {
                 pic.Trees[i] = AptNode.GenerateTree(rand.Next(min, max), rand);
@@ -130,7 +175,7 @@ namespace GameLogic
 
         public static Pic GenHSVPic(int min, int max, Random rand)
         {
-            Pic pic = new Pic(PicType.HSV);
+            Pic pic = NewPic(PicType.HSV);
             for (int i = 0; i < 3; i++)
             {
                 pic.Trees[i] = AptNode.GenerateTree(rand.Next(min, max), rand);
@@ -139,10 +184,10 @@ namespace GameLogic
             return pic;
         }
 
-        public static void RegenTex(Pic p,GraphicsDevice graphics, int width, int height)
+        public static void RegenTex(Pic p,GraphicsDevice graphics)
         {            
                 if (p.button.tex != null) { p.button.tex.Dispose(); }
-                p.button.tex = ToTexture(p, graphics, width, height);                                                    
+                p.button.tex = ToTexture(p, graphics, p.button.bounds.Width, p.button.bounds.Height);                                                    
         }
 
         public static Texture2D ToTexture(Pic pic, GraphicsDevice graphics, int w, int h)

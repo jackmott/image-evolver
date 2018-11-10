@@ -35,7 +35,7 @@ namespace GameInterface
 
     public interface IGameInterface
     {
-        GameState Init(GraphicsDevice g,SpriteBatch batch);
+        GameState Init(GraphicsDevice g);
         GameState Update(KeyboardState keyboard, MouseState mouseState, MouseState prevMouseState, GameTime gameTime, GraphicsDevice g);
         void Draw(SpriteBatch batch, GameTime gameTime);
         void SetState(GameState state);

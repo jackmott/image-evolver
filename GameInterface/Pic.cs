@@ -16,40 +16,23 @@ namespace GameInterface
 
     public class Pic
     {
-        public Rectangle bounds;
+
         public PicType type;
         public AptNode[] Trees;
         public StackMachine[] Machines;
-        public (Color?,Color?)[] gradients;
+        public (Color?, Color?)[] gradients;
         public float[] pos;
 
         public Button button;
         public Button inject;
-        public bool selected;
 
-        
-        public Pic(PicType type)
+        public bool selected = false;
+        public bool zoomed = false;
+
+
+        public Pic()
         {
-            this.type = type;
-            button = new Button(null, new Rectangle());
-            inject = new Button(null, new Rectangle());
-            switch (type)
-            {
-                case PicType.RGB:
-                case PicType.HSV:
-                    Trees = new AptNode[3];
-                    Machines = new StackMachine[3];
-                    break;
-                case PicType.GRADIENT:
-                    Trees = new AptNode[1];
-                    Machines = new StackMachine[1];
-                    break;
-            }
         }
-
-      
-
-       
 
         public string ToLisp()
         {
@@ -74,37 +57,7 @@ namespace GameInterface
                 default:
                     throw new Exception("Impossible");
             }
-        }
-
-
-       
-
-
-        public Pic Clone()
-        {
-            Pic pic = new Pic(type);
-            if (gradients != null)
-            {
-                var newGradients = new (Color?,Color?)[gradients.Length];
-                var newPos = new float[pos.Length];
-
-                for (int i = 0; i < newGradients.Length; i++)
-                {
-                    newGradients[i] = gradients[i];
-                    newPos[i] = pos[i];
-                }
-                pic.gradients = newGradients;
-                pic.pos = newPos;
-            }
-            for (int i = 0; i < Trees.Length; i++)
-            {
-                pic.Trees[i] = Trees[i].Clone();
-                pic.Machines[i] = new StackMachine(Trees[i]);
-            }
-            return pic;
-        }
-
-       
+        }     
 
         public (AptNode, StackMachine) GetRandomTree(Random r)
         {

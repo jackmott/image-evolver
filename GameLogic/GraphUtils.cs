@@ -11,7 +11,7 @@ namespace GameLogic
     public static class GraphUtils
     {
         private static Dictionary<Color, Texture2D> simple_textures = new Dictionary<Color, Texture2D>();
-        public static Texture2D GetTexture(SpriteBatch spriteBatch, Color color)
+        public static Texture2D GetTexture(GraphicsDevice g, Color color)
         {
             Texture2D tex;
             if (simple_textures.TryGetValue(color, out tex))
@@ -20,7 +20,7 @@ namespace GameLogic
             }
             else
             {
-                tex = new Texture2D(spriteBatch.GraphicsDevice, 1, 1, false, SurfaceFormat.Color);
+                tex = new Texture2D(g, 1, 1, false, SurfaceFormat.Color);
                 tex.SetData(new[] { color });
                 simple_textures[color] = tex;
                 return tex;
