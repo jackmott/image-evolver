@@ -8,6 +8,7 @@ using GameInterface;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using static GameLogic.StackMachineFunctions;
+
 namespace GameLogic
 {
     public static class PicFunctions
@@ -54,7 +55,7 @@ namespace GameLogic
             {
                 pic.Trees[i] = toClone.Trees[i].Clone();
                 pic.Machines[i] = new StackMachine(toClone.Trees[i]);
-            }
+            }            
             return pic;
         }
 
@@ -69,7 +70,18 @@ namespace GameLogic
             pic.button.Draw(batch, gameTime);
             pic.inject.Draw(batch, gameTime);
             pic.equation.Draw(batch, gameTime);
-            
+
+            if (pic.showEquation)
+            {
+                if (pic.wrappedEquation == "")
+                {
+                    pic.wrappedEquation = WordWrap.Wrap(pic.ToLisp(), pic.button.bounds.Width, WordWrap.MeasureWidth);
+                    Console.WriteLine(pic.wrappedEquation);
+
+                }
+                batch.DrawString(Settings.equationFont,pic.wrappedEquation, new Vector2(pic.button.bounds.X, pic.button.bounds.Y), Color.White);
+            }
+                        
             
         }
 
@@ -81,8 +93,7 @@ namespace GameLogic
                 pic.button.tex.Dispose();
             }
             pic.inject.bounds = new Rectangle(bounds.X, bounds.Y + bounds.Height + 5, 20, 20);
-            pic.equation.bounds = new Rectangle(bounds.X+30, bounds.Y + bounds.Height + 5, 20, 20);
-
+            pic.equation.bounds = new Rectangle(bounds.X+30, bounds.Y + bounds.Height + 5, 20, 20);            
             RegenTex(pic, g);            
             
         }
@@ -174,7 +185,7 @@ namespace GameLogic
             {
                 pic.Trees[i] = AptNode.GenerateTree(rand.Next(min, max), rand);
                 pic.Machines[i] = new StackMachine(pic.Trees[i]);
-            }
+            }            
             return pic;
         }
 

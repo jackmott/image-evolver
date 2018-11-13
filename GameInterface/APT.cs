@@ -215,7 +215,7 @@ namespace GameInterface
                 case NodeType.Y:
                     return "Y";
                 case NodeType.CONSTANT:
-                    return value.ToString();
+                    return value.ToString("0.000");
                 case NodeType.ABS:
                     return "Abs";
                 case NodeType.CLIP:

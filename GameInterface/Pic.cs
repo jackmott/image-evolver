@@ -22,6 +22,7 @@ namespace GameInterface
         public StackMachine[] Machines;
         public (Color?, Color?)[] gradients;
         public float[] pos;
+        public string wrappedEquation = "";
 
         public Button button;
         public Button inject;
@@ -29,7 +30,8 @@ namespace GameInterface
 
         public bool selected = false;
         public bool zoomed = false;
-
+        public bool showEquation = false;
+        
 
         public Pic()
         {

@@ -52,6 +52,9 @@
     <Compile Include="StackMachine.cs" />
   </ItemGroup>
   <ItemGroup>
+    <PackageReference Include="JetBrains.Annotations">
+      <Version>2018.2.1</Version>
+    </PackageReference>
     <PackageReference Include="MonoGame.Framework.WindowsDX">
       <Version>3.7.0.1708</Version>
     </PackageReference>
@@ -59,5 +62,6 @@
       <Version>4.5.1</Version>
     </PackageReference>
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

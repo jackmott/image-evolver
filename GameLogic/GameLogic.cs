@@ -22,14 +22,14 @@ namespace GameLogic
         {
             this.state = state;
         }
-
+        
 
         public GameState Init(GraphicsDevice g,ContentManager content)
         {
             state = new GameState();
             state.r = new Random();
             state.g = g;
-
+            
             Settings.injectTexture = GraphUtils.GetTexture(g, Color.Blue);
             Settings.selectedTexture = GraphUtils.GetTexture(g, Color.Yellow);
             Settings.equationTexture = GraphUtils.GetTexture(g, Color.White);
@@ -67,6 +67,7 @@ namespace GameLogic
             Random r = state.r;
             GenTrees(r);
             LayoutUI();
+            
             return state;
         }
 
@@ -190,21 +191,25 @@ namespace GameLogic
         public Pic GenTree(Random r)
         {
             int chooser = r.Next(0, 3);
+            Pic p;
             if (chooser == 0)
             {
-                return GenRGBPic(Settings.MIN_GEN_SIZE, Settings.MAX_GEN_SIZE, r);                
+                p = GenRGBPic(Settings.MIN_GEN_SIZE, Settings.MAX_GEN_SIZE, r);                
             }
             else if (chooser == 1)
             {
-                return GenHSVPic(Settings.MIN_GEN_SIZE, Settings.MAX_GEN_SIZE, r);
+                p = GenHSVPic(Settings.MIN_GEN_SIZE, Settings.MAX_GEN_SIZE, r);
                 
             }
-            else if (chooser == 2)
+            else 
             {
-                var gradients = GenGradientPic(Settings.MIN_GEN_SIZE, Settings.MAX_GEN_SIZE, r);
-                return gradients;
+                p = GenGradientPic(Settings.MIN_GEN_SIZE, Settings.MAX_GEN_SIZE, r);
+                
             }
-            throw new Exception("Choose");
+                                    
+            
+            
+            return p;            
         }
         public void GenTrees(Random r)
         {
@@ -228,8 +233,7 @@ namespace GameLogic
         {
             var r = state.r;
             if (state.reRollButton.WasLeftClicked(mouseState, prevMouseState))
-            {
-               
+            {               
                 GenTrees(r);
                 LayoutUI();
             }
@@ -280,6 +284,10 @@ namespace GameLogic
             for(int i = 0; i< state.pictures.Count(); i++)
             {
                 var pic = state.pictures[i];
+                if (pic.showEquation)
+                {                    
+                    //todo
+                }
                 if (pic.button.WasLeftClicked(mouseState, prevMouseState))
                 {
                     pic.selected = !pic.selected;
@@ -294,6 +302,7 @@ namespace GameLogic
 
                 if (pic.equation.WasLeftClicked(mouseState, prevMouseState))
                 {
+                    pic.showEquation = !pic.showEquation;                    
                     Console.WriteLine(pic.ToLisp());
                 }
 
