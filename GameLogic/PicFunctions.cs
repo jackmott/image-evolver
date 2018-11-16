@@ -16,6 +16,7 @@ namespace GameLogic
         public static Pic NewPic(PicType type)
         {
             Pic pic = new Pic();
+            
             pic.type = type;
             pic.button = new Button(null, new Rectangle());
             pic.inject = new Button(Settings.injectTexture,new Rectangle());
@@ -73,13 +74,10 @@ namespace GameLogic
 
             if (pic.showEquation)
             {
-                if (pic.wrappedEquation == "")
-                {
-                    pic.wrappedEquation = WordWrap.Wrap(pic.ToLisp(), pic.button.bounds.Width, WordWrap.MeasureWidth);
-                    Console.WriteLine(pic.wrappedEquation);
-
-                }
-                batch.DrawString(Settings.equationFont,pic.wrappedEquation, new Vector2(pic.button.bounds.X, pic.button.bounds.Y), Color.White);
+                pic.textBox.Draw(batch, gameTime);
+                pic.textBox.SetActive(true);
+                    
+                    
             }
                         
             
@@ -95,7 +93,6 @@ namespace GameLogic
             pic.inject.bounds = new Rectangle(bounds.X, bounds.Y + bounds.Height + 5, 20, 20);
             pic.equation.bounds = new Rectangle(bounds.X+30, bounds.Y + bounds.Height + 5, 20, 20);            
             RegenTex(pic, g);            
-            
         }
 
         public static Pic BreedWith(Pic pic, Pic partner, Random r)

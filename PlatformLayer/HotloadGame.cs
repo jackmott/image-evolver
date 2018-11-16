@@ -15,7 +15,7 @@ namespace ImageEvolver
         SpriteBatch spriteBatch;
         Hotloader hotloader;
         GameState state;
-        MouseState prevMouseState;
+        
         
         int screenWidth;
         int screenHeight;
@@ -52,11 +52,9 @@ namespace ImageEvolver
             // TODO: Add your initialization logic here
 
             base.Initialize();
-            this.IsMouseVisible = true;
-            
+            this.IsMouseVisible = true;            
             screenWidth = graphics.PreferredBackBufferWidth;
-            screenHeight = graphics.PreferredBackBufferHeight;
-            prevMouseState = Mouse.GetState();
+            screenHeight = graphics.PreferredBackBufferHeight;            
         }
 
         /// <summary>
@@ -67,7 +65,7 @@ namespace ImageEvolver
         {
             hotloader = new Hotloader(Content, GraphicsDevice);                        
             spriteBatch = new SpriteBatch(GraphicsDevice);
-            hotloader.Init(GraphicsDevice,Content);
+            hotloader.Init(GraphicsDevice,Window,Content);
             
         }
 
@@ -95,9 +93,14 @@ namespace ImageEvolver
 #if DEBUG
             hotloader.CheckShaders();
 #endif
-            MouseState mouse = Mouse.GetState();
-            state = hotloader.Update(Keyboard.GetState(),mouse,prevMouseState,gameTime,GraphicsDevice);
-            prevMouseState = mouse;
+            if (state != null)
+            {
+                state.inputState.keyboardState = Keyboard.GetState();
+                state.inputState.mouseState = Mouse.GetState();
+            }
+            state = hotloader.Update(gameTime);
+            state.inputState.prevKeyboardState = state.inputState.keyboardState;
+            state.inputState.prevMouseState = state.inputState.mouseState;
             base.Update(gameTime);
         }
 

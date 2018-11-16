@@ -25,11 +25,11 @@ namespace GameInterface
             batch.Draw(tex, bounds, Color.White);
         }
 
-        public bool WasLeftClicked(MouseState current, MouseState prev)
+        public bool WasLeftClicked(InputState state)
         {
-            if (prev.LeftButton == ButtonState.Pressed && current.LeftButton == ButtonState.Released)
+            if (state.prevMouseState.LeftButton == ButtonState.Pressed && state.mouseState.LeftButton == ButtonState.Released)
             {
-                if (bounds.Contains(prev.Position) && bounds.Contains(current.Position))
+                if (bounds.Contains(state.prevMouseState.Position) && bounds.Contains(state.mouseState.Position))
                 {
                     Debug.WriteLine("left click");
                     return true;
@@ -38,11 +38,11 @@ namespace GameInterface
             return false;
         }
 
-        public bool WasRightClicked(MouseState current, MouseState prev)
+        public bool WasRightClicked(InputState state)
         {
-            if (prev.RightButton == ButtonState.Pressed && current.RightButton == ButtonState.Released)
+            if (state.prevMouseState.RightButton == ButtonState.Pressed && state.mouseState.RightButton == ButtonState.Released)
             {
-                if (bounds.Contains(prev.Position) && bounds.Contains(current.Position))
+                if (bounds.Contains(state.prevMouseState.Position) && bounds.Contains(state.mouseState.Position))
                 {
                     Debug.WriteLine("right click");
                     return true;

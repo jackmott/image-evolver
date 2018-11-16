@@ -24,12 +24,13 @@ namespace GameLogic
         }
         
 
-        public GameState Init(GraphicsDevice g,ContentManager content)
+        public GameState Init(GraphicsDevice g,GameWindow window,ContentManager content)
         {
             state = new GameState();
             state.r = new Random();
             state.g = g;
-            
+            state.w = window;
+            state.inputState = new InputState();
             Settings.injectTexture = GraphUtils.GetTexture(g, Color.Blue);
             Settings.selectedTexture = GraphUtils.GetTexture(g, Color.Yellow);
             Settings.equationTexture = GraphUtils.GetTexture(g, Color.White);
@@ -162,25 +163,25 @@ namespace GameLogic
 
 
 
-        public GameState Update(KeyboardState keyboard, MouseState mouseState, MouseState prevMouseState, GameTime gameTime, GraphicsDevice g)
+        public GameState Update(GameTime gameTime)
         {
 
-
+            
             if (state.screen == Screen.CHOOSE)
             {
-                return ChooseUpdate(keyboard, mouseState, prevMouseState, gameTime, g);
+                return ChooseUpdate(gameTime);
             }
             else if (state.screen == Screen.ZOOM)
             {
-                return ZoomUpdate(keyboard, mouseState, prevMouseState, gameTime, g);
+                return ZoomUpdate(gameTime);
             }
+            
             return state;
         }
 
-        public GameState ZoomUpdate(KeyboardState keyboard, MouseState mouseState, MouseState prevMouseState, GameTime gameTime, GraphicsDevice g)
+        public GameState ZoomUpdate(GameTime gameTime)
         {
-            if (state.zoomedPic.button.WasRightClicked(mouseState, prevMouseState))
-            {
+            if (state.zoomedPic.button.WasRightClicked(state.inputState)) {
                 state.screen = Screen.CHOOSE;
                 state.zoomedPic.zoomed = false;
                 state.zoomedPic = null;                
@@ -229,16 +230,16 @@ namespace GameLogic
             }
         }
 
-        public GameState ChooseUpdate(KeyboardState keyboard, MouseState mouseState, MouseState prevMouseState, GameTime gameTime, GraphicsDevice g)
+        public GameState ChooseUpdate(GameTime gameTime)
         {
             var r = state.r;
-            if (state.reRollButton.WasLeftClicked(mouseState, prevMouseState))
+            if (state.reRollButton.WasLeftClicked(state.inputState))
             {               
                 GenTrees(r);
                 LayoutUI();
             }
 
-            if (state.evolveButton.WasLeftClicked(mouseState, prevMouseState))
+            if (state.evolveButton.WasLeftClicked(state.inputState))
             {
                 if (!state.pictures.Exists(p => p.selected))
                 {
@@ -288,29 +289,29 @@ namespace GameLogic
                 {                    
                     //todo
                 }
-                if (pic.button.WasLeftClicked(mouseState, prevMouseState))
+                if (pic.button.WasLeftClicked(state.inputState))
                 {
                     pic.selected = !pic.selected;
                 }
 
-                if (pic.inject.WasLeftClicked(mouseState, prevMouseState))
+                if (pic.inject.WasLeftClicked(state.inputState))
                 {
                     pic.button.tex.Dispose();
                     state.pictures[i] = GenTree(r);
                     SetNewBounds(state.pictures[i], pic.button.bounds, state.g);                    
                 }
 
-                if (pic.equation.WasLeftClicked(mouseState, prevMouseState))
+                if (pic.equation.WasLeftClicked(state.inputState))
                 {
                     pic.showEquation = !pic.showEquation;                    
                     Console.WriteLine(pic.ToLisp());
                 }
 
-                if (pic.button.WasRightClicked(mouseState, prevMouseState))
+                if (pic.button.WasRightClicked(state.inputState))
                 {
                     state.zoomedPic = pic;
                     pic.zoomed = true;
-                    SetNewBounds(pic, new Rectangle(0, 0, state.g.Viewport.Width, state.g.Viewport.Height), g);
+                    SetNewBounds(pic, new Rectangle(0, 0, state.g.Viewport.Width, state.g.Viewport.Height), state.g);
                     Console.WriteLine(state.zoomedPic.ToLisp());
                     state.screen = Screen.ZOOM;
                 }

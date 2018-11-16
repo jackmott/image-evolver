@@ -50,6 +50,7 @@
     <Compile Include="Pic.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="StackMachine.cs" />
+    <Compile Include="TextBox.cs" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="JetBrains.Annotations">

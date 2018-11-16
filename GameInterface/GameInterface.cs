@@ -24,6 +24,8 @@ namespace GameInterface
     public class GameState
     {
         public GraphicsDevice g;
+        public GameWindow w;
+        public InputState inputState;
         public ContentManager content;
         public Button evolveButton;
         public Button reRollButton;
@@ -35,10 +37,19 @@ namespace GameInterface
         public static List<ExternalImage> externalImages;
     }
 
+    public class InputState
+    {
+        public KeyboardState keyboardState;
+        public KeyboardState prevKeyboardState;
+        public MouseState mouseState;
+        public MouseState prevMouseState;
+        public int keyboardStateMillis;
+    }
+
     public interface IGameInterface
     {
-        GameState Init(GraphicsDevice g, ContentManager content);
-        GameState Update(KeyboardState keyboard, MouseState mouseState, MouseState prevMouseState, GameTime gameTime, GraphicsDevice g);
+        GameState Init(GraphicsDevice g, GameWindow w, ContentManager content);
+        GameState Update(GameTime gameTime);
         void Draw(SpriteBatch batch, GameTime gameTime);
         void SetState(GameState state);
         void OnResize();
