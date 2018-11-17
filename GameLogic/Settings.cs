@@ -10,7 +10,7 @@ namespace GameLogic
     public static class Settings
     {
         public const int MIN_GEN_SIZE = 1;
-        public const int MAX_GEN_SIZE = 10;
+        public const int MAX_GEN_SIZE = 15;
         public const int POP_SIZE_COLUMNS = 5;
         //Chance of a mutation happening on a pic
         public const int MUTATE_CHANCE = 2; // 1 in X

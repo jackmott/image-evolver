@@ -135,7 +135,7 @@ namespace GameLogic
            
             state.g.Clear(Color.Black);
             batch.Begin();                        
-            state.zoomedPic.button.Draw(batch, gameTime);
+            PicFunctions.ZoomDraw(state.zoomedPic,batch, gameTime);
             batch.End();
             // TODO: Add your drawing code here
         }
@@ -181,6 +181,13 @@ namespace GameLogic
 
         public GameState ZoomUpdate(GameTime gameTime)
         {
+            if (state.zoomedPic.equation.WasLeftClicked(state.inputState))
+            {
+                state.zoomedPic.textBox.SetActive(true);
+            }
+            if (state.zoomedPic.textBox.IsActive()) {
+                TextBoxFunctions.Update(state.zoomedPic.textBox, state.inputState, gameTime);
+            }
             if (state.zoomedPic.button.WasRightClicked(state.inputState)) {
                 state.screen = Screen.CHOOSE;
                 state.zoomedPic.zoomed = false;
@@ -194,22 +201,18 @@ namespace GameLogic
             int chooser = r.Next(0, 3);
             Pic p;
             if (chooser == 0)
-            {
-                p = GenRGBPic(Settings.MIN_GEN_SIZE, Settings.MAX_GEN_SIZE, r);                
+            {                
+                p = NewPic(PicType.RGB, r, Settings.MIN_GEN_SIZE, Settings.MAX_GEN_SIZE);                
             }
             else if (chooser == 1)
-            {
-                p = GenHSVPic(Settings.MIN_GEN_SIZE, Settings.MAX_GEN_SIZE, r);
-                
+            {                
+                p = NewPic(PicType.HSV, r, Settings.MIN_GEN_SIZE, Settings.MAX_GEN_SIZE);                
             }
             else 
-            {
-                p = GenGradientPic(Settings.MIN_GEN_SIZE, Settings.MAX_GEN_SIZE, r);
-                
+            {                
+                p = NewPic(PicType.GRADIENT, r, Settings.MIN_GEN_SIZE, Settings.MAX_GEN_SIZE);             
             }
-                                    
-            
-            
+            SetupTextbox(p, state.g, state.w);
             return p;            
         }
         public void GenTrees(Random r)
@@ -285,10 +288,7 @@ namespace GameLogic
             for(int i = 0; i< state.pictures.Count(); i++)
             {
                 var pic = state.pictures[i];
-                if (pic.showEquation)
-                {                    
-                    //todo
-                }
+               
                 if (pic.button.WasLeftClicked(state.inputState))
                 {
                     pic.selected = !pic.selected;

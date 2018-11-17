@@ -16,24 +16,71 @@ namespace GameLogic
         public static Pic NewPic(PicType type)
         {
             Pic pic = new Pic();
-            
             pic.type = type;
             pic.button = new Button(null, new Rectangle());
-            pic.inject = new Button(Settings.injectTexture,new Rectangle());
+            pic.inject = new Button(Settings.injectTexture, new Rectangle());
             pic.equation = new Button(Settings.equationTexture, new Rectangle());
             switch (type)
             {
                 case PicType.RGB:
                 case PicType.HSV:
                     pic.Trees = new AptNode[3];
-                    pic.Machines = new StackMachine[3];
+                    pic.Machines = new StackMachine[3];                   
                     break;
                 case PicType.GRADIENT:
                     pic.Trees = new AptNode[1];
-                    pic.Machines = new StackMachine[1];
+                    pic.Machines = new StackMachine[1];                    
                     break;
             }
             return pic;
+        }
+
+        public static Pic NewPic(PicType type, Random rand, int min, int max)
+        {
+            Pic pic = NewPic(type);
+                        
+            switch (type)
+            {
+                case PicType.RGB:
+                case PicType.HSV:                    
+                    for (int i = 0; i < 3; i++)
+                    {
+                        pic.Trees[i] = AptNode.GenerateTree(rand.Next(min, max), rand);
+                        pic.Machines[i] = new StackMachine(pic.Trees[i]);
+                    }
+                    break;
+                case PicType.GRADIENT:                    
+                    pic.Trees[0] = AptNode.GenerateTree(rand.Next(min, max), rand);
+                    pic.Machines[0] = new StackMachine(pic.Trees[0]);
+
+                    int numGradients = rand.Next(Settings.MIN_GRADIENTS, Settings.MAX_GRADIENTS);
+                    pic.gradients = new (Color?, Color?)[numGradients];
+                    pic.pos = new float[numGradients];
+                    for (int i = 0; i < pic.gradients.Length; i++)
+                    {
+                        bool isSuddenShift = rand.Next(0, Settings.CHANCE_HARD_GRADIENT) == 0;
+                        if (!isSuddenShift)
+                        {
+                            pic.gradients[i] = (GraphUtils.RandomColor(rand), null);
+                        }
+                        else
+                        {
+                            pic.gradients[i] = (GraphUtils.RandomColor(rand), GraphUtils.RandomColor(rand));
+                        }
+                        pic.pos[i] = (float)(rand.NextDouble() * 2.0 - 1.0);
+                        Array.Sort(pic.pos);
+                    }
+                    pic.pos[0] = -1.0f;
+                    pic.pos[pic.pos.Length - 1] = 1.0f;
+                    break;
+            }
+            return pic;
+        }
+
+        public static void SetupTextbox(Pic p, GraphicsDevice g, GameWindow window)
+        {
+            string lisp = p.ToLisp();
+            p.textBox = new TextBox(lisp, window, GraphUtils.GetTexture(g, new Color(0, 0, 0, 128)), GraphUtils.GetTexture(g, Color.Cyan), p.button.bounds, Settings.equationFont, Color.White);
         }
 
         public static Pic Clone(Pic toClone)
@@ -67,20 +114,19 @@ namespace GameLogic
                 Rectangle rect = new Rectangle(pic.button.bounds.X - 5, pic.button.bounds.Y - 5, pic.button.bounds.Width + 10, pic.button.bounds.Height + 10);
                 batch.Draw(Settings.selectedTexture, rect, Color.White);
             }
-            
             pic.button.Draw(batch, gameTime);
-            pic.inject.Draw(batch, gameTime);
-            pic.equation.Draw(batch, gameTime);
+            pic.inject.Draw(batch, gameTime);                                                           
+        }
 
-            if (pic.showEquation)
+        public static void ZoomDraw(Pic pic, SpriteBatch batch, GameTime gameTime)
+        {
+
+            pic.button.Draw(batch, gameTime);
+            pic.equation.Draw(batch, gameTime);
+            if (pic.textBox.IsActive())
             {
-                pic.textBox.Draw(batch, gameTime);
-                pic.textBox.SetActive(true);
-                    
-                    
+                pic.textBox.Draw(batch, gameTime);                
             }
-                        
-            
         }
 
         public static void SetNewBounds(Pic pic, Rectangle bounds, GraphicsDevice g)
@@ -91,7 +137,7 @@ namespace GameLogic
                 pic.button.tex.Dispose();
             }
             pic.inject.bounds = new Rectangle(bounds.X, bounds.Y + bounds.Height + 5, 20, 20);
-            pic.equation.bounds = new Rectangle(bounds.X+30, bounds.Y + bounds.Height + 5, 20, 20);            
+            pic.equation.bounds = new Rectangle(bounds.X+30, (int)(bounds.Y + bounds.Height * .9f), 20, 20);            
             RegenTex(pic, g);            
         }
 
@@ -144,57 +190,6 @@ namespace GameLogic
                 s.RebuildInstructions(t);
             }
             return result;
-        }
-
-        public static Pic GenGradientPic(int min, int max, Random rand)
-        {
-            Pic pic = NewPic(PicType.GRADIENT);
-            
-            pic.Trees[0] = AptNode.GenerateTree(rand.Next(min, max), rand);
-            pic.Machines[0] = new StackMachine(pic.Trees[0]);
-
-            int numGradients = rand.Next(Settings.MIN_GRADIENTS,Settings.MAX_GRADIENTS);
-            pic.gradients = new (Color?,Color?)[numGradients];
-            pic.pos = new float[numGradients];            
-            for (int i = 0; i < pic.gradients.Length; i++)
-            {
-                bool isSuddenShift = rand.Next(0, Settings.CHANCE_HARD_GRADIENT) == 0;
-                if (!isSuddenShift)
-                {
-                    pic.gradients[i] = (GraphUtils.RandomColor(rand), null);
-                }
-                else
-                {
-                    pic.gradients[i] = (GraphUtils.RandomColor(rand), GraphUtils.RandomColor(rand));
-                }
-                pic.pos[i] = (float)(rand.NextDouble() * 2.0 - 1.0);
-                Array.Sort(pic.pos);
-            }
-            pic.pos[0] = -1.0f;
-            pic.pos[pic.pos.Length - 1] = 1.0f;
-            return pic;
-        }
-
-        public static Pic GenRGBPic(int min, int max, Random rand)
-        {
-            Pic pic = NewPic(PicType.RGB);
-            for (int i = 0; i < 3; i++)
-            {
-                pic.Trees[i] = AptNode.GenerateTree(rand.Next(min, max), rand);
-                pic.Machines[i] = new StackMachine(pic.Trees[i]);
-            }            
-            return pic;
-        }
-
-        public static Pic GenHSVPic(int min, int max, Random rand)
-        {
-            Pic pic = NewPic(PicType.HSV);
-            for (int i = 0; i < 3; i++)
-            {
-                pic.Trees[i] = AptNode.GenerateTree(rand.Next(min, max), rand);
-                pic.Machines[i] = new StackMachine(pic.Trees[i]);
-            }
-            return pic;
         }
 
         public static void RegenTex(Pic p,GraphicsDevice graphics)

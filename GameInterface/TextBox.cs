@@ -14,16 +14,16 @@ namespace GameInterface
         public string contents;
         Color color;
         Border border;
-        Cursor cursor;
+        public Cursor cursor;
         SpriteFont font;        
-        bool active;
+        private bool active;
         Rectangle bounds;
-        EventHandler<TextInputEventArgs> textEvents;
+        GameWindow window;
 
-        public TextBox(string contents, EventHandler<TextInputEventArgs> textEvents, Texture2D background, Texture2D pixelTex, Rectangle bounds, SpriteFont font, Color color)
+        public TextBox(string contents, GameWindow window, Texture2D background, Texture2D pixelTex, Rectangle bounds, SpriteFont font, Color color)
         {            
             active = false;
-            this.textEvents = textEvents;
+            this.window = window;
             this.bounds = bounds;
             this.color = color;                        
             this.font = font;
@@ -50,56 +50,21 @@ namespace GameInterface
             if (a && !active)
             {
                 active = true;
-                textEvents += HandleInput;
+                window.TextInput += HandleInput;
             }
             else if (!a && active)
             {
                 active = false;
-                textEvents -= HandleInput;
+                window.TextInput -= HandleInput;
             }
         }
 
-        public void Update(GameTime gameTime)
+        public bool IsActive()
         {
-            /*
-            if (active)
-            {
-                if (game.IsKey(Keys.Back, gameTime))
-                {
-                    if (cursor.Pos > 0)
-                    {
-                        contents = contents.Remove(cursor.Pos - 1, 1);
-                        cursor.Pos--;
-                    }
-                }
-                else if (game.IsKey(Keys.Delete, gameTime))
-                {
-                    if (cursor.Pos < contents.Length)
-                    {
-                        contents = contents.Remove(cursor.Pos, 1);
-                    }
-                }
-                else if (game.IsKey(Keys.Home, gameTime))
-                {
-                    cursor.Pos = 0;
-                }
-                else if (game.IsKey(Keys.End, gameTime))
-                {
-                    cursor.Pos = contents.Length;
-                }
-                else if (game.IsKey(Keys.Right, gameTime))
-                {
-                    if (cursor.Pos < contents.Length)
-                        cursor.Pos++;
-                }
-                else if (game.IsKey(Keys.Left, gameTime))
-                {
-                    cursor.Pos--;
-                }
-            }
-            */
+            return active;
         }
 
+      
         public void Draw(SpriteBatch batch, GameTime gameTime)
         {
             Color c = color;                        
