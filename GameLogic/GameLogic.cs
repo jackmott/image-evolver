@@ -1,30 +1,38 @@
 ﻿// TODO resize big buttons onresize properly
 
 using Microsoft.Xna.Framework;
-using Microsoft.Xna.Framework.Input;
 using Microsoft.Xna.Framework.Graphics;
 using System;
-using GameInterface;
-using System.Diagnostics;
-using static GameLogic.PicFunctions;
 using System.Collections.Generic;
 using System.Linq;
 using System.IO;
 using Microsoft.Xna.Framework.Content;
+using System.Runtime.Serialization.Formatters.Binary;
+using System.Runtime.Serialization;
+using System.Xml;
 
 namespace GameLogic
 {
 
-    public class GameLogic : IGameInterface
+    public class GameLogic
     {
         public GameState state;
-        public void SetState(GameState state)
-        {
-            this.state = state;
-        }
-        
 
-        public GameState Init(GraphicsDevice g,GameWindow window,ContentManager content)
+
+        public GameState SetState(string xml)
+        {
+            using (XmlReader reader = XmlReader.Create(new StringReader(xml)))
+            {
+                DataContractSerializer formatter0 =
+                    new DataContractSerializer(typeof(GameState));
+                state = (GameState)formatter0.ReadObject(reader);
+                return state;
+            }
+
+            
+        }
+
+        public GameState Init(GraphicsDevice g, GameWindow window, ContentManager content)
         {
             state = new GameState();
             state.r = new Random();
@@ -49,7 +57,9 @@ namespace GameLogic
             {
                 try
                 {
-                    var tex = Texture2D.FromStream(g, new FileStream(file.FullName, FileMode.Open));
+                    var fs = new FileStream(file.FullName, FileMode.Open);
+                    var tex = Texture2D.FromStream(g, fs);
+                    fs.Close();
                     Color[] colors = new Color[tex.Width * tex.Height];
                     tex.GetData(colors);
                     ExternalImage img = new ExternalImage { data = colors, w = tex.Width, h = tex.Height };
@@ -68,7 +78,7 @@ namespace GameLogic
             Random r = state.r;
             GenTrees(r);
             LayoutUI();
-            
+
             return state;
         }
 
@@ -91,7 +101,7 @@ namespace GameLogic
 
             spaceRemaining = winH - vSpace * (numPerColumn + 1);
             int picH = spaceRemaining / numPerColumn;
-            
+
             var pos = new Vector2(0, 0);
             int index = 0;
             for (int y = 0; y < Settings.POP_SIZE_COLUMNS - 1; y++)
@@ -100,7 +110,7 @@ namespace GameLogic
                 for (int x = 0; x < Settings.POP_SIZE_COLUMNS; x++)
                 {
                     pos.X += hSpace;
-                    SetNewBounds(state.pictures[index],new Rectangle((int)pos.X, (int)pos.Y, picW, picH),g);                                       
+                    state.pictures[index].SetNewBounds(new Rectangle((int)pos.X, (int)pos.Y, picW, picH), g);
                     index++;
                     pos.X += picW;
 
@@ -108,7 +118,7 @@ namespace GameLogic
                 pos.Y += picH;
                 pos.X = 0;
             }
-            
+
         }
 
         public void OnResize()
@@ -132,10 +142,10 @@ namespace GameLogic
         public void ZoomDraw(SpriteBatch batch, GameTime gameTime)
         {
 
-           
+
             state.g.Clear(Color.Black);
-            batch.Begin();                        
-            PicFunctions.ZoomDraw(state.zoomedPic,batch, gameTime);
+            batch.Begin();
+            state.zoomedPic.ZoomDraw(batch, gameTime);
             batch.End();
             // TODO: Add your drawing code here
         }
@@ -144,7 +154,7 @@ namespace GameLogic
         public void ChooseDraw(SpriteBatch batch, GameTime gameTime)
         {
             var g = state.g;
-            
+
             g.Clear(Color.Black);
             batch.Begin();
             state.evolveButton.Draw(batch, gameTime);
@@ -152,7 +162,7 @@ namespace GameLogic
 
             foreach (var pic in state.pictures)
             {
-                PicFunctions.Draw(pic, batch, gameTime);
+                pic.Draw(batch, gameTime);
             }
             batch.End();
 
@@ -161,12 +171,12 @@ namespace GameLogic
 
         }
 
-
+        
 
         public GameState Update(GameTime gameTime)
         {
 
-            
+
             if (state.screen == Screen.CHOOSE)
             {
                 return ChooseUpdate(gameTime);
@@ -175,7 +185,7 @@ namespace GameLogic
             {
                 return ZoomUpdate(gameTime);
             }
-            
+
             return state;
         }
 
@@ -185,13 +195,15 @@ namespace GameLogic
             {
                 state.zoomedPic.textBox.SetActive(true);
             }
-            if (state.zoomedPic.textBox.IsActive()) {
-                TextBoxFunctions.Update(state.zoomedPic.textBox, state.inputState, gameTime);
+            if (state.zoomedPic.textBox.IsActive())
+            {
+                state.zoomedPic.textBox.Update(state.inputState, gameTime);
             }
-            if (state.zoomedPic.button.WasRightClicked(state.inputState)) {
+            if (state.zoomedPic.button.WasRightClicked(state.inputState))
+            {
                 state.screen = Screen.CHOOSE;
                 state.zoomedPic.zoomed = false;
-                state.zoomedPic = null;                
+                state.zoomedPic = null;
                 LayoutUI();
             }
             return state;
@@ -201,23 +213,23 @@ namespace GameLogic
             int chooser = r.Next(0, 3);
             Pic p;
             if (chooser == 0)
-            {                
-                p = NewPic(PicType.RGB, r, Settings.MIN_GEN_SIZE, Settings.MAX_GEN_SIZE);                
+            {
+                p = new Pic(PicType.RGB, r, Settings.MIN_GEN_SIZE, Settings.MAX_GEN_SIZE);
             }
             else if (chooser == 1)
-            {                
-                p = NewPic(PicType.HSV, r, Settings.MIN_GEN_SIZE, Settings.MAX_GEN_SIZE);                
+            {
+                p = new Pic(PicType.HSV, r, Settings.MIN_GEN_SIZE, Settings.MAX_GEN_SIZE);
             }
-            else 
-            {                
-                p = NewPic(PicType.GRADIENT, r, Settings.MIN_GEN_SIZE, Settings.MAX_GEN_SIZE);             
+            else
+            {
+                p = new Pic(PicType.GRADIENT, r, Settings.MIN_GEN_SIZE, Settings.MAX_GEN_SIZE);
             }
-            SetupTextbox(p, state.g, state.w);
-            return p;            
+            p.SetupTextbox(state.g, state.w);
+            return p;
         }
         public void GenTrees(Random r)
         {
-            foreach (var pic in state.pictures) 
+            foreach (var pic in state.pictures)
             {
                 if (pic.button.tex != null)
                 {
@@ -237,7 +249,7 @@ namespace GameLogic
         {
             var r = state.r;
             if (state.reRollButton.WasLeftClicked(state.inputState))
-            {               
+            {
                 GenTrees(r);
                 LayoutUI();
             }
@@ -252,7 +264,7 @@ namespace GameLogic
                 // Clear out all textures as they are about to get updated
                 foreach (var pic in state.pictures)
                 {
-                    if (pic.button.tex != null) 
+                    if (pic.button.tex != null)
                         pic.button.tex.Dispose();
                     pic.button.tex = null;
                 }
@@ -275,20 +287,20 @@ namespace GameLogic
                 {
                     var first = nextGeneration[state.r.Next(0, selectedCount)];
                     var second = nextGeneration[state.r.Next(0, selectedCount)];
-                    
-                    var child = BreedWith(first,second, state.r);
-                    child = Mutate(child,state.r);                    
+
+                    var child = first.BreedWith(second, state.r);
+                    child = child.Mutate(state.r);
                     nextGeneration.Add(child);
-                    
+
                 }
                 state.pictures = nextGeneration;
                 LayoutUI();
 
             }
-            for(int i = 0; i< state.pictures.Count(); i++)
+            for (int i = 0; i < state.pictures.Count(); i++)
             {
                 var pic = state.pictures[i];
-               
+
                 if (pic.button.WasLeftClicked(state.inputState))
                 {
                     pic.selected = !pic.selected;
@@ -298,12 +310,12 @@ namespace GameLogic
                 {
                     pic.button.tex.Dispose();
                     state.pictures[i] = GenTree(r);
-                    SetNewBounds(state.pictures[i], pic.button.bounds, state.g);                    
+                    state.pictures[i].SetNewBounds(pic.button.bounds, state.g);
                 }
 
                 if (pic.equation.WasLeftClicked(state.inputState))
                 {
-                    pic.showEquation = !pic.showEquation;                    
+                    pic.showEquation = !pic.showEquation;
                     Console.WriteLine(pic.ToLisp());
                 }
 
@@ -311,7 +323,7 @@ namespace GameLogic
                 {
                     state.zoomedPic = pic;
                     pic.zoomed = true;
-                    SetNewBounds(pic, new Rectangle(0, 0, state.g.Viewport.Width, state.g.Viewport.Height), state.g);
+                    pic.SetNewBounds(new Rectangle(0, 0, state.g.Viewport.Width, state.g.Viewport.Height), state.g);
                     Console.WriteLine(state.zoomedPic.ToLisp());
                     state.screen = Screen.ZOOM;
                 }

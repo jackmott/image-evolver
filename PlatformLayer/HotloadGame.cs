@@ -2,7 +2,6 @@
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using System;
-using GameInterface;
 
 namespace ImageEvolver
 {
@@ -13,8 +12,7 @@ namespace ImageEvolver
     {
         GraphicsDeviceManager graphics;
         SpriteBatch spriteBatch;
-        Hotloader hotloader;
-        GameState state;
+        Hotloader hotloader;        
         
         
         int screenWidth;
@@ -63,10 +61,8 @@ namespace ImageEvolver
         /// </summary>
         protected override void LoadContent()
         {
-            hotloader = new Hotloader(Content, GraphicsDevice);                        
-            spriteBatch = new SpriteBatch(GraphicsDevice);
-            hotloader.Init(GraphicsDevice,Window,Content);
-            
+            hotloader = new Hotloader(Content,Window, GraphicsDevice);                        
+            spriteBatch = new SpriteBatch(GraphicsDevice);                        
         }
 
         /// <summary>
@@ -89,18 +85,18 @@ namespace ImageEvolver
                 Exit();
 
             // TODO: Add your update logic here
-            hotloader.CheckDLL(state);
+            hotloader.CheckDLL();
 #if DEBUG
             hotloader.CheckShaders();
 #endif
-            if (state != null)
+            if (hotloader.state != null)
             {
-                state.inputState.keyboardState = Keyboard.GetState();
-                state.inputState.mouseState = Mouse.GetState();
+                hotloader.state.inputState.keyboardState = Keyboard.GetState();
+                hotloader.state.inputState.mouseState = Mouse.GetState();
             }
-            state = hotloader.Update(gameTime);
-            state.inputState.prevKeyboardState = state.inputState.keyboardState;
-            state.inputState.prevMouseState = state.inputState.mouseState;
+            hotloader.Update(gameTime);
+            hotloader.state.inputState.prevKeyboardState = hotloader.state.inputState.keyboardState;
+            hotloader.state.inputState.prevMouseState = hotloader.state.inputState.mouseState;
             base.Update(gameTime);
         }
 

@@ -52,7 +52,10 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
+    <Reference Include="Microsoft.CSharp" />
     <Reference Include="System" />
+    <Reference Include="System.Runtime.Serialization" />
+    <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="Assets\darwin.jpg">
@@ -77,12 +80,6 @@
     <None Include="app.config" />
     <None Include="app.manifest" />
     <None Include="Content\equation-font.spritefont" />
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\GameInterface\GameInterface.csproj">
-      <Project>{49c8c828-7fc1-4751-af09-905f3d8032e9}</Project>
-      <Name>GameInterface</Name>
-    </ProjectReference>
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="MonoGame.Framework.WindowsDX">

@@ -1,0 +1,224 @@
+
+
+
+
+
+
+
+
+
+
+
+
+<html lang="en">
+  <head><script>var aPageStart = (new Date()).getTime();</script><meta charset="utf-8">
+    <!-- TODO LC-1948: Use cached resources for icon -->
+    <link rel="icon" href="/resources/img/favicon.ico">
+    <script>
+(function(g,h,O,pa){function k(a){v&&v.tag&&v.tag(q(":","aui",a))}function x(a,b){v&&v.count&&v.count("aui:"+a,0===b?0:b||(v.count("aui:"+a)||0)+1)}function l(a){try{return a.test(navigator.userAgent)}catch(b){return!1}}function w(a,b,c){a.addEventListener?a.addEventListener(b,c,!1):a.attachEvent&&a.attachEvent("on"+b,c)}function q(a,b,c,d){b=b&&c?b+a+c:b||c;return d?q(a,b,d):b}function E(a,b,c){try{Object.defineProperty(a,b,{value:c,writable:!1})}catch(d){a[b]=c}return c}function P(){return setTimeout(Y,
+0)}function qa(a,b){var c=a.length,d=c,f=function(){d--||(Q.push(b),R||(P(),R=!0))};for(f();c--;)Z[a[c]]?f():(z[a[c]]=z[a[c]]||[]).push(f)}function ra(a,b,c,d,f){var e=h.createElement(a?"script":"link");w(e,"error",d);f&&w(e,"load",f);if(a){e.type="text/javascript";e.async=!0;if(a=c)a=-1!==b.indexOf("images/I")||/AUIClients/.test(b);a&&e.setAttribute("crossorigin","anonymous");e.src=b}else e.rel="stylesheet",e.href=b;h.getElementsByTagName("head")[0].appendChild(e)}function aa(a,b){function c(c,d){function f(){ra(b,
+c,h,function(b){!F&&h?(h=!1,x("resource_retry"),f()):(x("resource_error"),a.log("Asset failed to load: "+c,F?"WARN":void 0));b&&b.stopPropagation?b.stopPropagation():g.event&&(g.event.cancelBubble=!0)},d)}if(ba[c])return!1;ba[c]=!0;x("resource_count");var h=!0;return!f()}if(b){var d=0,f=0;c.andConfirm=function(a,b){return c(a,function(){d++;b&&b.apply(this,arguments)})};c.confirm=function(){f++};c.getCsriCounters=function(){return{reqs:d,full:f}}}return c}function sa(a,b,c){for(var d={name:a,guard:function(c){return b.guardFatal(a,
+c)},logError:function(c,d,f){b.logError(c,d,f,a)}},f=[],e=0;e<c.length;e++)G.hasOwnProperty(c[e])&&(f[e]=S.hasOwnProperty(c[e])?S[c[e]](G[c[e]],d):G[c[e]]);return f}function A(a,b,c,d,f){return function(e,h){function n(){var a=null;d?a=h:"function"===typeof h&&(p.start=B(),a=h.apply(g,sa(e,k,l)),p.end=B());if(b){G[e]=a;a=e;for(Z[a]=!0;(z[a]||[]).length;)z[a].shift()();delete z[a]}p.done=!0}var k=f||this;"function"===typeof e&&(h=e,e=void 0);b&&(e=e?e.replace(ca,""):"__NONAME__",T.hasOwnProperty(e)&&
+k.error(q(", reregistered by ",q(" by ",e+" already registered",T[e]),k.attribution),e),T[e]=k.attribution);for(var l=[],m=0;m<a.length;m++)l[m]=a[m].replace(ca,"");var p=da[e||"anon"+ ++ta]={depend:l,registered:B(),namespace:k.namespace};c?n():qa(l,k.guardFatal(e,n));return{decorate:function(a){S[e]=k.guardFatal(e,a)}}}}function ea(a){return function(){var b=Array.prototype.slice.call(arguments);return{execute:A(b,!1,a,!1,this),register:A(b,!0,a,!1,this)}}}function U(a,b){return function(c,d){d||
+(d=c,c=void 0);var f=this.attribution;return function(){y.push(b||{attribution:f,name:c,logLevel:a});var e=d.apply(this,arguments);y.pop();return e}}}function H(a,b){this.load={js:aa(this,!0),css:aa(this)};E(this,"namespace",b);E(this,"attribution",a)}function fa(){h.body?p.trigger("a-bodyBegin"):setTimeout(fa,20)}function C(a,b){if(b){for(var c=a.className.split(" "),d=c.length;d--;)if(c[d]===b)return;a.className+=" "+b}}function ga(a,b){for(var c=a.className.split(" "),d=[],f;void 0!==(f=c.pop());)f&&
+f!==b&&d.push(f);a.className=d.join(" ")}function ha(a){try{return a()}catch(b){return!1}}function I(){if(J){var a=g.innerWidth?{w:g.innerWidth,h:g.innerHeight}:{w:m.clientWidth,h:m.clientHeight};5<Math.abs(a.w-V.w)||50<a.h-V.h?(V=a,K=4,(a=n.mobile||n.tablet?450<a.w&&a.w>a.h:1250<=a.w)?C(m,"a-ws"):ga(m,"a-ws")):0<K&&(K--,ia=setTimeout(I,16))}}function ua(a){(J=void 0===a?!J:!!a)&&I()}function va(){return J}function r(a,b){return"sw:"+(b||"")+":"+a+":"}function ja(a,b,c,d){if(c){b=l(/Chrome/i)&&!l(/Edge/i)&&
+!l(/OPR/i)&&!a.capabilities.isAmazonApp;var f=r(d,"browser"),e=r(d,"prod_mshop"),g=r(d,"beta_mshop");!a.capabilities.isAmazonApp&&c.browser&&b&&(k(f+"supported"),c.browser.action(f,d));!b&&c.browser&&k(f+"unsupported");c.prodMshop&&k(e+"unsupported");c.betaMshop&&k(g+"unsupported")}}"use strict";var L=O.now=O.now||function(){return+new O},B=function(a){return a&&a.now?a.now.bind(a):L}(g.performance);pa=B();var t=g.AmazonUIPageJS||g.P;if(t&&t.when&&t.register)throw Error("A copy of P has already been loaded on this page.");
+var v=g.ue;k();k("aui_build_date:3.18.15-2018-11-13");var Q=[],R=!1,Y;Y=function(){for(var a=P(),b=L();Q.length;)if(Q.shift()(),50<L()-b)return;clearTimeout(a);R=!1};l(/OS 6_[0-9]+ like Mac OS X/i)&&w(g,"scroll",P);var Z={},z={},ba={},F=!1;w(g,"beforeunload",function(){F=!0;setTimeout(function(){F=!1},1E4)});var ca=/^prv:/,T={},G={},S={},da={},ta=0,D,y=[],ka=g.onerror;g.onerror=function(a,b,c,d,f){f&&"object"===typeof f||(f=Error(a,b,c),f.columnNumber=d,f.stack=b||c||d?q(String.fromCharCode(92),f.message,
+"at "+q(":",b,c,d)):void 0);var e=y.pop()||{};f.attribution=q(":",f.attribution||e.attribution,e.name);f.logLevel=e.logLevel;f.attribution&&console&&console.log&&console.log([f.logLevel||"ERROR",a,"thrown by",f.attribution].join(" "));y=[];ka&&(e=[].slice.call(arguments),e[4]=f,ka.apply(g,e))};H.prototype={logError:function(a,b,c,d){b={message:b,logLevel:c||"ERROR",attribution:q(":",this.attribution,d)};if(g.ueLogError)return g.ueLogError(a||b,a?b:null),!0;console&&console.error&&(console.log(b),
+console.error(a));return!1},error:function(a,b,c,d){a=Error(q(":",d,a,c));a.attribution=q(":",this.attribution,b);throw a;},guardError:U(),guardFatal:U("FATAL"),guardCurrent:function(a){var b=y[y.length-1];return b?U(b.logLevel,b).call(this,a):a},log:function(a,b,c){return this.logError(null,a,b,c)},declare:A([],!0,!0,!0),register:A([],!0),execute:A([]),AUI_BUILD_DATE:"3.18.15-2018-11-13",when:ea(),now:ea(!0),trigger:function(a,b,c){var d=L();this.declare(a,{data:b,pageElapsedTime:d-(g.aPageStart||
+NaN),triggerTime:d});c&&c.instrument&&D.when("prv:a-logTrigger").execute(function(b){b(a)})},handleTriggers:function(){this.log("handleTriggers deprecated")},attributeErrors:function(a){return new H(a)},_namespace:function(a,b){return new H(a,b)}};var p=E(g,"AmazonUIPageJS",new H);D=p._namespace("PageJS","AmazonUI");D.declare("prv:p-debug",da);p.declare("p-recorder-events",[]);p.declare("p-recorder-stop",function(){});E(g,"P",p);fa();if(h.addEventListener){var la;h.addEventListener("DOMContentLoaded",
+la=function(){p.trigger("a-domready");h.removeEventListener("DOMContentLoaded",la,!1)},!1)}var m=h.documentElement,W=function(){var a=["O","ms","Moz","Webkit"],b=h.createElement("div");return{testGradients:function(){b.style.cssText="background-image:-webkit-gradient(linear,left top,right bottom,from(#9f9),to(white));background-image:-webkit-linear-gradient(left top,#9f9,white);background-image:linear-gradient(left top,#9f9,white);";return-1<b.style.backgroundImage.indexOf("gradient")},test:function(c){var d=
+c.charAt(0).toUpperCase()+c.substr(1);c=(a.join(d+" ")+d+" "+c).split(" ");for(d=c.length;d--;)if(""===b.style[c[d]])return!0;return!1},testTransform3d:function(){var a=!1;g.matchMedia&&(a=g.matchMedia("(-webkit-transform-3d)").matches);return a}}}(),t=m.className,ma=/(^| )a-mobile( |$)/.test(t),na=/(^| )a-tablet( |$)/.test(t),n={audio:function(){return!!h.createElement("audio").canPlayType},video:function(){return!!h.createElement("video").canPlayType},canvas:function(){return!!h.createElement("canvas").getContext},
+svg:function(){return!!h.createElementNS&&!!h.createElementNS("http://www.w3.org/2000/svg","svg").createSVGRect},offline:function(){return navigator.hasOwnProperty&&navigator.hasOwnProperty("onLine")&&navigator.onLine},dragDrop:function(){return"draggable"in h.createElement("span")},geolocation:function(){return!!navigator.geolocation},history:function(){return!(!g.history||!g.history.pushState)},webworker:function(){return!!g.Worker},autofocus:function(){return"autofocus"in h.createElement("input")},
+inputPlaceholder:function(){return"placeholder"in h.createElement("input")},textareaPlaceholder:function(){return"placeholder"in h.createElement("textarea")},localStorage:function(){return"localStorage"in g&&null!==g.localStorage},orientation:function(){return"orientation"in g},touch:function(){return"ontouchend"in h},gradients:function(){return W.testGradients()},hires:function(){var a=g.devicePixelRatio&&1.5<=g.devicePixelRatio||g.matchMedia&&g.matchMedia("(min-resolution:144dpi)").matches;x("hiRes"+
+(ma?"Mobile":na?"Tablet":"Desktop"),a?1:0);return a},transform3d:function(){return W.testTransform3d()},touchScrolling:function(){return l(/Windowshop|android.([3-9]|[L-Z])|OS ([5-9]|[1-9][0-9]+)(_[0-9]{1,2})+ like Mac OS X|Chrome|Silk|Firefox|Trident.+?; Touch/i)},ios:function(){return l(/OS [1-9][0-9]*(_[0-9]*)+ like Mac OS X/i)&&!l(/trident|Edge/i)},android:function(){return l(/android.([1-9]|[L-Z])/i)&&!l(/trident|Edge/i)},mobile:function(){return ma},tablet:function(){return na}},u;for(u in n)n.hasOwnProperty(u)&&
+(n[u]=ha(n[u]));for(var X="textShadow textStroke boxShadow borderRadius borderImage opacity transform transition".split(" "),M=0;M<X.length;M++)n[X[M]]=ha(function(){return W.test(X[M])});var J=!0,ia=0,V={w:0,h:0},K=4;I();w(g,"resize",function(){clearTimeout(ia);K=4;I()});var oa={getItem:function(a){try{return g.localStorage.getItem(a)}catch(b){}},setItem:function(a,b){try{return g.localStorage.setItem(a,b)}catch(c){}}};ga(m,"a-no-js");C(m,"a-js");!l(/OS [1-8](_[0-9]*)+ like Mac OS X/i)||g.navigator.standalone||
+l(/safari/i)||C(m,"a-ember");t=[];for(u in n)n.hasOwnProperty(u)&&n[u]&&t.push("a-"+u.replace(/([A-Z])/g,function(a){return"-"+a.toLowerCase()}));C(m,t.join(" "));m.setAttribute("data-aui-build-date","3.18.15-2018-11-13");p.register("p-detect",function(){return{capabilities:n,localStorage:n.localStorage&&oa,toggleResponsiveGrid:ua,responsiveGridEnabled:va}});l(/UCBrowser/i)||n.localStorage&&C(m,oa.getItem("a-font-class"));p.declare("a-event-revised-handling",!1);var N=navigator.serviceWorker;N&&w(N,
+"message",function(a){a&&a.data&&x(a.data.k,a.data.v)});(function(a){var b=a.reg,c=a.unreg;N&&N.getRegistrations?(D.when("A","a-util").execute(function(a,b){ja(a,b,c,"unregister")}),w(g,"load",function(){D.when("A","a-util").execute(function(a,c){ja(a,c,b,"register")})})):(b&&(b.browser&&k(r("register","browser")+"unsupported"),b.prodMshop&&k(r("register","prod_mshop")+"unsupported"),b.betaMshop&&k(r("register","beta_mshop")+"unsupported")),c&&(c.browser&&k(r("unregister","browser")+"unsupported"),
+c.prodMshop&&k(r("unregister","prod_mshop")+"unsupported"),c.betaMshop&&k(r("unregister","beta_mshop")+"unsupported")))})({reg:{},unreg:{}});p.declare("a-fix-event-off",!1);x("pagejs:pkgExecTime",B()-NaN)})(window,document,Date);
+  (window.AmazonUIPageJS ? AmazonUIPageJS : P).load.js('https://images-na.ssl-images-amazon.com/images/I/61gI9g8kEwL._RC|11IYhapguOL.js,61hqz617hLL.js,21iSNz47xoL.js,012FVc3131L.js,119KAWlHU6L.js,31fv8bqHLoL.js,31ReKJl2X6L.js,51WivJzk7vL.js,11AHlQhPRjL.js,01NATrwbNUL.js,11aNYFFS5hL.js,116tgw9TSaL.js,21auxuI+dRL.js,01PoLXBDXWL.js,617Bk-PJ7EL.js,01mi-J86cyL.js,11BOgvnnntL.js,31Yk2xRPJGL.js,01rpauTep4L.js,01iyxuSGj4L.js,01t-7xu4umL.js_.js?AUIClients/AmazonUI#168183-T1.144375-T1');
+  (window.AmazonUIPageJS ? AmazonUIPageJS : P).load.js('https://images-na.ssl-images-amazon.com/images/I/91zucF8Y8tL.js?AUIClients/RexLiveCodeWebAppAssets');
+</script>
+
+    <link rel="stylesheet" href="https://images-na.ssl-images-amazon.com/images/I/61e0zver2nL._RC|01evdoiemkL.css,01K+Ps1DeEL.css,31bAdTWQ3tL.css,11NK7V6nvxL.css,11UGC+GXOPL.css,21LK7jaicML.css,11L58Qpo0GL.css,21EuGTxgpoL.css,01Xl9KigtzL.css,01YhS3Cs-hL.css,21GwE3cR-yL.css,019SHZnt8RL.css,01gv-pABIRL.css,11vZhCgAHbL.css,21Mne54CsmL.css,11WgRxUdJRL.css,01dU8+SPlFL.css,11DGn6WmpTL.css,01SHjPML6tL.css,111-D2qRjiL.css,01QrWuRrZ-L.css,31VvBsfI8-L.css,114KWZGKCVL.css,01cbS3UK11L.css,21gqsBkZE0L.css,01giMEP+djL.css_.css?AUIClients/AmazonUI#us.not-trident" />
+<link rel="stylesheet" href="https://images-na.ssl-images-amazon.com/images/I/71uTj88zZoL.css?AUIClients/RexLiveCodeWebAppAssets" />
+<link rel="stylesheet" href="https://images-na.ssl-images-amazon.com/images/I/41D2hK62LML.css?AUIClients/FontAwesomeAUIBuild" />
+
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+    <title>LiveCode</title>
+  </head>
+  <body
+    data-module="session"
+    data-doc-id="fe098911-d2fa-4712-bf53-a28916876780"
+    data-doc-mode="csharp"
+    
+
+    
+  >
+
+
+
+
+<section id="isitdown-banner"></section>
+
+<div id="header-area" class="main-row">
+    <nav class="navbar navbar-static-top navbar-default" style="margin-bottom: 0px; border: 0px">
+        <div class="navbar-header" role="heading" aria-level="1">
+            <a id="home-link" class="navbar-brand" href="/" style="margin: 16px" aria-label="go to home page" alt="go to home page">
+                <img class="navbar-brand-image"
+                    src="https://m.media-amazon.com/images/G/01/acr/Amazon-logo-RGB._CB505282185_.png"
+                    aria-label="amazon logo"/>
+            </a>
+        </div>
+        <div class="container-fluid">
+            <div class="nav navbar-nav navbar-right">
+                <div style="margin: 16px 16px">
+                    
+                    <a href="/static/accessibility" aria-label="go to accessibility details page" role="heading" aria-level="1">Accessibility</a>
+                    <span style="margin: 20px" aria-hidden="true">&vert;</span>
+                    <span aria-hidden="true">Theme</span>
+                    <button id="theme-light" class="a11y-theme-change"><i class="fa fa-sun-o"></i></button>
+                    <button id="theme-dark" class="a11y-theme-change"><i class="fa fa-moon-o"></i></button>
+                    <span style="margin: 20px" aria-hidden="true">&vert;</span>
+                    <span aria-hidden="true">Font</span>
+                    <button id="font-decrease" class="a11y-font-resize"><i class="fa fa-minus"></i></button>
+                    <button id="font-reset" class="a11y-font-resize">Aa</button>
+                    <button id="font-increase" class="a11y-font-resize"><i class="fa fa-plus"></i></button>
+                </div>
+            </div>
+        </div>
+    </nav>
+</div>
+
+<div id="error-overlay" class="container-fluid" style="min-height: calc(100vh - 100px); overflow-y: auto;" aria-hidden="true">
+    <div class="row" style="display: flex; justify-content: space-between; min-height: calc(100vh - 100px);flex-direction: column; align-items: center;">
+        <h4>JavaScript and Cookies Must be enabled</h4>
+    </div>
+</div>
+
+<div id="main-area" role="main" class="container-fluid hidden" style="min-height: calc(100vh - 152px); overflow-y: auto;">
+    <header id="main-header" class="row">
+        <div class="editor-header">
+            <div class="legacyMode">
+              <span class="legacyMode__tooltip">
+                The editor has been enhanced but in case of issues you may turn on legacy mode
+              </span>
+              <label class="a11y-txt-hidden" aria-hidden="true">
+                Editor legacy mode
+              </label>
+              <div class="legacyMode__wrapper">
+                <button id="legacyMode__info" class="fa fa-info-circle" aria-hidden="true"></button>
+                <span class="legacyMode__toggle-text" aria-hidden="true">Legacy mode</span>
+                <button class="legacyMode__toggle" aria-pressed="false" aria-label="OFF">
+                  <span>ON</span><span>OFF</span>
+                </button>
+              </div>
+            </div>
+            <div class="tabTrapInfo" aria-hidden="true">
+              <i class="fa fa-info-circle"></i>
+              <span>press <em>Esc</em> to resume navigation by keyboard</span>
+            </div>
+        </div>
+        <div class="tools-header" aria-hidden="true">
+            <span id="connection-text" style="font-size: 100%">Connected </span>
+            <span id="connection-status" class="user-status online">
+                <span class="dot"></span>
+            </span>
+        </div>
+    </header>
+
+    <div class="a11y-hidden" aria-label="">
+        <div id="alert-current-line" role="alert" aria-live="assertive"></div>
+        <div id="alert-language-changed" role="alert" aria-live="assertive"></div>
+        <div id="alert-message-received" role="alert" aria-live="assertive"></div>
+        <div id="alert-message-sent" role="alert" aria-live="assertive"></div>
+        <div id="alert-new-user" role="alert" aria-live="assertive"></div>
+        <div id="alert-privacy-changed" role="alert" aria-live="assertive"></div>
+        <div id="summary" class="a11y-alert" role="alert" aria-live="assertive"></div>
+        <input id="editor-focus" type="button" accessKey="O" tabindex="-1" aria-hidden="true" aria-label="editor focus">
+        <div id="header-editor" role="heading" aria-level="1" aria-label="editor">Editor</div>
+        <textarea
+          id="reader"
+          class="a11y-reader"
+          cols="1000"
+          aria-live="assertive"
+          aria-labelledby="header-editor"></textarea>
+    </div>
+
+    <div class="row" style="display: flex;">
+
+        <div id="editor" class="jumbotron" tabindex="-1"></div>
+
+        <div id="tools-area" class="row-content">
+
+            <div class="form-group" id="lang-select">
+                <label for="editor-lang-select" role="heading" aria-level="1">Programming Language</label>
+                <select id="editor-lang-select" class="form-control side-panel-control" style="width: 100%; height: 40px; border-radius: 6px">
+                    <option disabled hidden="true">Select mode...</option>
+                    <option value="clojure" >Clojure</option><option value="c_cpp" >C/C++</option><option value="csharp"  selected >C#</option><option value="css" >CSS</option><option value="golang" >GoLang</option><option value="html" >HTML</option><option value="java" >Java</option><option value="javascript" >JavaScript</option><option value="objectivec" >Objective C</option><option value="plain_text" >Plain Text</option><option value="perl" >Perl</option><option value="python" >Python</option><option value="ruby" >Ruby</option><option value="scala" >Scala</option><option value="sh" >Shell Script</option><option value="sql" >SQL</option><option value="xml" >XML</option>
+                </select>
+            </div>
+
+            <div class="panel panel-default margin-top side-panel">
+                <div id="users-heading" class="panel-heading side-panel-heading" role="heading" aria-level="1" aria-label="Users">
+                    <span aria-hidden="true"><b>Users</b>&nbsp;</span><span id="user-count">1</span>
+                </div>
+                <div class="panel-body side-panel-body">
+                    <div id="user"></div>
+                    <div id="others"></div>
+                </div>
+            </div>
+
+            
+
+            <div class="chat-message-left">
+                <div class="chat-name"></div>
+                <div class="chat-message"></div>
+            </div>
+
+            <div class="chat-message-right">
+                <div>
+                    <span class="chat-status" aria-hidden="true"></span>
+                    <span class="chat-name"></span>
+                </div>
+                <div class="chat-message"></div>
+            </div>
+
+            <div id="chat-area" class="panel panel-default side-panel">
+                <div id="secondary-panel-heading" class="panel-heading side-panel-heading" role="heading" aria-level="1" aria-label="Chat"><b>Chat</b></div>
+                <div class="panel-body side-panel-body">
+                    <div id="chatArea"></div>
+                    <textarea id="messageText" rows="1" style="width:100%" aria-label="chat box" accessKey="K"></textarea>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div style="height: 100%; background: transparent;"></div>
+<div id="footer-area" class="main-row" aria-hidden="true">
+    <nav class="navbar-default">
+        <div class="container-fluid">
+            <ul class="nav navbar-nav">
+                <!-- TODO LC-1957: Add about link -->
+                <li>
+                    <a href="https://www.amazon.com/gp/help/customer/display.html/ref=footer_cou?ie=UTF8&nodeId=508088"
+                        class="navbar-link">Conditions of Use</a>
+                </li>
+                <li>
+                    <a href="https://www.amazon.com/gp/help/customer/display.html/ref=footer_privacy?ie=UTF8&nodeId=468496"
+                       class="navbar-link">Privacy Notice</a>
+                </li>
+                <li>
+                    <a href="mailto:livecode-dev@amazon.com?subject=Issue%20with%20LiveCode&body=%3D%3D%20Session%20URL%20%3D%3D%0D%0A%0D%0A%0D%0A%3D%3D%20Issue%20Description%20%3D%3D%0D%0A%0D%0A"
+                       class="navbar-link">Need Help?</a>
+                </li>
+            </ul>
+            <ul class="nav navbar-nav navbar-right">
+                <li class="navbar-text" aria-label="copyright notice">&copy; 1996-2018, Amazon.com, Inc. or its affiliates.</li>
+            </ul>
+        </div>
+    </nav>
+</div>
+</body>
+</html>

@@ -10,8 +10,6 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PlatformLayer", "PlatformLa
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GameLogic", "GameLogic\GameLogic.csproj", "{7D67509B-0D3A-44B6-9EA3-5A931ED557BA}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GameInterface", "GameInterface\GameInterface.csproj", "{49C8C828-7FC1-4751-AF09-905F3D8032E9}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -26,10 +24,6 @@ Global
 		{7D67509B-0D3A-44B6-9EA3-5A931ED557BA}.Debug|x64.Build.0 = Debug|x64
 		{7D67509B-0D3A-44B6-9EA3-5A931ED557BA}.Release|x64.ActiveCfg = Release|x64
 		{7D67509B-0D3A-44B6-9EA3-5A931ED557BA}.Release|x64.Build.0 = Release|x64
-		{49C8C828-7FC1-4751-AF09-905F3D8032E9}.Debug|x64.ActiveCfg = Debug|x64
-		{49C8C828-7FC1-4751-AF09-905F3D8032E9}.Debug|x64.Build.0 = Debug|x64
-		{49C8C828-7FC1-4751-AF09-905F3D8032E9}.Release|x64.ActiveCfg = Release|x64
-		{49C8C828-7FC1-4751-AF09-905F3D8032E9}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
