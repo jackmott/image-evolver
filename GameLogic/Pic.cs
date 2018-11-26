@@ -291,17 +291,49 @@ namespace GameLogic
 
            }
         }
+
+        public void RangeTest()
+        {
+            float min = float.MaxValue;
+            float max = float.MinValue;
+
+            float[][] stacks = new float[Machines.Length][];
+            for (int i = 0; i < stacks.Length; i++) {
+                stacks[i] = new float[Machines[i].nodeCount];
+            }
+
+            int h = 500;
+            int w = 500;
+            for (int y = 0; y < h; y++)
+            {
+                float yf = ((float)y / (float)h) * 2.0f - 1.0f;
+                int yw = y * w;
+                for (int x = 0; x < w; x++)
+                {
+                    float xf = ((float)x / (float)w) * 2.0f - 1.0f;
+
+                    for (int i = 0; i < Machines.Length; i++)
+                    {
+                        var f = Machines[i].Execute(xf, yf, stacks[i]);
+                        if (f < min) min = f;
+                        if (f > max) max = f;
+                    }                    
+                }
+
+            }
+
+            Console.WriteLine("min:" + min + " max:" + max + " range:" + (max - min));
+        }
         private Texture2D RGBToTexture(GraphicsDevice graphics, int w, int h)
         {
             Color[] colors = new Color[w * h];
-            var scale = (float)(255 / 2);
-            var offset = -1.0f * scale;
+            var scale = 0.5f;            
             var partition = Partitioner.Create(0, h);
 
             Parallel.ForEach(
                 partition,
                 (range, state) =>
-                {
+                {                   
                     var rStack = new float[Machines[0].nodeCount];
                     var gStack = new float[Machines[1].nodeCount];
                     var bStack = new float[Machines[2].nodeCount];
@@ -312,13 +344,15 @@ namespace GameLogic
                         for (int x = 0; x < w; x++)
                         {
                             float xf = ((float)x / (float)w) * 2.0f - 1.0f;
-                            var r = (byte)(Machines[0].Execute(xf, yf, rStack) * scale - offset);
-                            var g = (byte)(Machines[1].Execute(xf, yf, gStack) * scale - offset);
-                            var b = (byte)(Machines[2].Execute(xf, yf, bStack) * scale - offset);
+                            var rf = Wrap0To1(Machines[0].Execute(xf, yf, rStack) * scale - scale);
+                            var gf = Wrap0To1(Machines[1].Execute(xf, yf, gStack) * scale - scale);
+                            var bf = Wrap0To1(Machines[2].Execute(xf, yf, bStack) * scale - scale);
+                            byte r = (byte)(rf * 255.0f);
+                            byte g = (byte)(gf * 255.0f);
+                            byte b = (byte)(bf * 255.0f);
                             colors[yw + x] = new Color(r, g, b, (byte)255);
                         }
-                    }
-
+                    }                  
                 });
             Texture2D tex = new Texture2D(graphics, w, h);
             var tex2 = new Texture2D(graphics, w, h);
@@ -337,6 +371,7 @@ namespace GameLogic
                 partition,
                 (range, state) =>
                 {
+                   
                     var stack = new float[Machines[0].nodeCount];
                     
                     for (int y = range.Item1; y < range.Item2; y++)
@@ -346,7 +381,7 @@ namespace GameLogic
                         for (int x = 0; x < w; x++)
                         {
                             float xf = ((float)x / (float)w) * 2.0f - 1.0f;
-                            var r = Machines[0].Execute(xf, yf, stack);
+                            var r = Machines[0].Execute(xf, yf, stack);                           
                             int i = 0;
                             for (; i < pos.Length-2; i++)
                             {
@@ -371,8 +406,7 @@ namespace GameLogic
                             colors[yw + x] = Color.Lerp(c1, c2a.Value, pct);
                                                         
                         }
-                    }
-
+                    }                   
                 });
             Texture2D tex = new Texture2D(graphics, w, h);
             var tex2 = new Texture2D(graphics, w, h);

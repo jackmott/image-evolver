@@ -208,6 +208,47 @@ namespace GameLogic
             }
             return state;
         }
+
+
+        // for testing
+        public Pic GenTree(NodeType type, Random r)
+        {
+            AptNode root = AptNode.MakeNode(type);
+            if (root.children.Length >= 2)
+            {
+                root.AddLeaf(new AptNode { type = NodeType.X });
+                root.AddLeaf(new AptNode { type = NodeType.Y });
+            }
+            while (root.AddLeaf(new AptNode { type = NodeType.CONSTANT, value = (float)r.NextDouble()*2.0f-1.0f})) { }
+            //while (root.AddLeaf(new AptNode { type = NodeType.CONSTANT, value = 0.5f })) { }
+
+            int chooser = r.Next(0, 3);
+            Pic p;
+            if (chooser == 0)
+            {
+                p = new Pic(PicType.RGB, r, Settings.MIN_GEN_SIZE, Settings.MAX_GEN_SIZE, state.g, state.w);                
+            }
+            else if (chooser == 1)
+            {
+                p = new Pic(PicType.HSV, r, Settings.MIN_GEN_SIZE, Settings.MAX_GEN_SIZE, state.g, state.w);
+            }
+            else
+            {
+                p = new Pic(PicType.GRADIENT, r, Settings.MIN_GEN_SIZE, Settings.MAX_GEN_SIZE, state.g, state.w);
+            }
+
+            for (int i = 0; i < p.Trees.Count(); i++)
+            {
+                p.Trees[i] = root;
+                p.Machines[i] = new StackMachine(root);
+            }
+            p.SetupTextbox();
+
+            return p;
+            
+
+        }
+
         public Pic GenTree(Random r)
         {
             int chooser = r.Next(0, 3);
@@ -242,6 +283,7 @@ namespace GameLogic
             for (int i = 0; i < state.populationSize; i++)
             {
                 state.pictures.Add(GenTree(r));
+                //state.pictures[i].RangeTest();
             }
         }
 

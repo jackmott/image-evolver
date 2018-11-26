@@ -290,12 +290,8 @@ namespace GameLogic
             }
         }
 
-        public static AptNode GetRandomNode(Random r)
+        public static AptNode MakeNode(NodeType type)
         {
-            var enum_size = Enum.GetNames(typeof(NodeType)).Length;
-            //-1 because we don't include warp
-            var typeNum = r.Next(AptNode.NUM_LEAF_TYPES, enum_size - 1);
-            var type = (NodeType)typeNum;
             AptNode result;
             switch (type)
             {
@@ -312,7 +308,7 @@ namespace GameLogic
                 case NodeType.SUB:
                 case NodeType.MUL:
                 case NodeType.DIV:
-                case NodeType.ATAN2:
+               case NodeType.ATAN2:
                 case NodeType.MIN:
                 case NodeType.MAX:
                 case NodeType.MOD:
@@ -334,9 +330,16 @@ namespace GameLogic
                 default:
                     throw new Exception("GetRandomNode failed to match the switch");
             }
-
-
             return result;
+        }
+
+        public static AptNode GetRandomNode(Random r)
+        {
+            var enum_size = Enum.GetNames(typeof(NodeType)).Length;
+            //-1 because we don't include warp
+            var typeNum = r.Next(AptNode.NUM_LEAF_TYPES, enum_size - 1);
+            var type = (NodeType)typeNum;
+            return MakeNode(type);
 
         }
 

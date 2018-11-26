@@ -164,18 +164,18 @@ namespace GameLogic
                                 break;
                             case NodeType.FBM:
                                 {
-                                    var lac = stackPointer[sp - 3] * 4.0f + 1.5f;
-                                    var gain = stackPointer[sp - 4] * 1.0f + 0.3f;
-                                    stackPointer[sp - 4] = 2.0f * 0.3584f * FastNoise.SingleSimplexFractalFBM(stackPointer[sp], stackPointer[sp - 1], stackPointer[sp - 2], 1337, 3, lac, gain);
-                                    sp -= 4;
+                                    const float lac = 2.0f;
+                                    const float  gain = 0.5f;
+                                    stackPointer[sp - 2] = 2.0f * 0.49f * FastNoise.SingleSimplexFractalFBM(stackPointer[sp], stackPointer[sp - 1], stackPointer[sp - 2], 1337, 3, lac, gain);
+                                    sp -= 2;
                                     break;
                                 }
                             case NodeType.BILLOW:
                                 {
-                                    var lac = stackPointer[sp - 3] * 5.0f + 1.25f;
-                                    var gain = stackPointer[sp - 4] * 1.0f + 0.3f;
-                                    stackPointer[sp - 4] = 2.0f * ((0.3496f * FastNoise.SingleSimplexFractalBillow(stackPointer[sp], stackPointer[sp - 1], stackPointer[sp - 2], 1337, 3, lac, gain)) + 0.6118f) - 1.0f;
-                                    sp -= 4;
+                                    const float lac = 2.0f;
+                                    const float gain = 0.5f;
+                                    stackPointer[sp - 2] = 2.0f * ((0.422f * FastNoise.SingleSimplexFractalBillow(stackPointer[sp], stackPointer[sp - 1], stackPointer[sp - 2], 1337, 3, lac, gain)) + 0.739f) - 1.0f;
+                                    sp -= 2;
                                     break;
                                 }
                             case NodeType.CELL1:
@@ -216,7 +216,7 @@ namespace GameLogic
                             default:
                                 throw new Exception("Evexecute found a bad node");
                         }
-                        stackPointer[sp] = MathUtils.Constrain(stackPointer[sp], -1.0f, 1.0f);
+                       stackPointer[sp] = MathUtils.Constrain(stackPointer[sp], -1.0f, 1.0f);
                     }
                     return stackPointer[sp];
                 }
