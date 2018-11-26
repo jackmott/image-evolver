@@ -46,9 +46,14 @@ namespace GameLogic
         [DataMember]
         public TextBox textBox;
 
-        public Pic(PicType type)
+        GraphicsDevice g;
+        GameWindow w;
+
+        public Pic(PicType type, GraphicsDevice g, GameWindow w)
         {
-            
+
+            this.g = g;
+            this.w = w;
             this.type = type;
             button = new Button(null, new Rectangle());
             inject = new Button(Settings.injectTexture, new Rectangle());
@@ -67,8 +72,10 @@ namespace GameLogic
             }            
         }
 
-        public Pic(PicType type, Random rand, int min, int max)
+        public Pic(PicType type, Random rand, int min, int max, GraphicsDevice g, GameWindow w)
         {
+            this.g = g;
+            this.w = w;
             this.type = type;
             button = new Button(null, new Rectangle());
             inject = new Button(Settings.injectTexture, new Rectangle());
@@ -111,13 +118,15 @@ namespace GameLogic
                     pos[0] = -1.0f;
                     pos[pos.Length - 1] = 1.0f;
                     break;
-            }            
+            }
+
+            SetupTextbox();
         }
 
-        public void SetupTextbox(GraphicsDevice g, GameWindow window)
+        public void SetupTextbox()
         {
             string lisp = ToLisp();
-            textBox = new TextBox(lisp, window, GraphUtils.GetTexture(g, new Color(0, 0, 0, 128)), GraphUtils.GetTexture(g, Color.Cyan), button.bounds, Settings.equationFont, Color.White);
+            textBox = new TextBox(lisp, w, GraphUtils.GetTexture(g, new Color(0, 0, 0, 128)), GraphUtils.GetTexture(g, Color.Cyan), button.bounds, Settings.equationFont, Color.White);
         }
 
         public string ToLisp()
@@ -147,7 +156,7 @@ namespace GameLogic
 
         public Pic Clone()
         {
-            Pic pic = new Pic(type);
+            Pic pic = new Pic(type,g,w);
             if (gradients != null)
             {
                 var newGradients = new (Color?, Color?)[gradients.Length];
@@ -165,7 +174,8 @@ namespace GameLogic
             {
                 pic.Trees[i] = Trees[i].Clone();
                 pic.Machines[i] = new StackMachine(Trees[i]);
-            }            
+            }
+            pic.SetupTextbox();
             return pic;
         }
 

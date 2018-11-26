@@ -214,17 +214,17 @@ namespace GameLogic
             Pic p;
             if (chooser == 0)
             {
-                p = new Pic(PicType.RGB, r, Settings.MIN_GEN_SIZE, Settings.MAX_GEN_SIZE);
+                p = new Pic(PicType.RGB, r, Settings.MIN_GEN_SIZE, Settings.MAX_GEN_SIZE,state.g,state.w);
             }
             else if (chooser == 1)
             {
-                p = new Pic(PicType.HSV, r, Settings.MIN_GEN_SIZE, Settings.MAX_GEN_SIZE);
+                p = new Pic(PicType.HSV, r, Settings.MIN_GEN_SIZE, Settings.MAX_GEN_SIZE, state.g, state.w);
             }
             else
             {
-                p = new Pic(PicType.GRADIENT, r, Settings.MIN_GEN_SIZE, Settings.MAX_GEN_SIZE);
+                p = new Pic(PicType.GRADIENT, r, Settings.MIN_GEN_SIZE, Settings.MAX_GEN_SIZE, state.g, state.w);
             }
-            p.SetupTextbox(state.g, state.w);
+            
             return p;
         }
         public void GenTrees(Random r)
