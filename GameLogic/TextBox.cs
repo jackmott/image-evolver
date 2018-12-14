@@ -3,6 +3,8 @@ using System.Runtime.Serialization;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace GameLogic
 {
@@ -10,13 +12,15 @@ namespace GameLogic
     public class TextBox
     {
         [DataMember]
-        public string contents;
+        public string rawContents;
+        [DataMember]
+        public List<string> contents;
         [DataMember]
         public Color color;
         [DataMember]
         public Border border;
         [DataMember]
-        public Cursor cursor;        
+        public Point cursorPos;        
         public SpriteFont font;
         [DataMember]
         private bool active;
@@ -25,6 +29,10 @@ namespace GameLogic
         public GameWindow window;
         [DataMember]
         public Vector2 letterSize;
+        [DataMember]
+        public Texture2D pixelTex;
+        [DataMember]
+        private bool cursorOn;
 
         public TextBox(string contents, GameWindow window, Texture2D background, Texture2D pixelTex, Rectangle bounds, SpriteFont font, Color color)
         {
@@ -33,11 +41,25 @@ namespace GameLogic
             this.bounds = bounds;
             this.color = color;
             this.font = font;
-            this.contents = contents;
+            rawContents = contents;
+            this.contents = WordWrap.Wrap(contents, bounds.Width, WordWrap.MeasureWidth);
             letterSize = font.MeasureString("A");
+            this.pixelTex = pixelTex;
             border = new Border(pixelTex, bounds, 1);
-            cursor = new Cursor(pixelTex);
+            cursorPos = new Point(0, 0);
 
+        }
+
+        public void SetNewBounds(Rectangle bounds)
+        {
+            this.bounds = bounds;
+            this.contents = WordWrap.Wrap(rawContents, bounds.Width, WordWrap.MeasureWidth);
+
+        }
+
+        public void UpdateRawText()
+        {
+            rawContents = contents.Aggregate((a, b) => a + b);
         }
 
         public void Update(InputState state, GameTime gameTime)
@@ -46,35 +68,48 @@ namespace GameLogic
             {
                 if (TextUtils.IsKey(Keys.Back, state))
                 {
-                    if (cursor.Pos > 0)
-                    {
-                        contents = contents.Remove(cursor.Pos - 1, 1);
-                        cursor.Pos--;
+                    if (cursorPos.X > 0)
+                    {                        
+                        cursorPos.X--;
                     }
+                    else if (cursorPos.Y > 0)
+                    {
+                        cursorPos.Y--;
+                        cursorPos.X = contents[cursorPos.Y].Length-1;
+                    }
+                    contents[cursorPos.Y] = contents[cursorPos.Y].Remove(cursorPos.X, 1);
+                    UpdateRawText();
                 }
                 else if (TextUtils.IsKey(Keys.Delete, state))
                 {
-                    if (cursor.Pos < contents.Length)
+                    if (cursorPos.X < contents[cursorPos.Y].Length)
                     {
-                        contents = contents.Remove(cursor.Pos, 1);
+                        contents[cursorPos.Y] = contents[cursorPos.Y].Remove(cursorPos.X-1, 1);
+                    } else if (cursorPos.Y < contents.Count-1) 
+                    {
+                        //bring next line up
                     }
+                    //todo remove text
                 }
                 else if (TextUtils.IsKey(Keys.Home, state))
                 {
-                    cursor.Pos = 0;
+                    cursorPos.X = 0;
                 }
                 else if (TextUtils.IsKey(Keys.End, state))
                 {
-                    cursor.Pos = contents.Length;
+                    cursorPos.X = contents[cursorPos.Y].Length;
                 }
                 else if (TextUtils.IsKey(Keys.Right, state))
                 {
-                    if (cursor.Pos < contents.Length)
-                        cursor.Pos++;
+                    if (cursorPos.X < contents[cursorPos.Y].Length)
+                        cursorPos.X++;
                 }
                 else if (TextUtils.IsKey(Keys.Left, state))
                 {
-                    cursor.Pos--;
+                    if (cursorPos.X > 0)
+                    {
+                        cursorPos.X--;
+                    }
                 }
             }
         }
@@ -96,11 +131,11 @@ namespace GameLogic
                     {
                         c = e.Character;
                     }
-                    contents = contents.Insert(cursor.Pos, c.ToString());
-                    cursor.Pos++;
+                    contents[cursorPos.Y] = contents[cursorPos.Y].Insert(cursorPos.X, c.ToString());
+                    cursorPos.X++;
 
                 }
-
+                UpdateRawText();
             }
         }
 
@@ -128,42 +163,25 @@ namespace GameLogic
         {
             Color c = color;
             border.Draw(batch, c);
-            batch.DrawString(font, contents, new Vector2(bounds.X, bounds.Y), c);
-            if (active && gameTime.TotalGameTime.Milliseconds % 500 != 0)
+            for (int i = 0; i < contents.Count; i++)
             {
-                string substring = contents.Substring(0, cursor.Pos);
-                float contentWidth = font.MeasureString(substring).X;
-                int cursorX = (int)(bounds.X + contentWidth);
-                cursor.Draw(batch, new Rectangle(cursorX, (int)bounds.Y, (int)letterSize.X, (int)letterSize.Y), gameTime);
+                batch.DrawString(font, contents[i], new Vector2(bounds.X, bounds.Y+letterSize.Y*i), c);
+            }
+            if (active && gameTime.TotalGameTime.Milliseconds % 250 == 0)
+            {
+                cursorOn = !cursorOn;                
+            }
+            if (cursorOn)
+            {
+               // var letterSize = font.MeasureString("" + contents[cursorPos.Y][cursorPos.X]);
+                batch.Draw(pixelTex, new Rectangle((int)(cursorPos.X*letterSize.X),(int)(cursorPos.Y*letterSize.Y), (int)letterSize.X, (int)letterSize.Y), Color.White);
             }
 
 
         }
     }
 
-    [DataContract]
-    public class Cursor
-    {
-        
-        public Texture2D tex;
-        [DataMember]
-        public int pos;
-        [DataMember]
-        public int Pos {
-            get { return pos; }
-            set { pos = Math.Max(0, value); }
-        }
-        public Cursor(Texture2D tex)
-        {
-            this.tex = tex;
-            Pos = 0;
-        }
-
-        public void Draw(SpriteBatch batch, Rectangle rectangleToDraw, GameTime gameTime)
-        {
-            batch.Draw(tex, new Rectangle(rectangleToDraw.X, rectangleToDraw.Y, rectangleToDraw.Width, rectangleToDraw.Height), Color.White);
-        }
-    }
+ 
 
     [DataContract]
     public class Border

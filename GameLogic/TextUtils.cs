@@ -30,10 +30,10 @@ namespace GameLogic
             return (int)Settings.equationFont.MeasureString(s).X;
         }
 
-        public static string Wrap(string s, int width, Func<string, int> widthMeasure)
+        public static List<string> Wrap(string s, int width, Func<string, int> widthMeasure)
         {
-            int spaceWidth = widthMeasure(" ");
-            StringBuilder builder = new StringBuilder(s.Length);
+            int spaceWidth = widthMeasure(" ");            
+            var result = new List<string>();
             var text = s.AsSpan();
             int lineStart = 0;
             int lineLen = 0;
@@ -54,7 +54,7 @@ namespace GameLogic
                     }
                     else
                     {
-                        builder.AppendLine(text.Slice(lineStart, lineLen).ToString());
+                        result.Add(text.Slice(lineStart, lineLen).ToString());
                         lineLen = i - wordStart;
                         lineStart = wordStart;
                         wordStart = i + 1;
@@ -65,15 +65,15 @@ namespace GameLogic
                 }
                 if (text[i] == '\n')
                 {
-                    builder.AppendLine(text.Slice(lineStart, i - lineStart).ToString());
+                    result.Add(text.Slice(lineStart, i - lineStart).ToString());
                     lineLen = 0;
                     lineStart = i + 1;
                     wordStart = i + 1;
                     lineWidth = 0;
                 }
             }
-            builder.AppendLine(text.Slice(lineStart).ToString());
-            return builder.ToString();
+            result.Add(text.Slice(lineStart).ToString());
+            return result;
 
         }
 

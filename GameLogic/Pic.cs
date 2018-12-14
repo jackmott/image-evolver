@@ -125,7 +125,7 @@ namespace GameLogic
 
         public void SetupTextbox()
         {
-            string lisp = ToLisp();
+            string lisp = ToLisp();            
             textBox = new TextBox(lisp, w, GraphUtils.GetTexture(g, new Color(0, 0, 0, 128)), GraphUtils.GetTexture(g, Color.Cyan), button.bounds, Settings.equationFont, Color.White);
         }
 
@@ -208,6 +208,7 @@ namespace GameLogic
             {
                 button.tex.Dispose();
             }
+            textBox.SetNewBounds(bounds);
             inject.bounds = new Rectangle(bounds.X, bounds.Y + bounds.Height + 5, 20, 20);
             equation.bounds = new Rectangle(bounds.X+30, (int)(bounds.Y + bounds.Height * .9f), 20, 20);            
             RegenTex(g);            
