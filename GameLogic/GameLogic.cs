@@ -45,10 +45,7 @@ namespace GameLogic
 
             Settings.equationFont = content.Load<SpriteFont>("equation-font");
 
-            int w = g.Viewport.Width;
-            int h = g.Viewport.Height;
-            state.evolveButton = new Button(GraphUtils.GetTexture(g, Color.Red), new Rectangle((int)(w * .001f), (int)(h * .91f), (int)(w * .1f), (int)(h * 0.05f)));
-            state.reRollButton = new Button(GraphUtils.GetTexture(g, Color.Blue), new Rectangle((int)(w * .2f), (int)(h * .91f), (int)(w * .1f), (int)(h * 0.05f)));
+            
             DirectoryInfo d = new DirectoryInfo(AppDomain.CurrentDomain.BaseDirectory + @"\Assets");
             var files = d.GetFiles("*.jpg").AsEnumerable().Concat(d.GetFiles("*.png"));
             GameState.externalImages = new List<ExternalImage>();
@@ -88,6 +85,10 @@ namespace GameLogic
             int winW = g.Viewport.Width;
             int winH = g.Viewport.Height;
 
+            state.evolveButton = new Button(GraphUtils.GetTexture(g, Color.Red), new Rectangle((int)(winW * .001f), (int)(winH * .91f), (int)(winW * .1f), (int)(winH * 0.05f)));
+            state.reRollButton = new Button(GraphUtils.GetTexture(g, Color.Blue), new Rectangle((int)(winW * .2f), (int)(winH * .91f), (int)(winW * .1f), (int)(winH * 0.05f)));
+
+
             int UISpace = (int)(winH * 0.1f);
             winH -= UISpace;
 
@@ -119,6 +120,7 @@ namespace GameLogic
                 pos.X = 0;
             }
 
+          
         }
 
         public void OnResize()

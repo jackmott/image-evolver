@@ -71,20 +71,23 @@ namespace GameLogic
                     if (cursorPos.X > 0)
                     {                        
                         cursorPos.X--;
+                        contents[cursorPos.Y] = contents[cursorPos.Y].Remove(cursorPos.X, 1);
+                        UpdateRawText();
                     }
                     else if (cursorPos.Y > 0)
                     {
                         cursorPos.Y--;
                         cursorPos.X = contents[cursorPos.Y].Length-1;
+                        contents[cursorPos.Y] = contents[cursorPos.Y].Remove(cursorPos.X, 1);
+                        UpdateRawText();
                     }
-                    contents[cursorPos.Y] = contents[cursorPos.Y].Remove(cursorPos.X, 1);
-                    UpdateRawText();
+                    
                 }
                 else if (TextUtils.IsKey(Keys.Delete, state))
                 {
                     if (cursorPos.X < contents[cursorPos.Y].Length)
                     {
-                        contents[cursorPos.Y] = contents[cursorPos.Y].Remove(cursorPos.X-1, 1);
+                        contents[cursorPos.Y] = contents[cursorPos.Y].Remove(cursorPos.X, 1);
                     } else if (cursorPos.Y < contents.Count-1) 
                     {
                         //bring next line up

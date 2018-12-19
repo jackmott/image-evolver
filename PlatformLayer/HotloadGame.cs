@@ -22,8 +22,8 @@ namespace ImageEvolver
         public HotloadGame()
         {
             graphics = new GraphicsDeviceManager(this);
-            graphics.PreferredBackBufferWidth = 1920;
-            graphics.PreferredBackBufferHeight = 1080;
+            graphics.PreferredBackBufferWidth = 1024;
+            graphics.PreferredBackBufferHeight = 768;
             Window.AllowUserResizing = true;
             Window.ClientSizeChanged += OnResize;
             Content.RootDirectory = "Content";

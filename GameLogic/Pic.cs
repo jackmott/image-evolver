@@ -209,8 +209,8 @@ namespace GameLogic
                 button.tex.Dispose();
             }
             textBox.SetNewBounds(bounds);
-            inject.bounds = new Rectangle(bounds.X, bounds.Y + bounds.Height + 5, 20, 20);
-            equation.bounds = new Rectangle(bounds.X+30, (int)(bounds.Y + bounds.Height * .9f), 20, 20);            
+            inject.bounds = new Rectangle(bounds.X, bounds.Y + bounds.Height + 5, (int)(bounds.Width*.1),(int)(bounds.Height*.1));
+            equation.bounds = new Rectangle(bounds.X+(int)(bounds.Width * .1), (int)(bounds.Y + bounds.Height * .9f), (int)(bounds.Width * .1), (int)(bounds.Height * .1));            
             RegenTex(g);            
         }
 
