@@ -75,7 +75,7 @@
       <Version>3.7.1.189</Version>
     </PackageReference>
     <PackageReference Include="System.Memory">
-      <Version>4.5.1</Version>
+      <Version>4.5.2-servicing-27114-05</Version>
     </PackageReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
