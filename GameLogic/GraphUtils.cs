@@ -1,8 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework;
 
@@ -30,6 +27,16 @@ namespace GameLogic
         public static Color RandomColor(Random r)
         {
             return new Color((byte)r.Next(0, 256), (byte)r.Next(0, 256), (byte)r.Next(0, 256), (byte)255);
+        }
+
+        public static Rectangle FRect(float x, float y, float w, float h)
+        {
+            return new Rectangle((int)x, (int)y, (int)w, (int)h);
+        }
+
+        public static Rectangle FRect(double x, double y, double w, double h)
+        {
+            return new Rectangle((int)x, (int)y, (int)w, (int)h);
         }
     }
 }

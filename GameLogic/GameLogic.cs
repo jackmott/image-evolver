@@ -41,7 +41,8 @@ namespace GameLogic
             Settings.injectTexture = GraphUtils.GetTexture(g, Color.Blue);
             Settings.selectedTexture = GraphUtils.GetTexture(g, Color.Yellow);
             Settings.equationTexture = GraphUtils.GetTexture(g, Color.White);
-
+            Settings.saveEquationTexture = GraphUtils.GetTexture(g, Color.Green);
+            Settings.cancelEditTexture = GraphUtils.GetTexture(g, Color.Red);
             Settings.equationFont = content.Load<SpriteFont>("equation-font");
 
             
@@ -130,6 +131,7 @@ namespace GameLogic
 
         public void Draw(SpriteBatch batch, GameTime gameTime)
         {
+
             if (state.screen == Screen.CHOOSE)
             {
                 ChooseDraw(batch, gameTime);
@@ -138,17 +140,28 @@ namespace GameLogic
             {
                 ZoomDraw(batch, gameTime);
             }
+            else if (state.screen == Screen.EDIT)
+            {
+                EditDraw(batch, gameTime);
+            }
+
+        }
+
+
+        public void EditDraw(SpriteBatch batch, GameTime gameTime)
+        {
+            state.g.Clear(Color.Black);
+            batch.Begin();
+            state.zoomedPic.EditDraw(batch, gameTime);
+            batch.End();        
         }
 
         public void ZoomDraw(SpriteBatch batch, GameTime gameTime)
         {
-
-
             state.g.Clear(Color.Black);
             batch.Begin();
             state.zoomedPic.ZoomDraw(batch, gameTime);
-            batch.End();
-            // TODO: Add your drawing code here
+            batch.End();        
         }
 
 
@@ -177,7 +190,6 @@ namespace GameLogic
         public GameState Update(GameTime gameTime)
         {
 
-
             if (state.screen == Screen.CHOOSE)
             {
                 return ChooseUpdate(gameTime);
@@ -186,21 +198,43 @@ namespace GameLogic
             {
                 return ZoomUpdate(gameTime);
             }
+            else if (state.screen == Screen.EDIT)
+            {
+                return EditUpdate(gameTime);
+            }
 
+            return state;
+        }
+
+        public GameState EditUpdate(GameTime gameTime)
+        {            
+            state.zoomedPic.textBox.Update(state.inputState, gameTime);
+            if (state.zoomedPic.cancelEditButton.WasLeftClicked(state.inputState))
+            {
+                state.screen = Screen.ZOOM;
+                state.zoomedPic.textBox.SetActive(false);
+                return state;
+            }
+            if (state.zoomedPic.saveEquationButton.WasLeftClicked(state.inputState))
+            {
+                // todo parse and render new image
+                state.screen = Screen.ZOOM;
+                state.zoomedPic.textBox.SetActive(false);                
+                return state;
+            }
             return state;
         }
 
         public GameState ZoomUpdate(GameTime gameTime)
         {
-            if (state.zoomedPic.equation.WasLeftClicked(state.inputState))
+            if (state.zoomedPic.editEquationButton.WasLeftClicked(state.inputState))
             {
+                state.screen = Screen.EDIT;
                 state.zoomedPic.textBox.SetActive(true);
+                return state;
             }
-            if (state.zoomedPic.textBox.IsActive())
-            {
-                state.zoomedPic.textBox.Update(state.inputState, gameTime);
-            }
-            if (state.zoomedPic.button.WasRightClicked(state.inputState))
+            
+            if (state.zoomedPic.picButton.WasRightClicked(state.inputState))
             {
                 state.screen = Screen.CHOOSE;
                 state.zoomedPic.zoomed = false;
@@ -273,10 +307,10 @@ namespace GameLogic
         {
             foreach (var pic in state.pictures)
             {
-                if (pic.button.tex != null)
+                if (pic.picButton.tex != null)
                 {
-                    pic.button.tex.Dispose();
-                    pic.button.tex = null;
+                    pic.picButton.tex.Dispose();
+                    pic.picButton.tex = null;
                 }
             }
             state.pictures.Clear();
@@ -307,9 +341,9 @@ namespace GameLogic
                 // Clear out all textures as they are about to get updated
                 foreach (var pic in state.pictures)
                 {
-                    if (pic.button.tex != null)
-                        pic.button.tex.Dispose();
-                    pic.button.tex = null;
+                    if (pic.picButton.tex != null)
+                        pic.picButton.tex.Dispose();
+                    pic.picButton.tex = null;
                 }
 
                 // Build the next generation of pictures
@@ -344,25 +378,19 @@ namespace GameLogic
             {
                 var pic = state.pictures[i];
 
-                if (pic.button.WasLeftClicked(state.inputState))
+                if (pic.picButton.WasLeftClicked(state.inputState))
                 {
                     pic.selected = !pic.selected;
                 }
 
-                if (pic.inject.WasLeftClicked(state.inputState))
+                if (pic.injectButton.WasLeftClicked(state.inputState))
                 {
-                    pic.button.tex.Dispose();
+                    pic.picButton.tex.Dispose();
                     state.pictures[i] = GenTree(r);
-                    state.pictures[i].SetNewBounds(pic.button.bounds, state.g);
+                    state.pictures[i].SetNewBounds(pic.picButton.bounds, state.g);
                 }
-
-                if (pic.equation.WasLeftClicked(state.inputState))
-                {
-                    pic.showEquation = !pic.showEquation;
-                    Console.WriteLine(pic.ToLisp());
-                }
-
-                if (pic.button.WasRightClicked(state.inputState))
+              
+                if (pic.picButton.WasRightClicked(state.inputState))
                 {
                     state.zoomedPic = pic;
                     pic.zoomed = true;

@@ -1,12 +1,10 @@
 ﻿using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.Linq;
 using System.Runtime.Serialization;
-using System.Text;
 using System.Threading.Tasks;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
+using static GameLogic.GraphUtils;
 
 
 namespace GameLogic
@@ -30,18 +28,21 @@ namespace GameLogic
         public float[] pos;
 
         [DataMember]
-        public Button button;
+        public Button picButton;
         [DataMember]
-        public Button inject;
+        public Button injectButton;
         [DataMember]
-        public Button equation;
+        public Button editEquationButton;
+        [DataMember]
+        public Button saveEquationButton;
+        [DataMember]
+        public Button cancelEditButton;
 
         [DataMember]
         public bool selected = false;
         [DataMember]
         public bool zoomed = false;
-        [DataMember]
-        public bool showEquation = false;
+        
 
         [DataMember]
         public TextBox textBox;
@@ -51,13 +52,10 @@ namespace GameLogic
 
         public Pic(PicType type, GraphicsDevice g, GameWindow w)
         {
-
             this.g = g;
             this.w = w;
             this.type = type;
-            button = new Button(null, new Rectangle());
-            inject = new Button(Settings.injectTexture, new Rectangle());
-            equation = new Button(Settings.equationTexture, new Rectangle());
+            InitButtons();
             switch (type)
             {
                 case PicType.RGB:
@@ -77,9 +75,7 @@ namespace GameLogic
             this.g = g;
             this.w = w;
             this.type = type;
-            button = new Button(null, new Rectangle());
-            inject = new Button(Settings.injectTexture, new Rectangle());
-            equation = new Button(Settings.equationTexture, new Rectangle());
+            InitButtons();
             switch (type)
             {
                 case PicType.RGB:
@@ -123,10 +119,19 @@ namespace GameLogic
             SetupTextbox();
         }
 
+        public void InitButtons()
+        {
+            picButton = new Button(null, new Rectangle());
+            injectButton = new Button(Settings.injectTexture, new Rectangle());
+            editEquationButton = new Button(Settings.equationTexture, new Rectangle());
+            saveEquationButton = new Button(Settings.saveEquationTexture, new Rectangle());
+            cancelEditButton = new Button(Settings.cancelEditTexture, new Rectangle());
+        }
+
         public void SetupTextbox()
         {
             string lisp = ToLisp();            
-            textBox = new TextBox(lisp, w, GraphUtils.GetTexture(g, new Color(0, 0, 0, 128)), GraphUtils.GetTexture(g, Color.Cyan), button.bounds, Settings.equationFont, Color.White);
+            textBox = new TextBox(lisp, w, GraphUtils.GetTexture(g, new Color(0, 0, 0, 128)), GraphUtils.GetTexture(g, Color.Cyan), picButton.bounds, Settings.equationFont, Color.White);
         }
 
         public string ToLisp()
@@ -183,34 +188,45 @@ namespace GameLogic
         {
             if (selected)
             {
-                Rectangle rect = new Rectangle(button.bounds.X - 5, button.bounds.Y - 5, button.bounds.Width + 20, button.bounds.Height + 10);
+                Rectangle rect = new Rectangle(picButton.bounds.X - 5, picButton.bounds.Y - 5, picButton.bounds.Width + 20, picButton.bounds.Height + 10);
                 batch.Draw(Settings.selectedTexture, rect, Color.White);
             }
-            button.Draw(batch, gameTime);
-            inject.Draw(batch, gameTime);                                                           
+            picButton.Draw(batch, gameTime);
+            injectButton.Draw(batch, gameTime);                                                           
+        }
+
+        public void EditDraw(SpriteBatch batch, GameTime gameTime)
+        {
+            picButton.Draw(batch, gameTime);            
+            textBox.Draw(batch, gameTime);
+            saveEquationButton.Draw(batch, gameTime);
+            cancelEditButton.Draw(batch, gameTime);            
         }
 
         public void ZoomDraw(SpriteBatch batch, GameTime gameTime)
         {
-
-            button.Draw(batch, gameTime);
-            equation.Draw(batch, gameTime);
-            if (textBox.IsActive())
-            {
-                textBox.Draw(batch, gameTime);                
-            }
+            picButton.Draw(batch, gameTime);
+            editEquationButton.Draw(batch, gameTime);            
         }
 
         public void SetNewBounds(Rectangle bounds, GraphicsDevice g)
         {            
-            button.bounds = bounds;
-            if (button.tex != null)
+            picButton.bounds = bounds;
+            if (picButton.tex != null)
             {
-                button.tex.Dispose();
+                picButton.tex.Dispose();
             }
-            textBox.SetNewBounds(bounds);
-            inject.bounds = new Rectangle(bounds.X, bounds.Y + bounds.Height + 5, (int)(bounds.Width*.1),(int)(bounds.Height*.1));
-            equation.bounds = new Rectangle(bounds.X+(int)(bounds.Width * .1), (int)(bounds.Y + bounds.Height * .9f), (int)(bounds.Width * .1), (int)(bounds.Height * .1));            
+            var textWidth = bounds.Width * .75f;
+            var textHeight = bounds.Height * .75f;
+            var textBounds = FRect(bounds.X + (bounds.Width - textWidth) / 2.0f, bounds.Y + (bounds.Height - textHeight) / 2.0f, textWidth, textHeight);
+            textBox.SetNewBounds(textBounds);
+            injectButton.bounds = FRect(bounds.X, bounds.Y + bounds.Height + 5, bounds.Width*.1,bounds.Height*.1);
+            editEquationButton.bounds = FRect(bounds.X + bounds.Width * .1, bounds.Y + bounds.Height * .9f, bounds.Width * .1, bounds.Height * .1);
+
+            saveEquationButton.bounds = FRect(textBounds.X, bounds.Height * .9f, bounds.Width * .1f, bounds.Height * .05f);
+            cancelEditButton.bounds = FRect(textBounds.X+textBounds.Width-bounds.Width*.1f, bounds.Height * .9f, bounds.Width * .1f, bounds.Height * .05f);
+
+
             RegenTex(g);            
         }
 
@@ -274,8 +290,8 @@ namespace GameLogic
 
         public void RegenTex(GraphicsDevice graphics)
         {            
-            if (button.tex != null) { button.tex.Dispose(); }
-            button.tex = ToTexture(graphics, button.bounds.Width, button.bounds.Height);                                                    
+            if (picButton.tex != null) { picButton.tex.Dispose(); }
+            picButton.tex = ToTexture(graphics, picButton.bounds.Width, picButton.bounds.Height);                                                    
         }
 
         public Texture2D ToTexture(GraphicsDevice graphics, int w, int h)

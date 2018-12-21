@@ -4,11 +4,6 @@ using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Content;
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Runtime.InteropServices;
-using System.Text;
-using System.Threading.Tasks;
-using System.Collections.Concurrent;
 using System.Runtime.Serialization;
 
 namespace GameLogic
@@ -24,7 +19,7 @@ namespace GameLogic
         public int h;
     }
 
-    public enum Screen { CHOOSE, ZOOM };
+    public enum Screen { CHOOSE, ZOOM, EDIT };
     [DataContract]
     public class GameState
     {

@@ -5,6 +5,7 @@ using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using System.Collections.Generic;
 using System.Linq;
+using static GameLogic.GraphUtils;
 
 namespace GameLogic
 {
@@ -45,7 +46,7 @@ namespace GameLogic
             this.contents = WordWrap.Wrap(contents, bounds.Width, WordWrap.MeasureWidth);
             letterSize = font.MeasureString("A");
             this.pixelTex = pixelTex;
-            border = new Border(pixelTex, bounds, 1);
+            border = new Border(pixelTex, bounds, 4);
             cursorPos = new Point(0, 0);
 
         }
@@ -53,6 +54,7 @@ namespace GameLogic
         public void SetNewBounds(Rectangle bounds)
         {
             this.bounds = bounds;
+            this.border.Rect = bounds;
             this.contents = WordWrap.Wrap(rawContents, bounds.Width, WordWrap.MeasureWidth);
 
         }
@@ -201,20 +203,22 @@ namespace GameLogic
         public void Draw(SpriteBatch batch, GameTime gameTime)
         {
             Color c = color;
-            border.Draw(batch, c);
+            
+            batch.Draw(pixelTex, bounds, new Color(0.0f, 0.0f, 0.0f, 0.5f));
+            if (active && gameTime.TotalGameTime.Milliseconds % 250 == 0)
+            {
+                cursorOn = !cursorOn;
+            }
+            if (cursorOn)
+            {
+                // var letterSize = font.MeasureString("" + contents[cursorPos.Y][cursorPos.X]);
+                batch.Draw(pixelTex, FRect(cursorPos.X * letterSize.X + bounds.X, cursorPos.Y * letterSize.Y + bounds.Y, letterSize.X, letterSize.Y), Color.White);
+            }
             for (int i = 0; i < contents.Count; i++)
             {
                 batch.DrawString(font, contents[i], new Vector2(bounds.X, bounds.Y+letterSize.Y*i), c);
             }
-            if (active && gameTime.TotalGameTime.Milliseconds % 250 == 0)
-            {
-                cursorOn = !cursorOn;                
-            }
-            if (cursorOn)
-            {
-               // var letterSize = font.MeasureString("" + contents[cursorPos.Y][cursorPos.X]);
-                batch.Draw(pixelTex, new Rectangle((int)(cursorPos.X*letterSize.X),(int)(cursorPos.Y*letterSize.Y), (int)letterSize.X, (int)letterSize.Y), Color.White);
-            }
+            border.Draw(batch, c);
 
 
         }
