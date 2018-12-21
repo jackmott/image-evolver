@@ -69,28 +69,35 @@ namespace GameLogic
                 if (TextUtils.IsKey(Keys.Back, state))
                 {
                     if (cursorPos.X > 0)
-                    {                        
+                    {
                         cursorPos.X--;
                         contents[cursorPos.Y] = contents[cursorPos.Y].Remove(cursorPos.X, 1);
                         UpdateRawText();
                     }
                     else if (cursorPos.Y > 0)
                     {
+                        cursorPos.X = contents[cursorPos.Y - 1].Length;
+                        contents[cursorPos.Y - 1] += contents[cursorPos.Y];
+                        contents.RemoveAt(cursorPos.Y);
                         cursorPos.Y--;
-                        cursorPos.X = contents[cursorPos.Y].Length-1;
-                        contents[cursorPos.Y] = contents[cursorPos.Y].Remove(cursorPos.X, 1);
+                        
                         UpdateRawText();
                     }
-                    
+
                 }
                 else if (TextUtils.IsKey(Keys.Delete, state))
                 {
                     if (cursorPos.X < contents[cursorPos.Y].Length)
                     {
                         contents[cursorPos.Y] = contents[cursorPos.Y].Remove(cursorPos.X, 1);
-                    } else if (cursorPos.Y < contents.Count-1) 
+                    }
+                    else if (cursorPos.Y < contents.Count - 1)
                     {
-                        //bring next line up
+                        for (int i = cursorPos.Y + 1; i < contents.Count; i++)
+                        {
+                            contents[i - 1] = contents[i];
+                        }
+                        contents.RemoveAt(contents.Count - 1);
                     }
                     //todo remove text
                 }
@@ -114,6 +121,27 @@ namespace GameLogic
                         cursorPos.X--;
                     }
                 }
+                else if (TextUtils.IsKey(Keys.Up, state))
+                {
+                    if (cursorPos.Y > 0)
+                    {
+                        cursorPos.Y--;
+                    }
+                }
+                else if (TextUtils.IsKey(Keys.Down, state))
+                {
+                    if (cursorPos.Y < contents.Count)
+                    {
+                        cursorPos.Y++;
+                    }
+                }
+                else if (TextUtils.IsKey(Keys.Enter, state))
+                {
+                    contents.Insert(cursorPos.Y+1, contents[cursorPos.Y].Substring(cursorPos.X-1));
+                    contents[cursorPos.Y] = contents[cursorPos.Y].Substring(0, cursorPos.X-1);
+                    cursorPos.X = 0;
+                    cursorPos.Y++;
+                }
             }
         }
 
@@ -124,21 +152,29 @@ namespace GameLogic
             {
                 if (Char.IsLetterOrDigit(e.Character) || Char.IsPunctuation(e.Character) || Char.IsSymbol(e.Character) || Char.IsWhiteSpace(e.Character))
                 {
-                    char c;
+                    string toInsert = string.Empty;
                     if (e.Character == '\r')
                     {
-                        c = '\n';
+                        //ignore?
 
+                    }
+                    else if (e.Character == '\t')
+                    {
+                        toInsert = "  ";
                     }
                     else
                     {
-                        c = e.Character;
+                        toInsert = e.Character.ToString();
                     }
-                    contents[cursorPos.Y] = contents[cursorPos.Y].Insert(cursorPos.X, c.ToString());
+                    
+                    contents[cursorPos.Y] = contents[cursorPos.Y].Insert(cursorPos.X, toInsert);
                     cursorPos.X++;
+                    UpdateRawText();
+                    
+                    
 
                 }
-                UpdateRawText();
+               
             }
         }
 
