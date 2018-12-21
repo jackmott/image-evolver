@@ -1,8 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+
 
 
 namespace GameLogic
@@ -24,10 +22,20 @@ namespace GameLogic
         int start;
         int pos;     
         Queue<Token> tokens;
+        Dictionary<string, NodeType> nodeDict;
 
         public void BeginLexing(string s)
         {
-            this = new Lexer { input = s.AsSpan(), tokens = new Queue<Token>(8) };
+            this = new Lexer { input = s.AsSpan(), tokens = new Queue<Token>(8), nodeDict = new Dictionary<string,NodeType>() };
+
+            foreach (var typeObj in Enum.GetValues(typeof(NodeType))) {
+                var type = (NodeType)typeObj;
+                if (type != NodeType.EMPTY && type != NodeType.CONSTANT)
+                {
+                    nodeDict.Add(AptNode.OpString(type).ToLower(),type);
+                }
+            }
+  
             var state = DetermineToken();
             do
             {
@@ -49,26 +57,15 @@ namespace GameLogic
             
         }
 
-        public static AptNode stringToNode(string s)
-        {            
-            switch (s) {
-                case "+":                    
-                    return new AptNode { type = NodeType.ADD, children = new AptNode[2]};                    
-                case "-":
-                    return new AptNode { type = NodeType.SUB, children = new AptNode[2] };
-                case "*":
-                    return new AptNode { type = NodeType.MUL, children = new AptNode[2] };
-                case "/":
-                    return new AptNode { type = NodeType.DIV, children = new AptNode[2] };
-                case "Sin":
-                    return new AptNode { type = NodeType.SIN, children = new AptNode[1] };
-                case "X":
-                    return new AptNode { type = NodeType.X};                    
-                case "Y":
-                    return new AptNode { type = NodeType.Y};
-                default:
-                    throw new Exception("Parse error, op:'" + s + "' unknown");
-            }
+        public AptNode stringToNode(string s)
+        {
+            s = s.ToLower();
+            NodeType type;
+            if (nodeDict.TryGetValue(s, out type)) {
+                return AptNode.MakeNode(type);
+            } else {
+                throw new Exception("invalid string" + s);
+            }                       
             
         }
 

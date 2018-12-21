@@ -205,6 +205,11 @@ namespace GameLogic
             return false;
         }
 
+        public static string OpString(NodeType type)
+        {
+            return new AptNode { type = type }.OpString();
+        }
+
         public string OpString()
         {
             switch (type)

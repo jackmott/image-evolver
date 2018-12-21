@@ -129,12 +129,20 @@ namespace GameLogic
                     {
                         cursorPos.Y--;
                     }
+                    if (cursorPos.X > contents[cursorPos.Y].Length)
+                    {
+                        cursorPos.X = contents[cursorPos.Y].Length;
+                    }
                 }
                 else if (TextUtils.IsKey(Keys.Down, state))
                 {
                     if (cursorPos.Y < contents.Count)
                     {
                         cursorPos.Y++;
+                    }
+                    if (cursorPos.X > contents[cursorPos.Y].Length)
+                    {
+                        cursorPos.X = contents[cursorPos.Y].Length;
                     }
                 }
                 else if (TextUtils.IsKey(Keys.Enter, state))
@@ -171,10 +179,7 @@ namespace GameLogic
                     
                     contents[cursorPos.Y] = contents[cursorPos.Y].Insert(cursorPos.X, toInsert);
                     cursorPos.X++;
-                    UpdateRawText();
-                    
-                    
-
+                    UpdateRawText();                                        
                 }
                
             }
@@ -204,7 +209,7 @@ namespace GameLogic
         {
             Color c = color;
             
-            batch.Draw(pixelTex, bounds, new Color(0.0f, 0.0f, 0.0f, 0.5f));
+            batch.Draw(pixelTex, bounds, new Color(0.0f, 0.0f, 0.0f, 0.75f));
             if (active && gameTime.TotalGameTime.Milliseconds % 250 == 0)
             {
                 cursorOn = !cursorOn;
