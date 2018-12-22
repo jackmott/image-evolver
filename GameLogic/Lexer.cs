@@ -5,15 +5,14 @@ using System.Collections.Generic;
 
 namespace GameLogic
 {
-    public enum TokenType : byte { OPEN_PAREN, CLOSE_PAREN, OP, CONSTANT}
-    public enum State : byte { DETERMINE, OP, NUMBER, EOF }
+    public enum TokenType : byte { PIC_TYPE,OPEN_PAREN, CLOSE_PAREN, OP, CONSTANT}
+    public enum State : byte { DETERMINE, OP, NUMBER, EOF}
 
     public struct Token
     {
         public TokenType type;
         public int start;
-        public int len;
-        
+        public int len;   
     }
 
     public ref struct Lexer
@@ -77,6 +76,7 @@ namespace GameLogic
                 switch (t.type) {
                     case TokenType.OP:
                         {
+                            //
                             var node = stringToNode(input.Slice(t.start, t.len).ToString());
                             if (node.children != null) {
                                 for (int i = 0; i < node.children.Length; i++)
@@ -221,6 +221,8 @@ namespace GameLogic
         {
             return (c >= '0' && c <= '9') || c == '-' || c == '.';
         }
+
+        
 
 
         
