@@ -218,6 +218,13 @@ namespace GameLogic
             if (state.zoomedPic.saveEquationButton.WasLeftClicked(state.inputState))
             {
                 // todo parse and render new image
+                Lexer lexer = new Lexer(state.zoomedPic.textBox.rawContents);
+                lexer.BeginLexing();
+                var p = lexer.ParsePic(state.g, state.w);
+                state.zoomedPic.Trees = p.Trees;
+                state.zoomedPic.Machines = p.Machines;
+                state.zoomedPic.type = p.type;
+                state.zoomedPic.RegenTex(state.g);                                
                 state.screen = Screen.ZOOM;
                 state.zoomedPic.textBox.SetActive(false);                
                 return state;

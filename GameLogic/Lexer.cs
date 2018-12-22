@@ -1,11 +1,13 @@
-﻿using System;
+﻿using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework.Graphics;
+using System;
 using System.Collections.Generic;
 
 
 
 namespace GameLogic
 {
-    public enum TokenType : byte { PIC_TYPE,OPEN_PAREN, CLOSE_PAREN, OP, CONSTANT}
+    public enum TokenType : byte { OPEN_PAREN, CLOSE_PAREN, OP, CONSTANT}
     public enum State : byte { DETERMINE, OP, NUMBER, EOF}
 
     public struct Token
@@ -23,18 +25,26 @@ namespace GameLogic
         Queue<Token> tokens;
         Dictionary<string, NodeType> nodeDict;
 
-        public void BeginLexing(string s)
+        public Lexer(string s)
         {
-            this = new Lexer { input = s.AsSpan(), tokens = new Queue<Token>(8), nodeDict = new Dictionary<string,NodeType>() };
+            input = s.AsSpan();
+            tokens = new Queue<Token>(8);
+            nodeDict = new Dictionary<string, NodeType>();
+            start = 0;
+            pos = 0;
 
-            foreach (var typeObj in Enum.GetValues(typeof(NodeType))) {
+            foreach (var typeObj in Enum.GetValues(typeof(NodeType)))
+            {
                 var type = (NodeType)typeObj;
                 if (type != NodeType.EMPTY && type != NodeType.CONSTANT)
                 {
-                    nodeDict.Add(AptNode.OpString(type).ToLower(),type);
+                    nodeDict.Add(AptNode.OpString(type).ToLower(), type);
                 }
             }
-  
+        }
+
+        public void BeginLexing()
+        {                         
             var state = DetermineToken();
             do
             {
@@ -57,8 +67,7 @@ namespace GameLogic
         }
 
         public AptNode stringToNode(string s)
-        {
-            s = s.ToLower();
+        {            
             NodeType type;
             if (nodeDict.TryGetValue(s, out type)) {
                 return AptNode.MakeNode(type);
@@ -68,7 +77,68 @@ namespace GameLogic
             
         }
 
-        public AptNode Parse()
+        public Pic ParsePic(GraphicsDevice g, GameWindow w)
+        {
+            while (true)
+            {
+                var t = tokens.Dequeue();
+                switch (t.type)
+                {
+                    case TokenType.OP:
+                        {
+                            var s = input.Slice(t.start, t.len).ToString().ToLower();
+
+                            if (s == "gradient")
+                            {
+                                Pic p = new Pic(PicType.GRADIENT, g, w);
+                                p.Trees[0] = ParseNodes();
+                                p.Machines[0] = new StackMachine(p.Trees[0]);
+                                return p;
+                            }
+                            else if (s == "rgb")
+                            {
+                                Pic p = new Pic(PicType.RGB, g, w);
+                                p.Trees[0] = ParseNodes();
+                                p.Machines[0] = new StackMachine(p.Trees[0]);
+
+                                p.Trees[1] = ParseNodes();
+                                p.Machines[1] = new StackMachine(p.Trees[1]);
+
+                                p.Trees[2] = ParseNodes();
+                                p.Machines[2] = new StackMachine(p.Trees[2]);
+                                return p;
+                            }
+                            else if (s == "hsv")
+                            {
+                                Pic p = new Pic(PicType.HSV, g, w);
+                                p.Trees[0] = ParseNodes();
+                                p.Machines[0] = new StackMachine(p.Trees[0]);
+
+                                p.Trees[1] = ParseNodes();
+                                p.Machines[1] = new StackMachine(p.Trees[1]);
+
+                                p.Trees[2] = ParseNodes();
+                                p.Machines[2] = new StackMachine(p.Trees[2]);
+                                return p;
+                            }
+                            else
+                            {
+                                throw new Exception("inavalid tokentype:" + s);
+                            }
+
+                        }
+                    case TokenType.CONSTANT:
+                        {
+                            throw new Exception("inavalid tokentype:" + t);
+                        }
+                    case TokenType.CLOSE_PAREN:
+                    case TokenType.OPEN_PAREN:
+                        continue;
+                }
+            }
+        }
+
+        public AptNode ParseNodes()
         {
             while(true)
             {
@@ -76,15 +146,16 @@ namespace GameLogic
                 switch (t.type) {
                     case TokenType.OP:
                         {
-                            //
-                            var node = stringToNode(input.Slice(t.start, t.len).ToString());
-                            if (node.children != null) {
+                            var s = input.Slice(t.start, t.len).ToString().ToLower();                           
+                            var node = stringToNode(s);
+                            if (node.children != null)
+                            {
                                 for (int i = 0; i < node.children.Length; i++)
                                 {
-                                    node.children[i] = Parse();
+                                    node.children[i] = ParseNodes();
                                 }
                             }
-                            return node;
+                            return node;                                                       
                         }
                     case TokenType.CONSTANT:
                         {
@@ -158,7 +229,10 @@ namespace GameLogic
             if (accept(".")) {
                 acceptRun(digits);
             }
-            if (input[start] == '-') {
+            if (input[start] == '-' && (
+                !IsStartOfNumber(input[start+1])
+                || input[start+1] =='.'
+                )) {
                 emit(TokenType.OP);         
             } else {
                 emit(TokenType.CONSTANT);

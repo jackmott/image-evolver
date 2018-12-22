@@ -332,8 +332,12 @@ namespace GameLogic
                 case NodeType.NEGATE:
                     result = new AptNode { type = type, children = new AptNode[1] };
                     break;
+                case NodeType.X:
+                case NodeType.Y:
+                    result = new AptNode { type = type };
+                    break;
                 default:
-                    throw new Exception("GetRandomNode failed to match the switch");
+                    throw new Exception("MakeNode failed to match the switch");
             }
             return result;
         }
