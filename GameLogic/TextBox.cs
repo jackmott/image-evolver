@@ -136,7 +136,7 @@ namespace GameLogic
                 }
                 else if (TextUtils.IsKey(Keys.Down, state))
                 {
-                    if (cursorPos.Y < contents.Count)
+                    if (cursorPos.Y < contents.Count-1)
                     {
                         cursorPos.Y++;
                     }

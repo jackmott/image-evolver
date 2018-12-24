@@ -7,8 +7,8 @@ using System.Collections.Generic;
 
 namespace GameLogic
 {
-    public enum TokenType : byte { OPEN_PAREN, CLOSE_PAREN, OP, CONSTANT}
-    public enum State : byte { DETERMINE, OP, NUMBER, EOF}
+    public enum TokenType : byte { OPEN_PAREN, CLOSE_PAREN, OP, STRING, CONSTANT}
+    public enum State : byte { DETERMINE, OP, NUMBER, STRING,EOF}
 
     public struct Token
     {
@@ -56,6 +56,9 @@ namespace GameLogic
                     case State.NUMBER:
                         state = LexNumber();
                         break;
+                    case State.STRING:
+                        state = LexString();
+                        break;
                     case State.OP:
                         state = LexOp();
                         break;
@@ -72,7 +75,7 @@ namespace GameLogic
             if (nodeDict.TryGetValue(s, out type)) {
                 return AptNode.MakeNode(type);
             } else {
-                throw new Exception("invalid string" + s);
+                throw new Exception("invalid string:" + s);
             }                       
             
         }
@@ -150,6 +153,16 @@ namespace GameLogic
                             var node = stringToNode(s);
                             if (node.children != null)
                             {
+                                if (node.type == NodeType.PICTURE)
+                                {
+                                    var filenameToken = tokens.Dequeue();
+                                    if (filenameToken.type != TokenType.STRING)
+                                    {
+                                        throw new Exception("Picture did not have a file name");
+                                    }
+                                    node.filename = input.Slice(filenameToken.start, filenameToken.len).ToString();
+
+                                }
                                 for (int i = 0; i < node.children.Length; i++)
                                 {
                                     node.children[i] = ParseNodes();
@@ -161,10 +174,10 @@ namespace GameLogic
                         {
                             var node = new AptNode { type = NodeType.CONSTANT };
                             string numStr = input.Slice(t.start, t.len).ToString();
-                            float num = float.Parse(numStr);
-                            node.value = num;
+                            node.value = float.Parse(numStr);
                             return node;
                         }
+                    
                     case TokenType.CLOSE_PAREN:
                     case TokenType.OPEN_PAREN:
                         continue;                    
@@ -192,10 +205,16 @@ namespace GameLogic
                 else if (c == '(')
                 {
                     emit(TokenType.OPEN_PAREN);
+                    ignore();
                 }
                 else if (c == ')')
                 {
                     emit(TokenType.CLOSE_PAREN);
+                    ignore();
+                }
+                else if (c == '"')
+                {
+                    return State.STRING;
                 }
                 else if (IsStartOfNumber(c))
                 {
@@ -220,7 +239,19 @@ namespace GameLogic
             return State.DETERMINE;
                 
         }
+        public State LexString()
+        {
+            ignore(); //skip the open "
+            while (peek() != '"')
+            {
+                next();
+            }
+            emit(TokenType.STRING);
+            next();
+            ignore();
 
+            return State.DETERMINE;
+        }
         public State LexNumber() {
             const string numprefix = "-.";
             accept(numprefix);
@@ -231,7 +262,7 @@ namespace GameLogic
             }
             if (input[start] == '-' && (
                 !IsStartOfNumber(input[start+1])
-                || input[start+1] =='.'
+                && input[start+1] != '.'
                 )) {
                 emit(TokenType.OP);         
             } else {

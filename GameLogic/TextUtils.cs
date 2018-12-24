@@ -1,24 +1,31 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Input;
 
 namespace GameLogic
 {
     public static class TextUtils
     {
+        public static int prevRepeat = 0;
         public static bool IsKey(Keys key, InputState state)
         {
             
             if (state.keyboardState.IsKeyDown(key))
             {
                 if (!state.prevKeyboardState.IsKeyDown(key))
+                {
+                    prevRepeat = 0;
                     return true;
+                }
                 if (state.keyboardStateMillis > 500)
-                    return true;
+                {
+                    if (state.keyboardStateMillis - prevRepeat > 20)
+                    {
+                        prevRepeat = state.keyboardStateMillis;
+                        return true;
+                    }
+                    
+                }
             }
             return false;
         }

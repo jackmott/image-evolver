@@ -95,6 +95,19 @@ namespace ImageEvolver
                 hotloader.state.inputState.mouseState = Mouse.GetState();
             }
             hotloader.Update(gameTime);
+
+
+            //Keep track of how long the keyboard state has not changed
+            //So that you can hold arrows/backspace and have them repeat
+            if (hotloader.state.inputState.keyboardState != hotloader.state.inputState.prevKeyboardState)
+            {
+                hotloader.state.inputState.keyboardStateMillis = 0;
+            }
+            else
+            {
+                hotloader.state.inputState.keyboardStateMillis += gameTime.ElapsedGameTime.TotalMilliseconds;
+            }
+
             hotloader.state.inputState.prevKeyboardState = hotloader.state.inputState.keyboardState;
             hotloader.state.inputState.prevMouseState = hotloader.state.inputState.mouseState;
             base.Update(gameTime);

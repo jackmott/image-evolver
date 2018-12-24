@@ -1,4 +1,12 @@
-﻿// TODO resize big buttons onresize properly
+﻿// todo - on cancel edit, put the text back
+// todo - be able to undo and go to previous population
+// todo - change new population to not include any previous selections
+// todo - mouse pointer moves cursor
+// todo - highlight in text box
+// todo - copy/paste in text box
+// todo - report parsing errors
+// todo - handling parsing of warp
+
 
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
@@ -59,7 +67,7 @@ namespace GameLogic
                     fs.Close();
                     Color[] colors = new Color[tex.Width * tex.Height];
                     tex.GetData(colors);
-                    ExternalImage img = new ExternalImage { data = colors, w = tex.Width, h = tex.Height };
+                    ExternalImage img = new ExternalImage { filename =  file.Name, data = colors, w = tex.Width, h = tex.Height };
                     GameState.externalImages.Add(img);
                     tex.Dispose();
                 }
@@ -180,8 +188,7 @@ namespace GameLogic
             }
             batch.End();
 
-            // TODO: Add your drawing code here
-
+           
 
         }
 

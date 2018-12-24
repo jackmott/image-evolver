@@ -1,11 +1,5 @@
 ﻿using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.Linq;
 using System.Runtime.Serialization;
-using System.Text;
-using System.Threading.Tasks;
-using Microsoft.Xna.Framework;
 namespace GameLogic
 {    
     [DataContract]
@@ -56,8 +50,21 @@ namespace GameLogic
                 case NodeType.EMPTY:
                     throw new Exception("can't BuildInstructions with a non finished APT");
                 case NodeType.CONSTANT:
-                case NodeType.PICTURE:
                     instructions[inPtr] = new Instruction { type = node.type, value = node.value };
+                    inPtr++;
+                    break;
+                case NodeType.PICTURE:
+                    var value = 0;
+                    for (int i = 0; i < GameState.externalImages.Count; i++)
+                    {
+                        var filename = GameState.externalImages[i].filename;
+                        if (filename.Equals(node.filename))
+                        {
+                            value = i;
+                            break;
+                        }
+                    }
+                    instructions[inPtr] = new Instruction { type = node.type, value = value};
                     inPtr++;
                     break;                
                 default:                
@@ -103,16 +110,14 @@ namespace GameLogic
                                 sp--;
                                 break;
                             case NodeType.DIV:
-                                {
-                                    stackPointer[sp - 1] = stackPointer[sp] / stackPointer[sp - 1];
-                                    sp--;
-                                }
+                                stackPointer[sp - 1] = stackPointer[sp] / stackPointer[sp - 1];
+                                sp--;
                                 break;
                             case NodeType.SIN:
-                                stackPointer[sp] = (float)Math.Sin(stackPointer[sp]);
+                                stackPointer[sp] = (float)Math.Sin(Math.PI*stackPointer[sp]);
                                 break;
                             case NodeType.COS:
-                                stackPointer[sp] = (float)Math.Cos(stackPointer[sp]);
+                                stackPointer[sp] = (float)Math.Cos(Math.PI*stackPointer[sp]);
                                 break;
                             case NodeType.ATAN:
                                 stackPointer[sp] = (float)Math.Atan(stackPointer[sp]);
@@ -207,6 +212,7 @@ namespace GameLogic
                                     var xi = (int)(xf * image.w);
                                     var yi = (int)(yf * image.h);
                                     var index = yi * image.w + xi;
+                                    if (index > image.data.Length - 1) index = image.data.Length - 1;
                                     var c = image.data[index];
                                     var fc = (float)(c.R + c.G + c.B) / (255.0f * 3.0f);
                                     sp--;
@@ -216,7 +222,7 @@ namespace GameLogic
                             default:
                                 throw new Exception("Evexecute found a bad node");
                         }
-                       stackPointer[sp] = MathUtils.Constrain(stackPointer[sp], -1.0f, 1.0f);
+                       stackPointer[sp] = MathUtils.Constrain(stackPointer[sp], -1.0f, 1.001f);
                     }
                     return stackPointer[sp];
                 }

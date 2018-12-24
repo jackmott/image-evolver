@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Runtime.Serialization;
 
 namespace GameLogic
@@ -18,6 +19,8 @@ namespace GameLogic
         public AptNode[] children;
         [DataMember]
         public float value;
+        [DataMember]
+        public string filename; // for pictures only
 
         public AptNode()
         {
@@ -95,6 +98,7 @@ namespace GameLogic
             AptNode result = new AptNode { };
             result.type = type;
             result.value = value;
+            result.filename = filename;
             if (children != null)
             {
                 result.children = new AptNode[children.Length];
@@ -266,10 +270,10 @@ namespace GameLogic
                     return "Billow";
                 case NodeType.CELL1:
                     return "Cell1";
-                case NodeType.PICTURE:
-                    return "Picture-" + ((int)value).ToString();
                 case NodeType.WARP1:
                     return "Warp1";
+                case NodeType.PICTURE:
+                    return "Picture";
                 default:
                     throw new Exception("corrupt node type in OpString()");
             }
@@ -285,8 +289,14 @@ namespace GameLogic
                 case NodeType.Y:
                 case NodeType.CONSTANT:
                     return OpString();
+                case NodeType.PICTURE:
+
                 default:
                     string result = "( " + OpString() + " ";
+                    if (type == NodeType.PICTURE)
+                    {
+                       result += "\"" + filename + "\" ";
+                    }
                     for (int i = 0; i < children.Length; i++)
                     {
                         result += children[i].ToLisp() + " ";
@@ -313,7 +323,7 @@ namespace GameLogic
                 case NodeType.SUB:
                 case NodeType.MUL:
                 case NodeType.DIV:
-               case NodeType.ATAN2:
+                case NodeType.ATAN2:
                 case NodeType.MIN:
                 case NodeType.MAX:
                 case NodeType.MOD:
@@ -335,6 +345,12 @@ namespace GameLogic
                 case NodeType.X:
                 case NodeType.Y:
                     result = new AptNode { type = type };
+                    break;
+                case NodeType.PICTURE:
+                    result = new AptNode { type = type, children = new AptNode[2]};
+                    break;
+                case NodeType.WARP1:
+                    result =new AptNode { type = type, children = new AptNode[5] };
                     break;
                 default:
                     throw new Exception("MakeNode failed to match the switch");
@@ -359,18 +375,19 @@ namespace GameLogic
             NodeType type;
             if (picChance == 0)
             {
-                type = (NodeType)r.Next(1, AptNode.NUM_LEAF_TYPES);
+                type = (NodeType)r.Next(1, NUM_LEAF_TYPES);
             }
             else
             {
-                type = (NodeType)r.Next(1, AptNode.NUM_LEAF_TYPES - 1);
+                type = (NodeType)r.Next(1, NUM_LEAF_TYPES - 1);
             }
 
             switch (type)
             {
                 case NodeType.PICTURE:
                     {
-                        var result = new AptNode { type = type, children = new AptNode[2], value = r.Next(0, 5) };
+                        var pic = GameState.externalImages[r.Next(0, GameState.externalImages.Count)];
+                        var result = new AptNode { type = type, children = new AptNode[2], filename = pic.filename };
                         result.children[0] = new AptNode { type = NodeType.X };
                         result.children[1] = new AptNode { type = NodeType.Y };
                         return result;

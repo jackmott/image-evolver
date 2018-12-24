@@ -12,6 +12,8 @@ namespace GameLogic
     public struct ExternalImage
     {
         [DataMember]
+        public string filename;
+        [DataMember]
         public Color[] data;
         [DataMember]
         public int w;
