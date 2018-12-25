@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Windows;
 using System.Runtime.Serialization;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
@@ -66,7 +65,7 @@ namespace GameLogic
 
         public void UpdateRawText()
         {
-            rawContents = contents.Aggregate((a, b) => a + b);
+            rawContents = contents.Aggregate((a, b) => a +"\n"+ b );
         }
 
         public void PreHighlight(InputState state)
@@ -134,6 +133,13 @@ namespace GameLogic
         {
             if (TextUtils.IsPaste(state))
             {
+                if (highlightStart != highlightEnd)
+                {
+                    ProcessHighlight(state, true);
+                }
+                contents[cursorPos.Y] = contents[cursorPos.Y].Insert(cursorPos.X, System.Windows.Forms.Clipboard.GetText());
+                UpdateRawText();
+                contents = WordWrap.Wrap(rawContents, bounds.Width, WordWrap.MeasureWidth);
 
             }
         }
@@ -167,6 +173,10 @@ namespace GameLogic
                 contents[start.Y] += contents[end.Y];
                 contents.RemoveAt(end.Y);
                 contents = contents.Where(s => s.Length != 0).ToList();
+            }
+            if (delete)
+            {
+                cursorPos = highlightStart;
                 highlightStart = Point.Zero;
                 highlightEnd = Point.Zero;
 
@@ -174,12 +184,57 @@ namespace GameLogic
             return text;
         }
 
+        public Point TextPosFromScreenPos(Point p)
+        {
+            p.X -= bounds.X;
+            p.Y -= bounds.Y;
+            p.X = (int)(p.X / letterSize.X);
+            p.Y = (int)(p.Y / letterSize.Y);
+            if (p.Y < 0) p.Y = 0;
+            if (p.Y > contents.Count - 1) p.Y = contents.Count - 1;
+            if (p.X < 0) p.X = 0;
+            if (p.X > contents[p.Y].Length - 1) p.X = contents[p.Y].Length - 1;
+            return p;
+        }
+        public void HandleMouse(InputState state)
+        {
+            if (state.prevMouseState.LeftButton == ButtonState.Pressed && state.mouseState.LeftButton == ButtonState.Released)
+            {
+                if (bounds.Contains(state.prevMouseState.Position) && bounds.Contains(state.mouseState.Position))
+                {
+                    cursorPos = TextPosFromScreenPos(state.mouseState.Position);
+                }
+            }
+            if (state.prevMouseState.LeftButton == ButtonState.Released && state.mouseState.LeftButton == ButtonState.Pressed)
+            {
+                highlightStart = Point.Zero;
+                highlightEnd = Point.Zero;
+            }
+            if (state.prevMouseState.LeftButton == ButtonState.Pressed && state.mouseState.LeftButton == ButtonState.Pressed)
+            {
+                Point pre = TextPosFromScreenPos(state.prevMouseState.Position);
+                Point cur = TextPosFromScreenPos(state.mouseState.Position);
+                if (pre != cur)
+                {
+                    if (highlightStart == highlightEnd)
+                    {
+                        highlightStart = pre;
+                     
+                    }
+                    highlightEnd = cur;
+                    
+                }
+            }
+        }
+
         public void Update(InputState state, GameTime gameTime)
         {
             if (IsActive())
             {
+                HandleMouse(state);
                 CheckCopy(state);
                 CheckCut(state);
+                CheckPaste(state);
                 PreHighlight(state);
                 if (TextUtils.IsKey(Keys.Back, state))
                 {

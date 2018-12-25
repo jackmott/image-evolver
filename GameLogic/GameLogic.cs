@@ -2,8 +2,7 @@
 // todo - be able to undo and go to previous population
 // todo - change new population to not include any previous selections
 // todo - mouse pointer moves cursor
-// todo - highlight in text box
-// todo - copy/paste in text box
+// todo - handle typing beyond edge of text box
 // todo - report parsing errors
 
 
