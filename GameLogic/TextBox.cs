@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Windows;
 using System.Runtime.Serialization;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
@@ -110,45 +111,123 @@ namespace GameLogic
 
         }
 
+        public void CheckCopy(InputState state)
+        {
+            if (TextUtils.IsCopy(state))
+            {
+                System.Windows.Forms.Clipboard.SetText(ProcessHighlight(state));
+
+            }
+        }
+
+
+        public void CheckCut(InputState state)
+        {
+            if (TextUtils.IsCut(state))
+            {
+                System.Windows.Forms.Clipboard.SetText(ProcessHighlight(state, true));
+            }
+                
+        }
+
+        public void CheckPaste(InputState state)
+        {
+            if (TextUtils.IsPaste(state))
+            {
+
+            }
+        }
+
+        public string ProcessHighlight(InputState state, bool delete = false)
+        {
+            string text = "";
+            if (delete) cursorPos = highlightStart;
+            var (start, end) = GetHighlightSorted();
+            for (int y = start.Y; y <= end.Y; y++)
+            {
+                int xStart = 0;
+                int xEnd = contents[y].Length - 1;
+                if (y == start.Y)
+                {
+                    xStart = start.X;
+                }
+                if (y == end.Y)
+                {
+                    xEnd = end.X;
+                }
+                text += contents[y].Substring(xStart, xEnd - xStart + 1);
+                if (delete) 
+                    contents[y] = contents[y].Substring(0, xStart) + contents[y].Substring(xEnd + 1);
+                if (y != end.Y) { text += "\n"; }
+            }
+
+
+            if (delete && start.Y != end.Y)
+            {
+                contents[start.Y] += contents[end.Y];
+                contents.RemoveAt(end.Y);
+                contents = contents.Where(s => s.Length != 0).ToList();
+                highlightStart = Point.Zero;
+                highlightEnd = Point.Zero;
+
+            }
+            return text;
+        }
+
         public void Update(InputState state, GameTime gameTime)
         {
             if (IsActive())
             {
+                CheckCopy(state);
+                CheckCut(state);
                 PreHighlight(state);
                 if (TextUtils.IsKey(Keys.Back, state))
                 {
-                    if (cursorPos.X > 0)
+                    if (highlightStart != highlightEnd)
                     {
-                        cursorPos.X--;
-                        contents[cursorPos.Y] = contents[cursorPos.Y].Remove(cursorPos.X, 1);
-                        UpdateRawText();
+                        ProcessHighlight(state, true);
                     }
-                    else if (cursorPos.Y > 0)
+                    else
                     {
-                        cursorPos.X = contents[cursorPos.Y - 1].Length;
-                        contents[cursorPos.Y - 1] += contents[cursorPos.Y];
-                        contents.RemoveAt(cursorPos.Y);
-                        cursorPos.Y--;
+                        if (cursorPos.X > 0)
+                        {
+                            cursorPos.X--;
+                            contents[cursorPos.Y] = contents[cursorPos.Y].Remove(cursorPos.X, 1);
+                            UpdateRawText();
+                        }
+                        else if (cursorPos.Y > 0)
+                        {
+                            cursorPos.X = contents[cursorPos.Y - 1].Length;
+                            contents[cursorPos.Y - 1] += contents[cursorPos.Y];
+                            contents.RemoveAt(cursorPos.Y);
+                            cursorPos.Y--;
 
-                        UpdateRawText();
+                            UpdateRawText();
+                        }
                     }
 
                 }
                 else if (TextUtils.IsKey(Keys.Delete, state))
                 {
-                    if (cursorPos.X < contents[cursorPos.Y].Length)
+                    if (highlightStart != highlightEnd)
                     {
-                        contents[cursorPos.Y] = contents[cursorPos.Y].Remove(cursorPos.X, 1);
+                        ProcessHighlight(state, true);
                     }
-                    else if (cursorPos.Y < contents.Count - 1)
+                    else
                     {
-                        for (int i = cursorPos.Y + 1; i < contents.Count; i++)
+                        if (cursorPos.X < contents[cursorPos.Y].Length)
                         {
-                            contents[i - 1] = contents[i];
+                            contents[cursorPos.Y] = contents[cursorPos.Y].Remove(cursorPos.X, 1);
                         }
-                        contents.RemoveAt(contents.Count - 1);
+                        else if (cursorPos.Y < contents.Count - 1)
+                        {
+                            for (int i = cursorPos.Y + 1; i < contents.Count; i++)
+                            {
+                                contents[i - 1] = contents[i];
+                            }
+                            contents.RemoveAt(contents.Count - 1);
+                        }
                     }
-                    //todo remove text
                 }
                 else if (TextUtils.IsKey(Keys.Home, state))
                 {
@@ -272,6 +351,15 @@ namespace GameLogic
             return active;
         }
 
+        public (Point, Point) GetHighlightSorted()
+        {
+            if (highlightStart.Y > highlightEnd.Y || (highlightStart.X > highlightEnd.X && highlightStart.Y == highlightEnd.Y))
+            {
+                return (highlightEnd, highlightStart);
+            }
+            return (highlightStart, highlightEnd);
+        }
+
 
         public void Draw(SpriteBatch batch, GameTime gameTime)
         {
@@ -281,14 +369,7 @@ namespace GameLogic
 
             if (highlightStart != highlightEnd)
             {
-                var start = highlightStart;
-                var end = highlightEnd;
-                if (start.Y > end.Y || (start.X > end.X && start.Y == end.Y))
-                {
-                    var t = start;
-                    start = end;
-                    end = t;
-                }
+                var (start, end) = GetHighlightSorted();
                 for (int y = start.Y; y <= end.Y; y++)
                 {
                     int maxX = end.X;

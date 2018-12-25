@@ -33,8 +33,35 @@ namespace GameLogic
         {
             return state.keyboardState.IsKeyDown(Keys.LeftShift) || state.keyboardState.IsKeyDown(Keys.RightShift);
         }
-    }
 
+        public static bool IsControl(InputState state)
+        {
+            return state.keyboardState.IsKeyDown(Keys.LeftControl) || state.keyboardState.IsKeyDown(Keys.RightControl);
+
+        }
+
+        public static bool IsCopy(InputState state)
+        {
+            //todo make this work for mac/linux idioms?
+            return IsControl(state) && IsKey(Keys.C, state);
+
+        }
+        public static bool IsCut(InputState state)
+        {
+            //todo make this work for mac/linux idioms?
+            return IsControl(state) && IsKey(Keys.X, state);
+
+        }
+
+        public static bool IsPaste(InputState state)
+        {
+            //todo make this work for mac/linux idioms?
+            return IsControl(state) && IsKey(Keys.V, state);
+
+        }
+
+
+    }
 
     public static class WordWrap
     {
