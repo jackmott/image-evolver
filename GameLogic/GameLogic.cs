@@ -5,7 +5,6 @@
 // todo - highlight in text box
 // todo - copy/paste in text box
 // todo - report parsing errors
-// todo - handling parsing of warp
 
 
 using Microsoft.Xna.Framework;

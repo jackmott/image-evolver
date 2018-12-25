@@ -9,7 +9,7 @@ namespace GameLogic
         public static int prevRepeat = 0;
         public static bool IsKey(Keys key, InputState state)
         {
-            
+
             if (state.keyboardState.IsKeyDown(key))
             {
                 if (!state.prevKeyboardState.IsKeyDown(key))
@@ -24,12 +24,18 @@ namespace GameLogic
                         prevRepeat = state.keyboardStateMillis;
                         return true;
                     }
-                    
+
                 }
             }
             return false;
         }
+        public static bool IsShift(InputState state)
+        {
+            return state.keyboardState.IsKeyDown(Keys.LeftShift) || state.keyboardState.IsKeyDown(Keys.RightShift);
+        }
     }
+
+
     public static class WordWrap
     {
         public static int MeasureWidth(string s)
@@ -39,7 +45,7 @@ namespace GameLogic
 
         public static List<string> Wrap(string s, int width, Func<string, int> widthMeasure)
         {
-            int spaceWidth = widthMeasure(" ");            
+            int spaceWidth = widthMeasure(" ");
             var result = new List<string>();
             var text = s.AsSpan();
             int lineStart = 0;

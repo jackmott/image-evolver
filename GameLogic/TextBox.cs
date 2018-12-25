@@ -21,12 +21,12 @@ namespace GameLogic
         [DataMember]
         public Border border;
         [DataMember]
-        public Point cursorPos;        
+        public Point cursorPos;
         public SpriteFont font;
         [DataMember]
         private bool active;
         [DataMember]
-        public Rectangle bounds;        
+        public Rectangle bounds;
         public GameWindow window;
         [DataMember]
         public Vector2 letterSize;
@@ -34,6 +34,10 @@ namespace GameLogic
         public Texture2D pixelTex;
         [DataMember]
         private bool cursorOn;
+        [DataMember]
+        public Point highlightStart;
+        [DataMember]
+        public Point highlightEnd;
 
         public TextBox(string contents, GameWindow window, Texture2D background, Texture2D pixelTex, Rectangle bounds, SpriteFont font, Color color)
         {
@@ -64,10 +68,53 @@ namespace GameLogic
             rawContents = contents.Aggregate((a, b) => a + b);
         }
 
+        public void PreHighlight(InputState state)
+        {
+            if (TextUtils.IsKey(Keys.Up, state) ||
+                TextUtils.IsKey(Keys.Down, state) ||
+                TextUtils.IsKey(Keys.Left, state) ||
+                TextUtils.IsKey(Keys.Right, state))
+            {
+
+
+                if (TextUtils.IsShift(state))
+                {
+                    if (highlightStart == highlightEnd)
+                    {
+                        highlightStart = cursorPos;
+                        highlightEnd = cursorPos;
+                    }
+                }
+                else
+                {
+                    highlightStart = Point.Zero;
+                    highlightEnd = Point.Zero;
+                }
+            }
+
+        }
+
+        public void PostHighlight(InputState state)
+        {
+            if (TextUtils.IsKey(Keys.Up, state) ||
+              TextUtils.IsKey(Keys.Down, state) ||
+              TextUtils.IsKey(Keys.Left, state) ||
+              TextUtils.IsKey(Keys.Right, state))
+            {
+
+                if (TextUtils.IsShift(state))
+                {
+                    highlightEnd = cursorPos;
+                }
+            }
+
+        }
+
         public void Update(InputState state, GameTime gameTime)
         {
             if (IsActive())
             {
+                PreHighlight(state);
                 if (TextUtils.IsKey(Keys.Back, state))
                 {
                     if (cursorPos.X > 0)
@@ -82,7 +129,7 @@ namespace GameLogic
                         contents[cursorPos.Y - 1] += contents[cursorPos.Y];
                         contents.RemoveAt(cursorPos.Y);
                         cursorPos.Y--;
-                        
+
                         UpdateRawText();
                     }
 
@@ -113,18 +160,33 @@ namespace GameLogic
                 }
                 else if (TextUtils.IsKey(Keys.Right, state))
                 {
+
                     if (cursorPos.X < contents[cursorPos.Y].Length)
                         cursorPos.X++;
+                    else if (cursorPos.Y < contents.Count - 1)
+                    {
+                        cursorPos.Y++;
+                        cursorPos.X = 0;
+                    }
+
+
                 }
                 else if (TextUtils.IsKey(Keys.Left, state))
                 {
+
                     if (cursorPos.X > 0)
                     {
                         cursorPos.X--;
                     }
+                    else if (cursorPos.Y > 0)
+                    {
+                        cursorPos.Y--;
+                        cursorPos.X = contents[cursorPos.Y].Length;
+                    }
                 }
                 else if (TextUtils.IsKey(Keys.Up, state))
                 {
+
                     if (cursorPos.Y > 0)
                     {
                         cursorPos.Y--;
@@ -133,10 +195,12 @@ namespace GameLogic
                     {
                         cursorPos.X = contents[cursorPos.Y].Length;
                     }
+
                 }
                 else if (TextUtils.IsKey(Keys.Down, state))
                 {
-                    if (cursorPos.Y < contents.Count-1)
+
+                    if (cursorPos.Y < contents.Count - 1)
                     {
                         cursorPos.Y++;
                     }
@@ -144,14 +208,18 @@ namespace GameLogic
                     {
                         cursorPos.X = contents[cursorPos.Y].Length;
                     }
+
                 }
                 else if (TextUtils.IsKey(Keys.Enter, state))
                 {
-                    contents.Insert(cursorPos.Y+1, contents[cursorPos.Y].Substring(cursorPos.X-1));
-                    contents[cursorPos.Y] = contents[cursorPos.Y].Substring(0, cursorPos.X-1);
+                    contents.Insert(cursorPos.Y + 1, contents[cursorPos.Y].Substring(cursorPos.X - 1));
+                    contents[cursorPos.Y] = contents[cursorPos.Y].Substring(0, cursorPos.X - 1);
                     cursorPos.X = 0;
                     cursorPos.Y++;
                 }
+
+
+                PostHighlight(state);
             }
         }
 
@@ -176,12 +244,12 @@ namespace GameLogic
                     {
                         toInsert = e.Character.ToString();
                     }
-                    
+
                     contents[cursorPos.Y] = contents[cursorPos.Y].Insert(cursorPos.X, toInsert);
                     cursorPos.X++;
-                    UpdateRawText();                                        
+                    UpdateRawText();
                 }
-               
+
             }
         }
 
@@ -208,8 +276,38 @@ namespace GameLogic
         public void Draw(SpriteBatch batch, GameTime gameTime)
         {
             Color c = color;
-            
+
             batch.Draw(pixelTex, bounds, new Color(0.0f, 0.0f, 0.0f, 0.75f));
+
+            if (highlightStart != highlightEnd)
+            {
+                var start = highlightStart;
+                var end = highlightEnd;
+                if (start.Y > end.Y || (start.X > end.X && start.Y == end.Y))
+                {
+                    var t = start;
+                    start = end;
+                    end = t;
+                }
+                for (int y = start.Y; y <= end.Y; y++)
+                {
+                    int maxX = end.X;
+                    int minX = start.X;
+                    if (y != end.Y)
+                    {
+                        maxX = contents[y].Length - 1;
+                    }
+                    if (y != start.Y)
+                    {
+                        minX = 0;
+                    }
+                    for (int x = minX; x <= maxX; x++)
+                    {
+                        batch.Draw(pixelTex, FRect(x * letterSize.X + bounds.X, y * letterSize.Y + bounds.Y, letterSize.X, letterSize.Y), Color.DarkBlue);
+                    }
+                }
+            }
+
             if (active && gameTime.TotalGameTime.Milliseconds % 250 == 0)
             {
                 cursorOn = !cursorOn;
@@ -219,9 +317,11 @@ namespace GameLogic
                 // var letterSize = font.MeasureString("" + contents[cursorPos.Y][cursorPos.X]);
                 batch.Draw(pixelTex, FRect(cursorPos.X * letterSize.X + bounds.X, cursorPos.Y * letterSize.Y + bounds.Y, letterSize.X, letterSize.Y), Color.White);
             }
+
+
             for (int i = 0; i < contents.Count; i++)
             {
-                batch.DrawString(font, contents[i], new Vector2(bounds.X, bounds.Y+letterSize.Y*i), c);
+                batch.DrawString(font, contents[i], new Vector2(bounds.X, bounds.Y + letterSize.Y * i), c);
             }
             border.Draw(batch, c);
 
@@ -229,7 +329,7 @@ namespace GameLogic
         }
     }
 
- 
+
 
     [DataContract]
     public class Border

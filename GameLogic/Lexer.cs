@@ -163,10 +163,27 @@ namespace GameLogic
                                     node.filename = input.Slice(filenameToken.start, filenameToken.len).ToString();
 
                                 }
+                                int warpCount = 0;
                                 for (int i = 0; i < node.children.Length; i++)
                                 {
-                                    node.children[i] = ParseNodes();
+                                    node.children[i-warpCount] = ParseNodes();
+                                    // warp returns two values, so it is a special case
+                                    if (node.children[i-warpCount].type == NodeType.WARP1)
+                                    {
+                                        warpCount++;
+                                        i++;
+                                    }
                                 }
+                                if (warpCount > 0)
+                                {
+                                    var newChildren = new AptNode[node.children.Length - warpCount];
+                                    for (int i = 0; i < newChildren.Length; i++)
+                                    {
+                                        newChildren[i] = node.children[i];
+                                    }
+                                    node.children = newChildren;
+                                }
+
                             }
                             return node;                                                       
                         }
