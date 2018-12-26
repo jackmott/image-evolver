@@ -7,21 +7,31 @@ using System.Collections.Generic;
 
 namespace GameLogic
 {
-    public enum TokenType : byte { OPEN_PAREN, CLOSE_PAREN, OP, STRING, CONSTANT}
-    public enum State : byte { DETERMINE, OP, NUMBER, STRING,EOF}
+    public enum TokenType : byte { OPEN_PAREN, CLOSE_PAREN, OP, STRING, CONSTANT }
+    public enum State : byte { DETERMINE, OP, NUMBER, STRING, EOF }
+
+    public class ParseException : Exception
+    {
+        public Token token;
+
+        public ParseException(string msg, Token token) : base(msg)
+        {
+            this.token = token;
+        }
+    }
 
     public struct Token
     {
         public TokenType type;
         public int start;
-        public int len;   
+        public int len;
     }
 
     public ref struct Lexer
-    {        
+    {
         public ReadOnlySpan<char> input;
         int start;
-        int pos;     
+        int pos;
         Queue<Token> tokens;
         Dictionary<string, NodeType> nodeDict;
 
@@ -44,7 +54,7 @@ namespace GameLogic
         }
 
         public void BeginLexing()
-        {                         
+        {
             var state = DetermineToken();
             do
             {
@@ -66,30 +76,43 @@ namespace GameLogic
                         break;
                 }
             } while (state != State.EOF);
-            
+
         }
 
-        public AptNode stringToNode(string s)
-        {            
+        public AptNode stringToNode(string s, Token t)
+        {
             NodeType type;
-            if (nodeDict.TryGetValue(s, out type)) {
+            if (nodeDict.TryGetValue(s, out type))
+            {
                 return AptNode.MakeNode(type);
-            } else {
-                throw new Exception("invalid string:" + s);
-            }                       
-            
+            }
+            else
+            {
+                throw new ParseException("invalid name:" + s, t);
+            }
+
         }
 
         public Pic ParsePic(GraphicsDevice g, GameWindow w)
         {
             while (true)
             {
-                var t = tokens.Dequeue();
+                var t = new Token { };
+
+                try
+                {
+                    t = tokens.Dequeue();
+                }
+                catch (Exception)
+                {
+                    throw new ParseException("Top level type must be RGB, Gradient, or HSV",t);
+                }
+                var s = input.Slice(t.start, t.len).ToString().ToLower();
+
                 switch (t.type)
                 {
                     case TokenType.OP:
                         {
-                            var s = input.Slice(t.start, t.len).ToString().ToLower();
 
                             if (s == "gradient")
                             {
@@ -126,13 +149,14 @@ namespace GameLogic
                             }
                             else
                             {
-                                throw new Exception("inavalid tokentype:" + s);
+                                throw new ParseException("Top level type must be RGB, Gradient, or HSV", t);
+                           
                             }
 
                         }
                     case TokenType.CONSTANT:
                         {
-                            throw new Exception("inavalid tokentype:" + t);
+                            throw new ParseException("Top level type must be RGB, Gradient, or HSV", t);
                         }
                     case TokenType.CLOSE_PAREN:
                     case TokenType.OPEN_PAREN:
@@ -143,14 +167,24 @@ namespace GameLogic
 
         public AptNode ParseNodes()
         {
-            while(true)
+
+            while (true)
             {
-                var t = tokens.Dequeue();
-                switch (t.type) {
+                var t = new Token { };
+                try
+                {
+                    t = tokens.Dequeue();
+                }
+                catch (Exception)
+                {
+                    throw new ParseException("Argument count wrong", t);
+                }
+                switch (t.type)
+                {
                     case TokenType.OP:
                         {
-                            var s = input.Slice(t.start, t.len).ToString().ToLower();                           
-                            var node = stringToNode(s);
+                            var s = input.Slice(t.start, t.len).ToString().ToLower();
+                            var node = stringToNode(s, t);
                             if (node.children != null)
                             {
                                 if (node.type == NodeType.PICTURE)
@@ -158,7 +192,7 @@ namespace GameLogic
                                     var filenameToken = tokens.Dequeue();
                                     if (filenameToken.type != TokenType.STRING)
                                     {
-                                        throw new Exception("Picture did not have a file name");
+                                        throw new ParseException("Picture did not have a file name", t);
                                     }
                                     node.filename = input.Slice(filenameToken.start, filenameToken.len).ToString();
 
@@ -166,9 +200,9 @@ namespace GameLogic
                                 int warpCount = 0;
                                 for (int i = 0; i < node.children.Length; i++)
                                 {
-                                    node.children[i-warpCount] = ParseNodes();
+                                    node.children[i - warpCount] = ParseNodes();
                                     // warp returns two values, so it is a special case
-                                    if (node.children[i-warpCount].type == NodeType.WARP1)
+                                    if (node.children[i - warpCount].type == NodeType.WARP1)
                                     {
                                         warpCount++;
                                         i++;
@@ -185,7 +219,7 @@ namespace GameLogic
                                 }
 
                             }
-                            return node;                                                       
+                            return node;
                         }
                     case TokenType.CONSTANT:
                         {
@@ -194,12 +228,13 @@ namespace GameLogic
                             node.value = float.Parse(numStr);
                             return node;
                         }
-                    
+
                     case TokenType.CLOSE_PAREN:
                     case TokenType.OPEN_PAREN:
-                        continue;                    
+                        continue;
                 }
             }
+
         }
 
         public override string ToString()
@@ -212,8 +247,10 @@ namespace GameLogic
             return result;
         }
 
-        public State DetermineToken() {
-            while (true) {
+        public State DetermineToken()
+        {
+            while (true)
+            {
                 char c = next();
                 if (IsWhiteSpace(c))
                 {
@@ -249,12 +286,13 @@ namespace GameLogic
         }
 
 
-        public State LexOp() {
+        public State LexOp()
+        {
             const string opchars = "+-/*abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
             acceptRun(opchars);
             emit(TokenType.OP);
             return State.DETERMINE;
-                
+
         }
         public State LexString()
         {
@@ -269,42 +307,50 @@ namespace GameLogic
 
             return State.DETERMINE;
         }
-        public State LexNumber() {
+        public State LexNumber()
+        {
             const string numprefix = "-.";
             accept(numprefix);
             const string digits = "0123456789";
             acceptRun(digits);
-            if (accept(".")) {
+            if (accept("."))
+            {
                 acceptRun(digits);
             }
             if (input[start] == '-' && (
-                !IsStartOfNumber(input[start+1])
-                && input[start+1] != '.'
-                )) {
-                emit(TokenType.OP);         
-            } else {
+                !IsStartOfNumber(input[start + 1])
+                && input[start + 1] != '.'
+                ))
+            {
+                emit(TokenType.OP);
+            }
+            else
+            {
                 emit(TokenType.CONSTANT);
             }
 
             return State.DETERMINE;
         }
 
-        public bool accept(string valid) {
-            if (valid.IndexOf(next()) >= 0) {
+        public bool accept(string valid)
+        {
+            if (valid.IndexOf(next()) >= 0)
+            {
                 return true;
             }
             backup();
             return false;
         }
 
-        public void acceptRun(string valid) {
+        public void acceptRun(string valid)
+        {
             while (valid.IndexOf(next()) >= 0) { }
             backup();
         }
 
         public void emit(TokenType type)
         {
-            tokens.Enqueue(new Token { type = type, start = start, len = pos-start});
+            tokens.Enqueue(new Token { type = type, start = start, len = pos - start });
         }
 
         public char next()
@@ -344,11 +390,11 @@ namespace GameLogic
             return (c >= '0' && c <= '9') || c == '-' || c == '.';
         }
 
-        
 
 
-        
+
+
     }
 
-    
+
 }

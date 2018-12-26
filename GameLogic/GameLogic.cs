@@ -3,8 +3,7 @@
 // todo - change new population to not include any previous selections
 // todo - mouse pointer moves cursor
 // todo - handle typing beyond edge of text box
-// todo - report parsing errors
-
+// todo - transition / hourglass animation while processing
 
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
@@ -224,15 +223,25 @@ namespace GameLogic
             {
                 // todo parse and render new image
                 Lexer lexer = new Lexer(state.zoomedPic.textBox.rawContents);
-                lexer.BeginLexing();
-                var p = lexer.ParsePic(state.g, state.w);
-                state.zoomedPic.Trees = p.Trees;
-                state.zoomedPic.Machines = p.Machines;
-                state.zoomedPic.type = p.type;
-                state.zoomedPic.RegenTex(state.g);                                
-                state.screen = Screen.ZOOM;
-                state.zoomedPic.textBox.SetActive(false);                
-                return state;
+                try
+                {
+                    lexer.BeginLexing();
+                    var p = lexer.ParsePic(state.g, state.w);
+                    state.zoomedPic.Trees = p.Trees;
+                    state.zoomedPic.Machines = p.Machines;
+                    state.zoomedPic.type = p.type;
+                    state.zoomedPic.RegenTex(state.g);
+                    state.screen = Screen.ZOOM;
+                    state.zoomedPic.textBox.SetActive(false);
+                }
+                catch (ParseException ex)
+                {
+                    Console.WriteLine(ex);
+                    state.zoomedPic.textBox.error = ex;
+                    return state;
+                }
+
+                state.zoomedPic.textBox.error = null;
             }
             return state;
         }

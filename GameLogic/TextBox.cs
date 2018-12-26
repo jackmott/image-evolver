@@ -39,6 +39,8 @@ namespace GameLogic
         [DataMember]
         public Point highlightEnd;
 
+        public ParseException error;
+
         public TextBox(string contents, GameWindow window, Texture2D background, Texture2D pixelTex, Rectangle bounds, SpriteFont font, Color color)
         {
             active = false;
@@ -196,8 +198,10 @@ namespace GameLogic
             if (p.X > contents[p.Y].Length - 1) p.X = contents[p.Y].Length - 1;
             return p;
         }
+
         public void HandleMouse(InputState state)
         {
+            // Set the cursor position on press then release
             if (state.prevMouseState.LeftButton == ButtonState.Pressed && state.mouseState.LeftButton == ButtonState.Released)
             {
                 if (bounds.Contains(state.prevMouseState.Position) && bounds.Contains(state.mouseState.Position))
@@ -205,11 +209,15 @@ namespace GameLogic
                     cursorPos = TextPosFromScreenPos(state.mouseState.Position);
                 }
             }
+
+            // Clear the highlight on a new press
             if (state.prevMouseState.LeftButton == ButtonState.Released && state.mouseState.LeftButton == ButtonState.Pressed)
             {
                 highlightStart = Point.Zero;
                 highlightEnd = Point.Zero;
             }
+
+            // Change the highlighted range on click->drag
             if (state.prevMouseState.LeftButton == ButtonState.Pressed && state.mouseState.LeftButton == ButtonState.Pressed)
             {
                 Point pre = TextPosFromScreenPos(state.prevMouseState.Position);
@@ -380,6 +388,8 @@ namespace GameLogic
                     }
 
                     contents[cursorPos.Y] = contents[cursorPos.Y].Insert(cursorPos.X, toInsert);
+                    
+                    
                     cursorPos.X++;
                     UpdateRawText();
                 }
@@ -452,6 +462,11 @@ namespace GameLogic
             {
                 // var letterSize = font.MeasureString("" + contents[cursorPos.Y][cursorPos.X]);
                 batch.Draw(pixelTex, FRect(cursorPos.X * letterSize.X + bounds.X, cursorPos.Y * letterSize.Y + bounds.Y, letterSize.X, letterSize.Y), Color.White);
+            }
+
+            if (error != null)
+            {
+                batch.DrawString(font, error.Message, new Vector2(bounds.X + bounds.Width * .01f, bounds.Y + bounds.Height - letterSize.Y), Color.Red);
             }
 
 

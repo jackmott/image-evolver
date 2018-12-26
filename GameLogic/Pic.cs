@@ -42,6 +42,7 @@ namespace GameLogic
         public bool selected = false;
         [DataMember]
         public bool zoomed = false;
+
         
 
         [DataMember]
