@@ -38,5 +38,14 @@ namespace GameLogic
         {
             return new Rectangle((int)x, (int)y, (int)w, (int)h);
         }
+
+        public static Rectangle ScaleCentered(Rectangle r, float scale)
+        {
+            float newW = r.Width * scale;
+            float newH = r.Height * scale;
+            float x = r.X + (r.Width - newW) / 2.0f;
+            float y = r.Y + (r.Height- newH) / 2.0f;
+            return FRect(x, y, newW, newH);
+        }
     }
 }

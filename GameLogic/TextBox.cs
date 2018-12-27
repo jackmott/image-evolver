@@ -48,13 +48,18 @@ namespace GameLogic
             this.bounds = bounds;
             this.color = color;
             this.font = font;
-            rawContents = contents;
-            this.contents = WordWrap.Wrap(contents, bounds.Width, WordWrap.MeasureWidth);
+            SetText(contents);
             letterSize = font.MeasureString("A");
             this.pixelTex = pixelTex;
             border = new Border(pixelTex, bounds, 4);
             cursorPos = new Point(0, 0);
 
+        }
+
+        public void SetText(string text)
+        {
+            rawContents = text;
+            this.contents = WordWrap.Wrap(rawContents, bounds.Width, WordWrap.MeasureWidth);
         }
 
         public void SetNewBounds(Rectangle bounds)
@@ -161,11 +166,15 @@ namespace GameLogic
                 }
                 if (y == end.Y)
                 {
-                    xEnd = end.X;
+                    xEnd = end.X + 1;
                 }
-                text += contents[y].Substring(xStart, xEnd - xStart + 1);
-                if (delete) 
-                    contents[y] = contents[y].Substring(0, xStart) + contents[y].Substring(xEnd + 1);
+                
+                
+                text += contents[y].Substring(xStart, Math.Min(contents[y].Length,xEnd) - xStart);
+                
+                if (delete)
+                    //todo the logic is off here, why?
+                    contents[y] = contents[y].Substring(0, xStart) + contents[y].Substring(xEnd);
                 if (y != end.Y) { text += "\n"; }
             }
 
@@ -302,7 +311,6 @@ namespace GameLogic
                 }
                 else if (TextUtils.IsKey(Keys.Right, state))
                 {
-
                     if (cursorPos.X < contents[cursorPos.Y].Length)
                         cursorPos.X++;
                     else if (cursorPos.Y < contents.Count - 1)
@@ -310,8 +318,6 @@ namespace GameLogic
                         cursorPos.Y++;
                         cursorPos.X = 0;
                     }
-
-
                 }
                 else if (TextUtils.IsKey(Keys.Left, state))
                 {
@@ -472,7 +478,7 @@ namespace GameLogic
 
             for (int i = 0; i < contents.Count; i++)
             {
-                batch.DrawString(font, contents[i], new Vector2(bounds.X, bounds.Y + letterSize.Y * i), c);
+                batch.DrawString(font, contents[i], new Vector2(bounds.X, bounds.Y + letterSize.Y * i), c);                
             }
             border.Draw(batch, c);
 

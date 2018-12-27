@@ -120,14 +120,14 @@ namespace GameLogic
                                 stackPointer[sp] = (float)Math.Cos(Math.PI*stackPointer[sp]);
                                 break;
                             case NodeType.ATAN:
-                                stackPointer[sp] = (float)Math.Atan(stackPointer[sp]);
+                                stackPointer[sp] = 0.6366f*(float)Math.Atan(5.0f*stackPointer[sp]);
                                 break;
                             case NodeType.ATAN2:
-                                stackPointer[sp - 1] = (float)Math.Atan2(stackPointer[sp], stackPointer[sp - 1]);
+                                stackPointer[sp - 1] = (float)(Math.Atan2(stackPointer[sp], stackPointer[sp - 1])/Math.PI);
                                 sp--;
                                 break;
                             case NodeType.LOG:
-                                stackPointer[sp] = (float)Math.Log(stackPointer[sp]);
+                                stackPointer[sp] = ((float)Math.Log(stackPointer[sp]*7.0f))/2.0f;
                                 break;
                             case NodeType.SQUARE:
                                 stackPointer[sp] = stackPointer[sp] * stackPointer[sp];
@@ -149,13 +149,14 @@ namespace GameLogic
                                 stackPointer[sp - 1] = Math.Max(stackPointer[sp], stackPointer[sp - 1]);
                                 sp--;
                                 break;
-                            case NodeType.CLIP:
-                                var v = stackPointer[sp];
-                                var max = Math.Abs(stackPointer[sp - 1]);
-                                if (v > max) v = max;
-                                if (v < -max) v = -max;
-                                stackPointer[sp - 1] = v;
-                                sp--;
+                            case NodeType.CLAMP:
+                                var v = stackPointer[sp];              
+                                if (v > 1.0f) v = 1.0f;
+                                else if (v < -1.0f) v = -1.0f;
+                                stackPointer[sp] = v;                                
+                                break;
+                            case NodeType.WRAP:
+                                stackPointer[sp] = MathUtils.Constrain(stackPointer[sp], -1.0f, 1.001f);
                                 break;
                             case NodeType.NEGATE:
                                 stackPointer[sp] = -1.0f * stackPointer[sp];
@@ -213,6 +214,7 @@ namespace GameLogic
                                     var yi = (int)(yf * image.h);
                                     var index = yi * image.w + xi;
                                     if (index > image.data.Length - 1) index = image.data.Length - 1;
+                                    if (index < 0) index = 0;
                                     var c = image.data[index];
                                     var fc = (float)(c.R + c.G + c.B) / (255.0f * 3.0f);
                                     sp--;
@@ -222,7 +224,7 @@ namespace GameLogic
                             default:
                                 throw new Exception("Evexecute found a bad node");
                         }
-                       stackPointer[sp] = MathUtils.Constrain(stackPointer[sp], -1.0f, 1.001f);
+                     
                     }
                     return stackPointer[sp];
                 }

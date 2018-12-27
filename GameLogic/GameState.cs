@@ -36,11 +36,15 @@ namespace GameLogic
         [DataMember]
         public Button reRollButton;
         [DataMember]
+        public Button undoButton;
+        [DataMember]
         public Screen screen = Screen.CHOOSE;
         [DataMember]
         public Random r;
         [DataMember]
         public int populationSize;
+        [DataMember]
+        public List<Pic> prevPictures;
         [DataMember]
         public List<Pic> pictures;
         [DataMember]

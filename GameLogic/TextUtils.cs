@@ -6,7 +6,7 @@ namespace GameLogic
 {
     public static class TextUtils
     {
-        public static int prevRepeat = 0;
+        public static int prevRepeat = 0;        
         public static bool IsKey(Keys key, InputState state)
         {
 
@@ -19,7 +19,9 @@ namespace GameLogic
                 }
                 if (state.keyboardStateMillis > 500)
                 {
-                    if (state.keyboardStateMillis - prevRepeat > 20)
+                    var diff = state.keyboardStateMillis - prevRepeat;
+                    // 0 diff means we are on the same exact frame so, return the same answer
+                    if (diff > 20 || diff == 0)
                     {
                         prevRepeat = state.keyboardStateMillis;
                         return true;

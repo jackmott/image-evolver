@@ -43,7 +43,7 @@ namespace GameLogic
         [DataMember]
         public bool zoomed = false;
 
-        
+
 
         [DataMember]
         public TextBox textBox;
@@ -62,13 +62,13 @@ namespace GameLogic
                 case PicType.RGB:
                 case PicType.HSV:
                     Trees = new AptNode[3];
-                    Machines = new StackMachine[3];                   
+                    Machines = new StackMachine[3];
                     break;
                 case PicType.GRADIENT:
                     Trees = new AptNode[1];
-                    Machines = new StackMachine[1];                    
+                    Machines = new StackMachine[1];
                     break;
-            }            
+            }
         }
 
         public Pic(PicType type, Random rand, int min, int max, GraphicsDevice g, GameWindow w)
@@ -116,7 +116,6 @@ namespace GameLogic
                     pos[pos.Length - 1] = 1.0f;
                     break;
             }
-
             SetupTextbox();
         }
 
@@ -131,8 +130,8 @@ namespace GameLogic
 
         public void SetupTextbox()
         {
-            string lisp = ToLisp();            
-            textBox = new TextBox(lisp, w, GraphUtils.GetTexture(g, new Color(0, 0, 0, 128)), GraphUtils.GetTexture(g, Color.Cyan), picButton.bounds, Settings.equationFont, Color.White);
+            string lisp = ToLisp();
+            textBox = new TextBox(lisp, w, GetTexture(g, new Color(0, 0, 0, 128)), GetTexture(g, Color.Cyan), ScaleCentered(picButton.bounds, 0.75f), Settings.equationFont, Color.White);
         }
 
         public string ToLisp()
@@ -164,7 +163,7 @@ namespace GameLogic
 
         public Pic Clone()
         {
-            Pic pic = new Pic(type,g,w);
+            Pic pic = new Pic(type, g, w);
             if (gradients != null)
             {
                 var newGradients = new (Color?, Color?)[gradients.Length];
@@ -191,46 +190,45 @@ namespace GameLogic
         {
             if (selected)
             {
-                Rectangle rect = new Rectangle(picButton.bounds.X - 5, picButton.bounds.Y - 5, picButton.bounds.Width + 20, picButton.bounds.Height + 10);
+                Rectangle rect = new Rectangle(picButton.bounds.X - 5, picButton.bounds.Y - 5, picButton.bounds.Width + 10, picButton.bounds.Height + 10);
                 batch.Draw(Settings.selectedTexture, rect, Color.White);
             }
             picButton.Draw(batch, gameTime);
-            injectButton.Draw(batch, gameTime);                                                           
+            injectButton.Draw(batch, gameTime);
         }
 
         public void EditDraw(SpriteBatch batch, GameTime gameTime)
         {
-            picButton.Draw(batch, gameTime);            
+            picButton.Draw(batch, gameTime);
             textBox.Draw(batch, gameTime);
             saveEquationButton.Draw(batch, gameTime);
-            cancelEditButton.Draw(batch, gameTime);            
+            cancelEditButton.Draw(batch, gameTime);
         }
 
         public void ZoomDraw(SpriteBatch batch, GameTime gameTime)
         {
             picButton.Draw(batch, gameTime);
-            editEquationButton.Draw(batch, gameTime);            
+            editEquationButton.Draw(batch, gameTime);
         }
 
         public void SetNewBounds(Rectangle bounds, GraphicsDevice g)
-        {            
+        {
             picButton.bounds = bounds;
             if (picButton.tex != null)
             {
                 picButton.tex.Dispose();
             }
-            var textWidth = bounds.Width * .75f;
-            var textHeight = bounds.Height * .75f;
-            var textBounds = FRect(bounds.X + (bounds.Width - textWidth) / 2.0f, bounds.Y + (bounds.Height - textHeight) / 2.0f, textWidth, textHeight);
+
+            var textBounds = ScaleCentered(bounds, 0.75f);
             textBox.SetNewBounds(textBounds);
-            injectButton.bounds = FRect(bounds.X, bounds.Y + bounds.Height + 5, bounds.Width*.1,bounds.Height*.1);
-            editEquationButton.bounds = FRect(bounds.X + bounds.Width * .1, bounds.Y + bounds.Height * .9f, bounds.Width * .1, bounds.Height * .1);
+            injectButton.bounds = FRect(bounds.X, bounds.Y + bounds.Height + 5, bounds.Width * .1, bounds.Height * .1);
+            editEquationButton.bounds = FRect(bounds.X + bounds.Width * .1, bounds.Y + bounds.Height * .9f, bounds.Width * .1, bounds.Height * .05);
 
             saveEquationButton.bounds = FRect(textBounds.X, bounds.Height * .9f, bounds.Width * .1f, bounds.Height * .05f);
-            cancelEditButton.bounds = FRect(textBounds.X+textBounds.Width-bounds.Width*.1f, bounds.Height * .9f, bounds.Width * .1f, bounds.Height * .05f);
+            cancelEditButton.bounds = FRect(textBounds.X + textBounds.Width - bounds.Width * .1f, bounds.Height * .9f, bounds.Width * .1f, bounds.Height * .05f);
 
 
-            RegenTex(g);            
+            RegenTex(g);
         }
 
         public Pic BreedWith(Pic partner, Random r)
@@ -255,10 +253,10 @@ namespace GameLogic
                     result.Machines = newMachines;
                     if (partner.type == PicType.GRADIENT)
                     {
-                        result.gradients = ((Color?,Color?)[])partner.gradients.Clone();
+                        result.gradients = ((Color?, Color?)[])partner.gradients.Clone();
                         result.pos = (float[])partner.pos.Clone();
                     }
-                    
+
                 }
                 return result;
             }
@@ -283,7 +281,8 @@ namespace GameLogic
         public Pic Mutate(Random r)
         {
             var result = Clone();
-            if (r.Next(0, Settings.MUTATE_CHANCE) == 0) {
+            if (r.Next(0, Settings.MUTATE_CHANCE) == 0)
+            {
                 var (t, s) = result.GetRandomTree(r);
                 t.Mutate(r);
                 s.RebuildInstructions(t);
@@ -292,14 +291,15 @@ namespace GameLogic
         }
 
         public void RegenTex(GraphicsDevice graphics)
-        {            
+        {
             if (picButton.tex != null) { picButton.tex.Dispose(); }
-            picButton.tex = ToTexture(graphics, picButton.bounds.Width, picButton.bounds.Height);                                                    
+            picButton.tex = ToTexture(graphics, picButton.bounds.Width, picButton.bounds.Height);
         }
 
         public Texture2D ToTexture(GraphicsDevice graphics, int w, int h)
         {
-            switch (type) {
+            switch (type)
+            {
                 case PicType.RGB:
                     return RGBToTexture(graphics, w, h);
                 case PicType.HSV:
@@ -309,7 +309,7 @@ namespace GameLogic
                 default:
                     throw new Exception("wat");
 
-           }
+            }
         }
 
         public void RangeTest()
@@ -318,7 +318,8 @@ namespace GameLogic
             float max = float.MinValue;
 
             float[][] stacks = new float[Machines.Length][];
-            for (int i = 0; i < stacks.Length; i++) {
+            for (int i = 0; i < stacks.Length; i++)
+            {
                 stacks[i] = new float[Machines[i].nodeCount];
             }
 
@@ -337,7 +338,7 @@ namespace GameLogic
                         var f = Machines[i].Execute(xf, yf, stacks[i]);
                         if (f < min) min = f;
                         if (f > max) max = f;
-                    }                    
+                    }
                 }
 
             }
@@ -347,13 +348,13 @@ namespace GameLogic
         private Texture2D RGBToTexture(GraphicsDevice graphics, int w, int h)
         {
             Color[] colors = new Color[w * h];
-            var scale = 0.5f;            
+            var scale = 0.5f;
             var partition = Partitioner.Create(0, h);
 
             Parallel.ForEach(
                 partition,
                 (range, state) =>
-                {                   
+                {
                     var rStack = new float[Machines[0].nodeCount];
                     var gStack = new float[Machines[1].nodeCount];
                     var bStack = new float[Machines[2].nodeCount];
@@ -364,15 +365,15 @@ namespace GameLogic
                         for (int x = 0; x < w; x++)
                         {
                             float xf = ((float)x / (float)w) * 2.0f - 1.0f;
-                            var rf = Wrap0To1(Machines[0].Execute(xf, yf, rStack) * scale - scale);
-                            var gf = Wrap0To1(Machines[1].Execute(xf, yf, gStack) * scale - scale);
-                            var bf = Wrap0To1(Machines[2].Execute(xf, yf, bStack) * scale - scale);
+                            var rf = Wrap0To1(Machines[0].Execute(xf, yf, rStack) * scale + scale);
+                            var gf = Wrap0To1(Machines[1].Execute(xf, yf, gStack) * scale + scale);
+                            var bf = Wrap0To1(Machines[2].Execute(xf, yf, bStack) * scale + scale);                            
                             byte r = (byte)(rf * 255.0f);
                             byte g = (byte)(gf * 255.0f);
                             byte b = (byte)(bf * 255.0f);
                             colors[yw + x] = new Color(r, g, b, (byte)255);
                         }
-                    }                  
+                    }
                 });
             Texture2D tex = new Texture2D(graphics, w, h);
             var tex2 = new Texture2D(graphics, w, h);
@@ -380,20 +381,20 @@ namespace GameLogic
             return tex;
         }
 
-       
+
 
         private Texture2D GradientToTexture(GraphicsDevice graphics, int w, int h)
         {
-            Color[] colors = new Color[w * h];            
+            Color[] colors = new Color[w * h];
             var partition = Partitioner.Create(0, h);
 
             Parallel.ForEach(
                 partition,
                 (range, state) =>
                 {
-                   
+
                     var stack = new float[Machines[0].nodeCount];
-                    
+
                     for (int y = range.Item1; y < range.Item2; y++)
                     {
                         float yf = ((float)y / (float)h) * 2.0f - 1.0f;
@@ -401,20 +402,20 @@ namespace GameLogic
                         for (int x = 0; x < w; x++)
                         {
                             float xf = ((float)x / (float)w) * 2.0f - 1.0f;
-                            var r = Machines[0].Execute(xf, yf, stack);                           
+                            var r = Machines[0].Execute(xf, yf, stack);
                             int i = 0;
-                            for (; i < pos.Length-2; i++)
+                            for (; i < pos.Length - 2; i++)
                             {
-                                if (r >= pos[i] && r <= pos[i+1])
+                                if (r >= pos[i] && r <= pos[i + 1])
                                 {
                                     break;
                                 }
                             }
-                            
 
-                            var (c1a,c1b) = gradients[i];
-                            var (c2a,c2b) = gradients[i + 1];
-                            
+
+                            var (c1a, c1b) = gradients[i];
+                            var (c2a, c2b) = gradients[i + 1];
+
                             float posDiff = r - pos[i];
                             float totalDiff = pos[i + 1] - pos[i];
                             float pct = posDiff / totalDiff;
@@ -422,11 +423,11 @@ namespace GameLogic
                             Color c1;
                             if (c1b == null) c1 = c1a.Value;
                             else c1 = c1b.Value;
-                            
+
                             colors[yw + x] = Color.Lerp(c1, c2a.Value, pct);
-                                                        
+
                         }
-                    }                   
+                    }
                 });
             Texture2D tex = new Texture2D(graphics, w, h);
             var tex2 = new Texture2D(graphics, w, h);
@@ -455,9 +456,9 @@ namespace GameLogic
                         for (int x = 0; x < width; x++)
                         {
                             float xf = ((float)x / (float)width) * 2.0f - 1.0f;
-                            var h = Wrap0To1(Machines[0].Execute(xf, yf, rStack) * scale - scale);
-                            var s = Wrap0To1(Machines[1].Execute(xf, yf, gStack) * scale - scale);
-                            var v = Wrap0To1(Machines[2].Execute(xf, yf, bStack) * scale - scale);
+                            var h = Wrap0To1(Machines[0].Execute(xf, yf, rStack) * scale + scale);
+                            var s = Wrap0To1(Machines[1].Execute(xf, yf, gStack) * scale + scale);
+                            var v = Wrap0To1(Machines[2].Execute(xf, yf, bStack) * scale + scale);
                             var (rf, gf, bf) = HSV2RGB(h, s, v);
                             byte r = (byte)(rf * 255.0f);
                             byte g = (byte)(gf * 255.0f);
@@ -479,57 +480,23 @@ namespace GameLogic
 
         public static (float, float, float) HSV2RGB(float h, float s, float v)
         {
-            var hh = h / 0.1666666f;
-            var i = (int)hh;
-            var ff = hh - (float)i;
+
+            var i = (int)Math.Floor(h * 6.0f);
+            var f = h * 6.0f - i;
             var p = v * (1.0f - s);
-            var q = v * (1.0f - (s * ff));
-            var t = v * (1.0f - (s * (1.0f - ff)));
+            var q = v * (1.0f - f * s);
+            var t = v * (1.0f - (1.0f - f) * s);
 
-            float r, g, b;
-            switch (i)
+            switch (i % 6)
             {
-                case 0:
-                    r = v;
-                    g = t;
-                    b = p;
-                    break;
-                case 1:
-                    r = q;
-                    g = v;
-                    b = p;
-                    break;
-                case 2:
-                    r = p;
-                    g = v;
-                    b = p;
-                    break;
-                case 3:
-                    r = p;
-                    g = q;
-                    b = v;
-                    break;
-                case 4:
-                    r = t;
-                    g = p;
-                    b = v;
-                    break;
-                case 5:
-                default:
-                    r = v;
-                    g = p;
-                    b = q;
-                    break;
+                case 0: return (v, t, p);
+                case 1: return (q, v, p);
+                case 2: return (p, v, t);
+                case 3: return (p, q, v);
+                case 4: return (t, p, v);
+                default: return (v, p, q);
             }
 
-            if (s <= 0.0f)
-            {
-                r = v;
-                b = v;
-                g = v;
-            }
-
-            return (r, g, b);
         }
     }
 }
