@@ -5,11 +5,13 @@ using System.Threading.Tasks;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using static GameLogic.GraphUtils;
+using static GameLogic.ColorTools;
 
 
 namespace GameLogic
 {
     public enum PicType { RGB, HSV, GRADIENT }
+    public enum GradientType { RANDOM, COMPLEMENTARY, SPLIT_COMPLEMENTARY, TRIADIC, TETRADIC, SQUARE, ANALOGOUS }
     [DataContract]
     public class Pic
     {
@@ -71,9 +73,9 @@ namespace GameLogic
             }
         }
 
-        public Pic(PicType type, Random rand, int min, int max, GraphicsDevice g, GameWindow w)
+        public Pic(PicType type, Random rand, int min, int max, GraphicsDevice graphics, GameWindow w)
         {
-            this.g = g;
+            this.g = graphics;
             this.w = w;
             this.type = type;
             InitButtons();
@@ -94,8 +96,120 @@ namespace GameLogic
                     Machines = new StackMachine[1];
                     Trees[0] = AptNode.GenerateTree(rand.Next(min, max), rand);
                     Machines[0] = new StackMachine(Trees[0]);
+                    
+                    Color[] colors = null;
+                    var enum_size = Enum.GetNames(typeof(GradientType)).Length;
+                    var gradType = (GradientType)rand.Next(0, enum_size);                    
+                    float saturation = (float)rand.NextDouble();
+                    float value = (float)rand.NextDouble();
+                    switch (gradType)
+                    {
+                        case GradientType.ANALOGOUS:
+                            {                                
+                                colors = new Color[3];
+                                var (h1, h2, h3) = ColorTools.GetAnalogousHues((float)rand.NextDouble());
 
-                    int numGradients = rand.Next(Settings.MIN_GRADIENTS, Settings.MAX_GRADIENTS);
+                                var (r, g, b) = HSV2RGB(h1, saturation, value);
+                                colors[0] = new Color(r, g, b);
+
+                                (r, g, b) = HSV2RGB(h2, saturation, value);
+                                colors[1] = new Color(r, g, b);
+
+                                (r, g, b) = HSV2RGB(h3, saturation, value);
+                                colors[2] = new Color(r, g, b);
+                                break;
+                            }
+                        case GradientType.COMPLEMENTARY:
+                            {                                
+                                colors = new Color[2];
+                                var (h1, h2) = ColorTools.GetComplementaryHues((float)rand.NextDouble());
+
+                                var (r, g, b) = HSV2RGB(h1, saturation, value);
+                                colors[0] = new Color(r, g, b);
+
+                                (r, g, b) = HSV2RGB(h2, saturation, value);
+                                colors[1] = new Color(r, g, b);
+                                break;
+                            }
+                        case GradientType.SPLIT_COMPLEMENTARY:
+                            {                                
+                                colors = new Color[3];
+                                var (h1, h2, h3) = ColorTools.GetSplitComplementaryHues((float)rand.NextDouble());
+
+                                var (r, g, b) = HSV2RGB(h1, saturation, value);
+                                colors[0] = new Color(r, g, b);
+
+                                (r, g, b) = HSV2RGB(h2, saturation, value);
+                                colors[1] = new Color(r, g, b);
+
+                                (r, g, b) = HSV2RGB(h3, saturation, value);
+                                colors[2] = new Color(r, g, b);
+                                break;
+                            }
+                        case GradientType.SQUARE:
+                            {                                
+                                colors = new Color[4];
+                                var (h1, h2, h3, h4) = ColorTools.GetSquareHues((float)rand.NextDouble());
+
+                                var (r, g, b) = HSV2RGB(h1, saturation, value);
+                                colors[0] = new Color(r, g, b);
+
+                                (r, g, b) = HSV2RGB(h2, saturation, value);
+                                colors[1] = new Color(r, g, b);
+
+                                (r, g, b) = HSV2RGB(h3, saturation, value);
+                                colors[2] = new Color(r, g, b);
+
+                                (r, g, b) = HSV2RGB(h4, saturation, value);
+                                colors[3] = new Color(r, g, b);
+                                break;
+                            }
+                        case GradientType.TETRADIC:
+                            {                                
+                                colors = new Color[4];
+                                var (h1, h2, h3, h4) = ColorTools.GetTetradicHues((float)rand.NextDouble());
+
+                                var (r, g, b) = HSV2RGB(h1, saturation, value);
+                                colors[0] = new Color(r, g, b);
+
+                                (r, g, b) = HSV2RGB(h2, saturation, value);
+                                colors[1] = new Color(r, g, b);
+
+                                (r, g, b) = HSV2RGB(h3, saturation, value);
+                                colors[2] = new Color(r, g, b);
+
+                                (r, g, b) = HSV2RGB(h4, saturation, value);
+                                colors[3] = new Color(r, g, b);
+                                break;
+                            }
+                        case GradientType.TRIADIC:
+                            {                                
+                                colors = new Color[3];
+                                var (h1, h2, h3) = ColorTools.GetTriadicHues((float)rand.NextDouble());
+
+                                var (r, g, b) = HSV2RGB(h1, saturation, value);
+                                colors[0] = new Color(r, g, b);
+
+                                (r, g, b) = HSV2RGB(h2, saturation, value);
+                                colors[1] = new Color(r, g, b);
+
+                                (r, g, b) = HSV2RGB(h3, saturation, value);
+                                colors[2] = new Color(r, g, b);
+                                break;
+                            }
+                        case GradientType.RANDOM:
+                            {
+                                colors = new Color[rand.Next(Settings.MIN_GRADIENTS, Settings.MAX_GRADIENTS)];
+                                for (int i = 0; i < colors.Length; i++)
+                                {
+                                    colors[i] = GraphUtils.RandomColor(rand);
+                                }
+                                break;
+                            }                            
+                    }
+
+
+                    var numGradients = colors.Length;
                     gradients = new (Color?, Color?)[numGradients];
                     pos = new float[numGradients];
                     for (int i = 0; i < gradients.Length; i++)
@@ -103,11 +217,11 @@ namespace GameLogic
                         bool isSuddenShift = rand.Next(0, Settings.CHANCE_HARD_GRADIENT) == 0;
                         if (!isSuddenShift)
                         {
-                            gradients[i] = (GraphUtils.RandomColor(rand), null);
+                            gradients[i] = (colors[i], null);
                         }
                         else
                         {
-                            gradients[i] = (GraphUtils.RandomColor(rand), GraphUtils.RandomColor(rand));
+                            gradients[i] = (colors[i],colors[(i+1)%colors.Length]);
                         }
                         pos[i] = (float)(rand.NextDouble() * 2.0 - 1.0);
                         Array.Sort(pos);
@@ -478,26 +592,7 @@ namespace GameLogic
             return v - (float)Math.Floor(v);
         }
 
-        public static (float, float, float) HSV2RGB(float h, float s, float v)
-        {
-
-            var i = (int)Math.Floor(h * 6.0f);
-            var f = h * 6.0f - i;
-            var p = v * (1.0f - s);
-            var q = v * (1.0f - f * s);
-            var t = v * (1.0f - (1.0f - f) * s);
-
-            switch (i % 6)
-            {
-                case 0: return (v, t, p);
-                case 1: return (q, v, p);
-                case 2: return (p, v, t);
-                case 3: return (p, q, v);
-                case 4: return (t, p, v);
-                default: return (v, p, q);
-            }
-
-        }
+      
     }
 }
 

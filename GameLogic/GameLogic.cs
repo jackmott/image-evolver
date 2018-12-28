@@ -2,6 +2,11 @@
 // todo - transition / hourglass animation while processing
 // todo - test text box edge cases -- highlight to end, hit delete, causes exception
 // todo - constant folding / optimizations on AST
+// todo - set cursor pos to 0/0 whenever opening text editor
+// todo - gradients don't have enough data to rebuild from the lisp output!
+// todo - crash sometimes when evolving gradient pics
+// todo - let gradients just be an index into a hue, then equations for sat and value?
+
 
 
 using Microsoft.Xna.Framework;
@@ -14,6 +19,7 @@ using Microsoft.Xna.Framework.Content;
 using System.Runtime.Serialization;
 using System.Xml;
 using static GameLogic.GraphUtils;
+using static GameLogic.ColorTools;
 
 namespace GameLogic
 {
@@ -22,7 +28,7 @@ namespace GameLogic
     {
         public GameState state;
 
-
+        
         public GameState SetState(string xml)
         {
             using (XmlReader reader = XmlReader.Create(new StringReader(xml)))
@@ -395,6 +401,7 @@ namespace GameLogic
         public Pic GenTree(Random r)
         {
             int chooser = r.Next(0, 3);
+            chooser = 2;
             Pic p;
             if (chooser == 0)
             {

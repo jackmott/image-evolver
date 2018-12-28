@@ -55,6 +55,7 @@
   <ItemGroup>
     <Compile Include="APT.cs" />
     <Compile Include="Button.cs" />
+    <Compile Include="ColorTools.cs" />
     <Compile Include="FastNoise.cs" />
     <Compile Include="GameState.cs" />
     <Compile Include="GameLogic.cs" />

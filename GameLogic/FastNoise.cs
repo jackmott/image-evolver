@@ -267,7 +267,7 @@ public class FastNoise
     private static int FastRound(FN_DECIMAL f) { return (f >= 0) ? (int)(f + (FN_DECIMAL)0.5) : (int)(f - (FN_DECIMAL)0.5); }
 
     [MethodImplAttribute(FN_INLINE)]
-    private static FN_DECIMAL Lerp(FN_DECIMAL a, FN_DECIMAL b, FN_DECIMAL t) { return a + t * (b - a); }
+    public static FN_DECIMAL Lerp(FN_DECIMAL a, FN_DECIMAL b, FN_DECIMAL t) { return a + t * (b - a); }
 
     [MethodImplAttribute(FN_INLINE)]
     private static FN_DECIMAL InterpHermiteFunc(FN_DECIMAL t) { return t * t * (3 - 2 * t); }

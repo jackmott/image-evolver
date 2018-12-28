@@ -5,7 +5,7 @@ namespace GameLogic
     public static class Settings
     {
         public const int MIN_GEN_SIZE = 1;
-        public const int MAX_GEN_SIZE = 4;
+        public const int MAX_GEN_SIZE = 8;
         public const int POP_SIZE_COLUMNS = 5;
         //Chance of a mutation happening on a pic
         public const int MUTATE_CHANCE = 2; // 1 in X
@@ -18,7 +18,7 @@ namespace GameLogic
 
         //note min gradients cannot be less than 2
         public const int MIN_GRADIENTS = 2;
-        public const int MAX_GRADIENTS = 20;
+        public const int MAX_GRADIENTS = 10;
         public const float HORIZONTAL_SPACING = .01f;
         public const float VERTICAL_SPACING = .04f;
 

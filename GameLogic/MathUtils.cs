@@ -17,5 +17,14 @@ namespace GameLogic
             var result = lo + (hi - lo) * (t - FastFloor(t));            
             return result;
         }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static float FixNan(float x)
+        {
+            if (float.IsNaN(x)) { return 0.0f; }
+            if (float.IsPositiveInfinity(x)) { return 1.0f; }
+            if (float.IsNegativeInfinity(x)) { return -1.0f; }
+            return x;
+        }
     }
 }

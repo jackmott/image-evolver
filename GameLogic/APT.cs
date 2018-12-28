@@ -3,7 +3,7 @@ using System.Runtime.Serialization;
 
 namespace GameLogic
 {
-    public enum NodeType : byte { EMPTY = 0, CONSTANT, X, Y, PICTURE, ABS,WRAP,CLAMP, NEGATE, ADD, SUB, MUL, DIV, SIN, COS, LOG, ATAN, ATAN2, SQRT, FLOOR, CEIL, MAX, MIN, MOD, SQUARE, FBM, BILLOW, CELL1, WARP1 };
+    public enum NodeType : byte { EMPTY = 0, CONSTANT, X, Y, PICTURE, IFLESS, ABS,WRAP,CLAMP, NEGATE, ADD, SUB, MUL, DIV, SIN, COS, LOG, ATAN, ATAN2, SQRT, FLOOR, CEIL, MAX, MIN, MOD, SQUARE, FBM, BILLOW, CELL1, WARP1 };
 
     [DataContract(IsReference = true)]
     public class AptNode
@@ -226,7 +226,7 @@ namespace GameLogic
                 case NodeType.CONSTANT:
                     return value.ToString("0.000");
                 case NodeType.ABS:
-                    return "Abs";
+                    return "Abs";                
                 case NodeType.CLAMP:
                     return "Clamp";
                 case NodeType.WRAP:
@@ -249,6 +249,8 @@ namespace GameLogic
                     return "Atan";
                 case NodeType.ATAN2:
                     return "Atan2";
+                case NodeType.IFLESS:
+                    return "IfLess";
                 case NodeType.CEIL:
                     return "Ceil";
                 case NodeType.FLOOR:
@@ -341,7 +343,7 @@ namespace GameLogic
                 case NodeType.ABS:
                 case NodeType.NEGATE:
                 case NodeType.CLAMP:
-                case NodeType.WRAP:
+                case NodeType.WRAP:                
                     result = new AptNode { type = type, children = new AptNode[1] };
                     break;
                 case NodeType.X:
@@ -350,6 +352,9 @@ namespace GameLogic
                     break;
                 case NodeType.PICTURE:
                     result = new AptNode { type = type, children = new AptNode[2]};
+                    break;
+                case NodeType.IFLESS:
+                    result = new AptNode { type = type, children = new AptNode[4] };
                     break;
                 case NodeType.WARP1:
                     result =new AptNode { type = type, children = new AptNode[5] };

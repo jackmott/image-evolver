@@ -1,7 +1,8 @@
 ﻿using System;
+using System.Runtime.InteropServices;
 using System.Runtime.Serialization;
 namespace GameLogic
-{    
+{
     [DataContract]
     public struct Instruction
     {
@@ -10,6 +11,14 @@ namespace GameLogic
         [DataMember]
         public float value;
     }
+
+    [StructLayout(LayoutKind.Explicit)]
+    public struct floatint {
+        [FieldOffset(0)]
+        public float f;
+        [FieldOffset(0)]
+        public int i; 
+     }
 
     [DataContract]
     public class StackMachine
@@ -20,14 +29,14 @@ namespace GameLogic
         public int inPtr;
         [DataMember]
         public int nodeCount;
-        
-                
+
+                                
         public StackMachine(AptNode node)
         {
             nodeCount = node.Count();
             instructions = new Instruction[nodeCount];
             inPtr = 0;
-            BuildInstructions(node);        
+            BuildInstructions(node);            
         }
 
         public void RebuildInstructions(AptNode node)
@@ -164,9 +173,29 @@ namespace GameLogic
                             case NodeType.ABS:
                                 stackPointer[sp] = (float)Math.Abs(stackPointer[sp]);
                                 break;
+                                /* this just seems to be garbage
+                            case NodeType.HASH:
+                                {                                   
+                                    int hash = 1337;                                    
+                                    hash ^= 1619 * new floatint { f = (stackPointer[sp]) }.i;
+                                    hash ^= 31337 * new floatint { f = (stackPointer[sp - 1]) }.i;
+                                    hash = hash * hash * hash * 60493;
+                                    hash = (hash >> 13) ^ hash;
+                                    var fi = new floatint { i = hash };
+                                    stackPointer[sp - 1] = FastNoise.Lerp(MathUtils.Constrain(fi.f, -1.0f, 1.0001f), stackPointer[sp - 1], 0.5f);
+                                    sp--;
+                                }
+                                break;*/
                             case NodeType.MOD:
                                 stackPointer[sp - 1] = stackPointer[sp] % stackPointer[sp - 1];
                                 sp--;
+                                break;
+                            case NodeType.IFLESS:
+                                if (stackPointer[sp] < stackPointer[sp - 1])
+                                {
+                                    stackPointer[sp - 3] = stackPointer[sp - 2];
+                                } // implicit else stackPointer[sp-3] = stackPointer[sp-3]
+                                sp -= 3;
                                 break;
                             case NodeType.FBM:
                                 {
@@ -175,7 +204,7 @@ namespace GameLogic
                                     stackPointer[sp - 2] = 2.0f * 0.49f * FastNoise.SingleSimplexFractalFBM(stackPointer[sp], stackPointer[sp - 1], stackPointer[sp - 2], 1337, 3, lac, gain);
                                     sp -= 2;
                                     break;
-                                }
+                                }                            
                             case NodeType.BILLOW:
                                 {
                                     const float lac = 2.0f;
@@ -224,7 +253,7 @@ namespace GameLogic
                             default:
                                 throw new Exception("Evexecute found a bad node");
                         }
-                     
+                        stackPointer[sp] = MathUtils.FixNan(stackPointer[sp]);
                     }
                     return stackPointer[sp];
                 }
