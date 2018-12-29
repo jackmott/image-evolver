@@ -3,7 +3,7 @@ using System.Runtime.Serialization;
 
 namespace GameLogic
 {
-    public enum NodeType : byte { EMPTY = 0, CONSTANT, X, Y, PICTURE, IFLESS, ABS,WRAP,CLAMP, NEGATE, ADD, SUB, MUL, DIV, SIN, COS, LOG, ATAN, ATAN2, SQRT, FLOOR, CEIL, MAX, MIN, MOD, SQUARE, FBM, BILLOW, CELL1, WARP1 };
+    public enum NodeType : byte { EMPTY = 0, CONSTANT, X, Y, PICTURE, IF, ABS,WRAP,CLAMP, NEGATE, ADD, SUB, MUL, DIV, SIN, COS, LOG, ATAN, ATAN2, SQRT, FLOOR, CEIL, MAX, MIN, MOD, SQUARE, FBM, BILLOW, CELL1, WARP1 };
 
     [DataContract(IsReference = true)]
     public class AptNode
@@ -249,8 +249,8 @@ namespace GameLogic
                     return "Atan";
                 case NodeType.ATAN2:
                     return "Atan2";
-                case NodeType.IFLESS:
-                    return "IfLess";
+                case NodeType.IF:
+                    return "If";
                 case NodeType.CEIL:
                     return "Ceil";
                 case NodeType.FLOOR:
@@ -314,12 +314,9 @@ namespace GameLogic
             switch (type)
             {
                 case NodeType.FBM:
-                case NodeType.BILLOW:
-                    result = new AptNode { type = type, children = new AptNode[5] };
-                    //result.children[3] = new AptNode { type = NodeType.CONSTANT, value = (float)r.NextDouble() * 7.0f + 1.0f };
-                    //result.children[4] = new AptNode { type = NodeType.CONSTANT, value = (float)r.NextDouble() * 2.0f + .1f };
-                    break;
+                case NodeType.BILLOW:                    
                 case NodeType.CELL1:
+                case NodeType.IF:
                     result = new AptNode { type = type, children = new AptNode[3] };
                     break;
                 case NodeType.ADD:
@@ -352,10 +349,7 @@ namespace GameLogic
                     break;
                 case NodeType.PICTURE:
                     result = new AptNode { type = type, children = new AptNode[2]};
-                    break;
-                case NodeType.IFLESS:
-                    result = new AptNode { type = type, children = new AptNode[4] };
-                    break;
+                    break;                                
                 case NodeType.WARP1:
                     result =new AptNode { type = type, children = new AptNode[5] };
                     break;

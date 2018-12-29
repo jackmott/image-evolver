@@ -400,8 +400,7 @@ namespace GameLogic
 
         public Pic GenTree(Random r)
         {
-            int chooser = r.Next(0, 3);
-            chooser = 2;
+            int chooser = r.Next(0, 3);            
             Pic p;
             if (chooser == 0)
             {

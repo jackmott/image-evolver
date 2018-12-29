@@ -119,6 +119,12 @@ namespace GameLogic
                                 Pic p = new Pic(PicType.GRADIENT, g, w);
                                 p.Trees[0] = ParseNodes();
                                 p.Machines[0] = new StackMachine(p.Trees[0]);
+
+                                p.Trees[1] = ParseNodes();
+                                p.Machines[1] = new StackMachine(p.Trees[1]);
+
+                                p.Trees[2] = ParseNodes();
+                                p.Machines[2] = new StackMachine(p.Trees[2]);
                                 return p;
                             }
                             else if (s == "rgb")

@@ -40,6 +40,21 @@ namespace GameLogic
             return (complementary,wheel(complementary,0.16666f),startHue,wheel(startHue,0.16666f));
         }
 
+        
+        public static (float, float, float, float) GetDoubleComplement(float startHue)
+        {
+            float analog = wheel(startHue, 0.0833f);
+            float complement = wheel(startHue, 0.5f);
+            float companalog = wheel(complement, 0.0833f);
+            return (startHue, analog, complement, companalog);
+            
+        }
+
+        public static (float, float) GetDiad(float startHue)
+        {
+            return (startHue, wheel(startHue, 0.16666f));
+        }
+
         public static (float, float, float) HSV2RGB(float h, float s, float v)
         {
 

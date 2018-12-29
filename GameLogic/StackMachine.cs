@@ -190,12 +190,12 @@ namespace GameLogic
                                 stackPointer[sp - 1] = stackPointer[sp] % stackPointer[sp - 1];
                                 sp--;
                                 break;
-                            case NodeType.IFLESS:
-                                if (stackPointer[sp] < stackPointer[sp - 1])
+                            case NodeType.IF:
+                                if (stackPointer[sp] < 0)
                                 {
-                                    stackPointer[sp - 3] = stackPointer[sp - 2];
-                                } // implicit else stackPointer[sp-3] = stackPointer[sp-3]
-                                sp -= 3;
+                                    stackPointer[sp - 2] = stackPointer[sp - 1];
+                                } // implicit else stackPointer[sp-2] = stackPointer[sp-2]
+                                sp -= 2;
                                 break;
                             case NodeType.FBM:
                                 {
