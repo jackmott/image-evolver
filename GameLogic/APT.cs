@@ -3,13 +3,13 @@ using System.Runtime.Serialization;
 
 namespace GameLogic
 {
-    public enum NodeType : byte { EMPTY = 0, CONSTANT, X, Y, PICTURE, IF, ABS,WRAP,CLAMP, NEGATE, ADD, SUB, MUL, DIV, SIN, COS, LOG, ATAN, ATAN2, SQRT, FLOOR, CEIL, MAX, MIN, MOD, SQUARE, FBM, BILLOW, CELL1, WARP1 };
+    public enum NodeType : byte { EMPTY = 0,T, CONSTANT, X, Y,PICTURE, IF, ABS,WRAP,CLAMP, NEGATE, ADD, SUB, MUL, DIV, SIN, COS, LOG, ATAN, ATAN2, SQRT, FLOOR, CEIL, MAX, MIN, MOD, SQUARE, FBM, BILLOW, CELL1, WARP1 };
 
     [DataContract(IsReference = true)]
     public class AptNode
     {
         [DataMember]
-        const int NUM_LEAF_TYPES = 5;
+        const int NUM_LEAF_TYPES = 6;
         [DataMember]
         public NodeType type;
         [DataMember]
@@ -219,6 +219,8 @@ namespace GameLogic
             {
                 case NodeType.EMPTY:
                     return "EMPTY";
+                case NodeType.T:
+                    return "T";
                 case NodeType.X:
                     return "X";
                 case NodeType.Y:
@@ -345,6 +347,7 @@ namespace GameLogic
                     break;
                 case NodeType.X:
                 case NodeType.Y:
+                case NodeType.T:
                     result = new AptNode { type = type };
                     break;
                 case NodeType.PICTURE:
@@ -371,16 +374,16 @@ namespace GameLogic
 
         public static AptNode GetRandomLeaf(Random r)
         {
-            //We start at 1 because 0 is EMPTY            
+            //We start at 2 because 0 is EMPTY  and 1 is Time for videos only          
             var picChance = r.Next(0, 3);
             NodeType type;
             if (picChance == 0)
             {
-                type = (NodeType)r.Next(1, NUM_LEAF_TYPES);
+                type = (NodeType)r.Next(2, NUM_LEAF_TYPES);
             }
             else
             {
-                type = (NodeType)r.Next(1, NUM_LEAF_TYPES - 1);
+                type = (NodeType)r.Next(2, NUM_LEAF_TYPES - 1);
             }
 
             switch (type)

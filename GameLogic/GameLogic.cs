@@ -4,8 +4,8 @@
 // todo - constant folding / optimizations on AST
 // todo - set cursor pos to 0/0 whenever opening text editor
 // todo - gradients don't have enough data to rebuild from the lisp output!
-// todo - crash sometimes when evolving gradient pics
-// todo - let gradients just be an index into a hue, then equations for sat and value?
+// todo - consider filter nodes attached to top level pic nodes (sepia, etc)
+
 
 
 
@@ -19,7 +19,7 @@ using Microsoft.Xna.Framework.Content;
 using System.Runtime.Serialization;
 using System.Xml;
 using static GameLogic.GraphUtils;
-using static GameLogic.ColorTools;
+
 
 namespace GameLogic
 {

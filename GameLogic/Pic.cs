@@ -2,6 +2,7 @@
 using System.Collections.Concurrent;
 using System.Runtime.Serialization;
 using System.Threading.Tasks;
+using System.Linq;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using static GameLogic.GraphUtils;
@@ -310,36 +311,32 @@ namespace GameLogic
         {
 
             var result = Clone();
+            var partnerClone = partner.Clone();
 
             if (result.type != partner.type && r.Next(0, Settings.CROSSOVER_ROOT_CHANCE) == 0)
             {
-                result.type = partner.type;
-                if (result.Trees.Length != partner.Trees.Length)
+                //Copy the gradient data if we are changing type TO gradient
+                if (partner.type == PicType.GRADIENT)
                 {
-                    var newTrees = new AptNode[partner.Trees.Length];
-                    var newMachines = new StackMachine[partner.Trees.Length];
-                    for (int i = 0; i < partner.Trees.Length; i++)
-                    {
-                        var randomIndex = r.Next(0, result.Trees.Length);
-                        newTrees[i] = result.Trees[randomIndex];
-                        newMachines[i] = result.Machines[randomIndex];
-                    }
-                    result.Trees = newTrees;
-                    result.Machines = newMachines;
-                    if (partner.type == PicType.GRADIENT)
-                    {
-                        result.gradients = ((float?, float?)[])partner.gradients.Clone();
-                        result.pos = (float[])partner.pos.Clone();
-                    }
-
+                    result.pos = new float[partner.pos.Length];
+                    Array.Copy(partner.pos, result.pos, partner.pos.Length);
+                    result.gradients = new (float?,float?)[partner.gradients.Length];
+                    Array.Copy(partner.gradients, result.gradients, partner.gradients.Length);
                 }
+                // clear gradient data if we are changing type FROM gradient
+                else if (result.type == PicType.GRADIENT)
+                {
+                    result.pos = null;
+                    result.gradients = null;
+                }
+                result.type = partner.type;
+                
                 return result;
             }
             else
             {
-
                 var (ft, fs) = result.GetRandomTree(r);
-                var (st, ss) = partner.GetRandomTree(r);
+                var (st, ss) = partnerClone.GetRandomTree(r);
                 ft.BreedWith(st, r);
                 fs.RebuildInstructions(ft);
                 return result;
@@ -425,7 +422,7 @@ namespace GameLogic
             Color[] colors = new Color[w * h];
             var scale = 0.5f;
             var partition = Partitioner.Create(0, h);
-
+                                    
             Parallel.ForEach(
                 partition,
                 (range, state) =>
@@ -442,11 +439,8 @@ namespace GameLogic
                             float xf = ((float)x / (float)w) * 2.0f - 1.0f;
                             var rf = Wrap0To1(Machines[0].Execute(xf, yf, rStack) * scale + scale);
                             var gf = Wrap0To1(Machines[1].Execute(xf, yf, gStack) * scale + scale);
-                            var bf = Wrap0To1(Machines[2].Execute(xf, yf, bStack) * scale + scale);                            
-                            byte r = (byte)(rf * 255.0f);
-                            byte g = (byte)(gf * 255.0f);
-                            byte b = (byte)(bf * 255.0f);
-                            colors[yw + x] = new Color(r, g, b, (byte)255);
+                            var bf = Wrap0To1(Machines[2].Execute(xf, yf, bStack) * scale + scale);                                                       
+                            colors[yw + x] = new Color(rf,gf,bf);
                         }
                     }
                 });
@@ -542,11 +536,8 @@ namespace GameLogic
                             var h = Wrap0To1(Machines[0].Execute(xf, yf, hStack) * scale + scale);
                             var s = Wrap0To1(Machines[1].Execute(xf, yf, sStack) * scale + scale);
                             var v = Wrap0To1(Machines[2].Execute(xf, yf, vStack) * scale + scale);
-                            var (rf, gf, bf) = HSV2RGB(h, s, v);
-                            byte r = (byte)(rf * 255.0f);
-                            byte g = (byte)(gf * 255.0f);
-                            byte b = (byte)(bf * 255.0f);
-                            colors[yw + x] = new Color(r, g, b, (byte)255);
+                            var (rf, gf, bf) = HSV2RGB(h, s, v);                            
+                            colors[yw + x] = new Color(rf,gf,bf);
                         }
                     }
                 });

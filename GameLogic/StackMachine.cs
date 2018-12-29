@@ -83,7 +83,12 @@ namespace GameLogic
             }
         }
 
-        public float Execute(float x, float y, float[] stack)
+        public float Execute(float x, float y,float[] stack)
+        {
+            return Execute(x, y, 0.0f, stack);
+        }
+
+        public float Execute(float x, float y,float t, float[] stack)
         {
             unsafe
             {
@@ -101,6 +106,10 @@ namespace GameLogic
                             case NodeType.Y:
                                 sp++;
                                 stackPointer[sp] = y;
+                                break;
+                            case NodeType.T:
+                                sp++;
+                                stackPointer[sp] = t;
                                 break;
                             case NodeType.CONSTANT:
                                 sp++;
