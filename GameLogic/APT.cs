@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Runtime.Serialization;
 
 namespace GameLogic
@@ -67,6 +68,39 @@ namespace GameLogic
             }
             return (new AptNode { type = NodeType.EMPTY }, n);
 
+        }
+
+        public static float Evaluate(AptNode node, float x, float y, float t) {
+            StackMachine m = new StackMachine(node);
+            var stack = new float[m.nodeCount];
+            return m.Execute(x, y, t,stack);
+        }
+
+        public static AptNode ConstantFolding(AptNode node)
+        {
+            var clone = new AptNode { type = node.type, children = new AptNode[node.children.Length]};
+            switch (node.type) {
+                case NodeType.X:
+                case NodeType.T:
+                case NodeType.Y:
+                case NodeType.CONSTANT:
+                    return clone;
+                default:
+                    bool allConstants = true;
+                    
+                    for (int i = 0; i < node.children.Length;i++)
+                    {
+                        clone.children[i] = ConstantFolding(node.children[i]);
+                        if (clone.children[i].type != NodeType.CONSTANT) allConstants = false;
+                    }
+
+                    if (allConstants)
+                    {
+                        var v = Evaluate(clone,0,0,0);
+                        return new AptNode { type = NodeType.CONSTANT, value = v };
+                    }
+            return clone;
+            }
         }
 
         public static void ReplaceNode(AptNode nodeToMutate, AptNode newNode,Random r, bool video)

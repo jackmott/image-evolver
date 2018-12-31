@@ -198,7 +198,7 @@ namespace GameLogic
 
             foreach (var pic in state.pictures)
             {
-                pic.Draw(batch, gameTime);
+                pic.Draw(batch, gameTime,state.inputState);
             }
             batch.End();
 

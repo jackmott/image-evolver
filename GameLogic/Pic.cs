@@ -272,7 +272,7 @@ namespace GameLogic
             return pic;
         }
 
-        public void Draw(SpriteBatch batch, GameTime gameTime)
+        public void Draw(SpriteBatch batch, GameTime gameTime, InputState state)
         {
             if (selected)
             {
@@ -280,7 +280,10 @@ namespace GameLogic
                 batch.Draw(Settings.selectedTexture, rect, Color.White);
             }
             picButton.Draw(batch, gameTime);
-            injectButton.Draw(batch, gameTime);            
+            if (picButton.bounds.Contains(state.mouseState.Position))
+            {
+                injectButton.Draw(batch, gameTime);
+            }
         }
 
         public void EditDraw(SpriteBatch batch, GameTime gameTime)
@@ -311,10 +314,7 @@ namespace GameLogic
 
             var textBounds = ScaleCentered(bounds, 0.75f);
             textBox.SetNewBounds(textBounds);
-            injectButton.bounds = FRect(bounds.X, bounds.Y + bounds.Height + 5, bounds.Width * .1, bounds.Height * .1);
-
-           
-
+            injectButton.bounds = FRect(bounds.X+ bounds.Width * .025, bounds.Y + bounds.Height *.9, bounds.Width * .1, bounds.Height * .1);
             saveEquationButton.bounds = FRect(textBounds.X, bounds.Height * .9f, bounds.Width * .1f, bounds.Height * .05f);
             cancelEditButton.bounds = FRect(textBounds.X + textBounds.Width - bounds.Width * .1f, bounds.Height * .9f, bounds.Width * .1f, bounds.Height * .05f);
 
