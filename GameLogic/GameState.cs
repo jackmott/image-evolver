@@ -40,6 +40,8 @@ namespace GameLogic
         [DataMember]
         public Button undoButton;
         [DataMember]
+        public ToggleButton videoModeButton;
+        [DataMember]
         public Screen screen = Screen.CHOOSE;
         [DataMember]
         public Random r;

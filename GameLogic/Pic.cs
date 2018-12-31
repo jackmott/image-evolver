@@ -46,6 +46,8 @@ namespace GameLogic
         public Button saveEquationButton;
         [DataMember]
         public Button cancelEditButton;
+        [DataMember]
+        public SlidingPanel panel;
 
         [DataMember]
         public bool selected = false;
@@ -203,6 +205,7 @@ namespace GameLogic
             editEquationButton = new Button(Settings.equationTexture, new Rectangle());
             saveEquationButton = new Button(Settings.saveEquationTexture, new Rectangle());
             cancelEditButton = new Button(Settings.cancelEditTexture, new Rectangle());
+            panel = new SlidingPanel(Settings.panelTexture, new Rectangle(), new Rectangle(), 1000.0);
         }
 
         public void SetupTextbox()
@@ -277,7 +280,7 @@ namespace GameLogic
                 batch.Draw(Settings.selectedTexture, rect, Color.White);
             }
             picButton.Draw(batch, gameTime);
-            injectButton.Draw(batch, gameTime);
+            injectButton.Draw(batch, gameTime);            
         }
 
         public void EditDraw(SpriteBatch batch, GameTime gameTime)
@@ -288,9 +291,13 @@ namespace GameLogic
             cancelEditButton.Draw(batch, gameTime);
         }
 
-        public void ZoomDraw(SpriteBatch batch, GameTime gameTime)
+        public void ZoomDraw(SpriteBatch batch, GameTime gameTime,InputState state)
         {            
             picButton.Draw(batch, gameTime);
+                        
+            panel.Draw(batch, gameTime, state);
+            var panelBounds = panel.GetBounds(state);
+            editEquationButton.bounds = FRect(panelBounds.X + panelBounds.Width * .1f, panelBounds.Y + panelBounds.Height * .25f, panelBounds.Width * .1f, panelBounds.Height * .5f);
             editEquationButton.Draw(batch, gameTime);
         }
 
@@ -305,11 +312,14 @@ namespace GameLogic
             var textBounds = ScaleCentered(bounds, 0.75f);
             textBox.SetNewBounds(textBounds);
             injectButton.bounds = FRect(bounds.X, bounds.Y + bounds.Height + 5, bounds.Width * .1, bounds.Height * .1);
-            editEquationButton.bounds = FRect(bounds.X + bounds.Width * .1, bounds.Y + bounds.Height * .9f, bounds.Width * .1, bounds.Height * .05);
+
+           
 
             saveEquationButton.bounds = FRect(textBounds.X, bounds.Height * .9f, bounds.Width * .1f, bounds.Height * .05f);
             cancelEditButton.bounds = FRect(textBounds.X + textBounds.Width - bounds.Width * .1f, bounds.Height * .9f, bounds.Width * .1f, bounds.Height * .05f);
 
+            panel.activeBounds = FRect(0, bounds.Height * .85f, bounds.Width, bounds.Height * .15f);
+            panel.hiddenBounds = FRect(0, bounds.Height * 1.001, bounds.Width, bounds.Height * .15f);            
 
             RegenTex(g);
         }

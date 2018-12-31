@@ -27,6 +27,7 @@ namespace GameLogic
         public static Texture2D selectedTexture;
         public static Texture2D saveEquationTexture;
         public static Texture2D cancelEditTexture;
+        public static Texture2D panelTexture;
 
         public static SpriteFont equationFont;
     }

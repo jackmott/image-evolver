@@ -7,8 +7,6 @@
 // todo - consider filter nodes attached to top level pic nodes (sepia, etc)
 
 
-
-
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using System;
@@ -55,6 +53,7 @@ namespace GameLogic
             Settings.saveEquationTexture = GraphUtils.GetTexture(g, Color.Green);
             Settings.cancelEditTexture = GraphUtils.GetTexture(g, Color.Red);
             Settings.equationFont = content.Load<SpriteFont>("equation-font");
+            Settings.panelTexture = GraphUtils.GetTexture(g, new Color(0.0f, 0.0f, 0.0f, 0.5f));
 
 
             DirectoryInfo d = new DirectoryInfo(AppDomain.CurrentDomain.BaseDirectory + @"\Assets");
@@ -99,7 +98,8 @@ namespace GameLogic
             state.undoButton = new Button(GetTexture(g, Color.White), FRect(winW * .01f, winH * .91f, winW * .1f, winH * 0.05f));
             state.reRollButton = new Button(GetTexture(g, Color.Blue), FRect(winW * .201f, winH * .91f, winW * .1f,winH * 0.05f));
             state.evolveButton = new Button(GetTexture(g, Color.Red), FRect(winW * .401f, winH * .91f, winW * .1f, winH * 0.05f));
-            
+            state.videoModeButton = new ToggleButton(GetTexture(g, Color.Green), GetTexture(g, Color.DarkGreen), FRect(winW * .601f, winH * .91f, winW * .1f, winH * 0.05f));
+
 
             int UISpace = (int)(winH * 0.1f);
             winH -= UISpace;
@@ -179,7 +179,7 @@ namespace GameLogic
         {
             state.g.Clear(Color.Black);
             batch.Begin();
-            state.zoomedPic.ZoomDraw(batch, gameTime);
+            state.zoomedPic.ZoomDraw(batch, gameTime,state.inputState);
             batch.End();
         }
 
@@ -193,6 +193,7 @@ namespace GameLogic
             state.undoButton.Draw(batch, gameTime);
             state.reRollButton.Draw(batch, gameTime);
             state.evolveButton.Draw(batch, gameTime);
+            state.videoModeButton.Draw(batch, gameTime,state.videoMode);
             
 
             foreach (var pic in state.pictures)
@@ -237,6 +238,14 @@ namespace GameLogic
             }
             if (state.reRollButton.WasLeftClicked(state.inputState))
             {
+                ClearPics(state.prevPictures);
+                state.prevPictures = state.pictures;
+                state.pictures = GenPics(r);
+                LayoutUI();
+            }
+            if (state.videoModeButton.WasLeftClicked(state.inputState))
+            {
+                state.videoMode = !state.videoMode;
                 ClearPics(state.prevPictures);
                 state.prevPictures = state.pictures;
                 state.pictures = GenPics(r);
