@@ -12,7 +12,7 @@ namespace GameLogic
         public static double Lerp(double a, double b, double t) { return a + t * (b - a); }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static int Lerp(int a, int b, double t) { return (int)(a + t * (b - a)); }
+        public static int Lerp(int a, int b, float t) { return (int)(a + t * (b - a)); }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static int FastFloor(float f) { return (f >= 0 ? (int)f : (int)f - 1); }

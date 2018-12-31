@@ -4,7 +4,7 @@ using Microsoft.Xna.Framework.Graphics;
 using System.Diagnostics;
 using System.Runtime.Serialization;
 using System;
-using static GameLogic.MathUtils;
+using static GameLogic.GraphUtils;
 namespace GameLogic
 {
 
@@ -38,31 +38,22 @@ namespace GameLogic
         {
             bool active = activeBounds.Contains(state.mouseState.Position);
             var deltaT = gameTime.TotalGameTime.TotalMilliseconds - lastStateChange;
-            var pct = Math.Min(deltaT / tranisitionTime, 1.0f);
+            var pct = (float)Math.Min(deltaT / tranisitionTime, 1.0f);
             if (active != lastState)
             {
                 deltaT = 0.0;
-                pct = Math.Min(deltaT / tranisitionTime, 1.0f);
+                pct = (float)Math.Min(deltaT / tranisitionTime, 1.0f);
                 lastStateChange = gameTime.TotalGameTime.TotalMilliseconds;
                 lastState = active;
             }
             if (active)
-            {                
-                
-                int x = Lerp(lastBounds.X, activeBounds.X, pct);
-                int y = Lerp(lastBounds.Y, activeBounds.Y, pct);
-                int w = Lerp(lastBounds.Width, activeBounds.Width, pct);
-                int h = Lerp(lastBounds.Height, activeBounds.Height, pct);
-                lastBounds = new Rectangle(x, y, w, h);
+            {                                                
+                lastBounds = RectLerp(lastBounds, activeBounds, pct);
                 batch.Draw(tex, lastBounds, Color.White);
             }
             else
-            {                               
-                int x = Lerp(lastBounds.X, hiddenBounds.X, pct);
-                int y = Lerp(lastBounds.Y, hiddenBounds.Y, pct);
-                int w = Lerp(lastBounds.Width, hiddenBounds.Width, pct);
-                int h = Lerp(lastBounds.Height, hiddenBounds.Height, pct);
-                lastBounds = new Rectangle(x, y, w, h);
+            {
+                lastBounds = RectLerp(lastBounds, activeBounds, pct);
                 batch.Draw(tex, lastBounds, Color.White);
             }
         }
