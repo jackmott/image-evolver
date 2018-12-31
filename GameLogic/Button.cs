@@ -18,7 +18,7 @@ namespace GameLogic
         double lastStateChange = 0;
         bool lastState;
         double tranisitionTime;
-        
+
 
         public SlidingPanel(Texture2D tex, Rectangle activeBounds, Rectangle hiddenBounds, double transitionTime)
         {
@@ -31,7 +31,7 @@ namespace GameLogic
 
         public Rectangle GetBounds(InputState state)
         {
-            return lastBounds;                
+            return lastBounds;
         }
 
         public void Draw(SpriteBatch batch, GameTime gameTime, InputState state)
@@ -47,13 +47,13 @@ namespace GameLogic
                 lastState = active;
             }
             if (active)
-            {                                                
+            {
                 lastBounds = RectLerp(lastBounds, activeBounds, pct);
                 batch.Draw(tex, lastBounds, Color.White);
             }
             else
             {
-                lastBounds = RectLerp(lastBounds, activeBounds, pct);
+                lastBounds = RectLerp(lastBounds, hiddenBounds, pct);
                 batch.Draw(tex, lastBounds, Color.White);
             }
         }
@@ -61,14 +61,15 @@ namespace GameLogic
 
     [DataContract]
     public class Button
-    {        
+    {
         public Texture2D tex;
         [DataMember]
         public Rectangle bounds;
 
         public Button() { }
 
-        public Button(Texture2D tex, Rectangle bounds) {
+        public Button(Texture2D tex, Rectangle bounds)
+        {
             this.tex = tex;
             this.bounds = bounds;
         }
@@ -115,14 +116,14 @@ namespace GameLogic
         public Texture2D offTex;
         [DataMember]
         public Rectangle bounds;
-        
+
         public ToggleButton() { }
 
-        public ToggleButton(Texture2D onTex,Texture2D offTex, Rectangle bounds)
+        public ToggleButton(Texture2D onTex, Texture2D offTex, Rectangle bounds)
         {
             this.onTex = onTex;
             this.offTex = offTex;
-            this.bounds = bounds;            
+            this.bounds = bounds;
         }
 
         public void Draw(SpriteBatch batch, GameTime gameTime, bool on)
