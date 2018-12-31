@@ -20,7 +20,7 @@ namespace GameLogic
         public const int MIN_GRADIENTS = 2;
         public const int MAX_GRADIENTS = 10;
         public const float HORIZONTAL_SPACING = .01f;
-        public const float VERTICAL_SPACING = .04f;
+        public const float VERTICAL_SPACING = .01f;
 
         public static Texture2D injectTexture;
         public static Texture2D equationTexture;
