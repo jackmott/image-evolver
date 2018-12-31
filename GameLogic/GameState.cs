@@ -29,6 +29,8 @@ namespace GameLogic
         public GraphicsDevice g;        
         public GameWindow w;
         [DataMember]
+        public bool videoMode = false;
+        [DataMember]
         public InputState inputState;        
         public ContentManager content;
         [DataMember]

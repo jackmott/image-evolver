@@ -17,6 +17,12 @@ namespace GameLogic
     public class Pic
     {
         [DataMember]
+        bool video;
+        [DataMember]
+        public float t=0.0f;
+        [DataMember]
+        public bool videoForward;
+        [DataMember]
         public PicType type;
         [DataMember]
         public AptNode[] Trees;
@@ -71,8 +77,9 @@ namespace GameLogic
             }
         }
 
-        public Pic(PicType type, Random rand, int min, int max, GraphicsDevice graphics, GameWindow w)
+        public Pic(PicType type, Random rand, int min, int max, GraphicsDevice graphics, GameWindow w, bool video)
         {
+            this.video = video;
             this.g = graphics;
             this.w = w;
             this.type = type;
@@ -85,7 +92,7 @@ namespace GameLogic
                     Machines = new StackMachine[3];
                     for (int i = 0; i < 3; i++)
                     {
-                        Trees[i] = AptNode.GenerateTree(rand.Next(min, max), rand);
+                        Trees[i] = AptNode.GenerateTree(rand.Next(min, max), rand,video);
                         Machines[i] = new StackMachine(Trees[i]);
                     }
                     break;
@@ -94,7 +101,7 @@ namespace GameLogic
                     Machines = new StackMachine[3];
                     for (int i = 0; i < 3; i++)
                     {
-                        Trees[i] = AptNode.GenerateTree(rand.Next(min, max), rand);
+                        Trees[i] = AptNode.GenerateTree(rand.Next(min, max), rand,video);
                         Machines[i] = new StackMachine(Trees[i]);
                     }
 
@@ -282,7 +289,7 @@ namespace GameLogic
         }
 
         public void ZoomDraw(SpriteBatch batch, GameTime gameTime)
-        {
+        {            
             picButton.Draw(batch, gameTime);
             editEquationButton.Draw(batch, gameTime);
         }
@@ -337,7 +344,7 @@ namespace GameLogic
             {
                 var (ft, fs) = result.GetRandomTree(r);
                 var (st, ss) = partnerClone.GetRandomTree(r);
-                ft.BreedWith(st, r);
+                ft.BreedWith(st, r,video);
                 fs.RebuildInstructions(ft);
                 return result;
             }
@@ -356,7 +363,7 @@ namespace GameLogic
             if (r.Next(0, Settings.MUTATE_CHANCE) == 0)
             {
                 var (t, s) = result.GetRandomTree(r);
-                t.Mutate(r);
+                t.Mutate(r,video);
                 s.RebuildInstructions(t);
             }
             return result;
@@ -373,11 +380,11 @@ namespace GameLogic
             switch (type)
             {
                 case PicType.RGB:
-                    return RGBToTexture(graphics, w, h);
+                    return RGBToTexture(graphics, w, h,t);
                 case PicType.HSV:
-                    return HSVToTexture(graphics, w, h);
+                    return HSVToTexture(graphics, w, h,t);
                 case PicType.GRADIENT:
-                    return GradientToTexture(graphics, w, h);
+                    return GradientToTexture(graphics, w, h,t);
                 default:
                     throw new Exception("wat");
 
@@ -417,7 +424,7 @@ namespace GameLogic
 
             Console.WriteLine("min:" + min + " max:" + max + " range:" + (max - min));
         }
-        private Texture2D RGBToTexture(GraphicsDevice graphics, int w, int h)
+        private Texture2D RGBToTexture(GraphicsDevice graphics, int w, int h, float t)
         {
             Color[] colors = new Color[w * h];
             var scale = 0.5f;
@@ -437,9 +444,9 @@ namespace GameLogic
                         for (int x = 0; x < w; x++)
                         {
                             float xf = ((float)x / (float)w) * 2.0f - 1.0f;
-                            var rf = Wrap0To1(Machines[0].Execute(xf, yf, rStack) * scale + scale);
-                            var gf = Wrap0To1(Machines[1].Execute(xf, yf, gStack) * scale + scale);
-                            var bf = Wrap0To1(Machines[2].Execute(xf, yf, bStack) * scale + scale);                                                       
+                            var rf = Wrap0To1(Machines[0].Execute(xf, yf,t,rStack) * scale + scale);
+                            var gf = Wrap0To1(Machines[1].Execute(xf, yf,t,gStack) * scale + scale);
+                            var bf = Wrap0To1(Machines[2].Execute(xf, yf,t,bStack) * scale + scale);                                                       
                             colors[yw + x] = new Color(rf,gf,bf);
                         }
                     }
@@ -452,7 +459,7 @@ namespace GameLogic
 
 
 
-        private Texture2D GradientToTexture(GraphicsDevice graphics, int w, int h)
+        private Texture2D GradientToTexture(GraphicsDevice graphics, int w, int h, float t)
         {
             Color[] colors = new Color[w * h];
             var partition = Partitioner.Create(0, h);
@@ -473,7 +480,7 @@ namespace GameLogic
                         for (int x = 0; x < w; x++)
                         {
                             float xf = ((float)x / (float)w) * 2.0f - 1.0f;
-                            var hues = Machines[0].Execute(xf, yf, hStack);
+                            var hues = Machines[0].Execute(xf, yf,t, hStack);
                             int i = 0;
                             for (; i < pos.Length - 2; i++)
                             {
@@ -482,8 +489,8 @@ namespace GameLogic
                                     break;
                                 }
                             }
-                            var s = Machines[1].Execute(xf, yf, sStack)*scale+scale;
-                            var v = Machines[2].Execute(xf, yf, vStack)*scale+scale;
+                            var s = Machines[1].Execute(xf, yf,t, sStack)*scale+scale;
+                            var v = Machines[2].Execute(xf, yf,t, vStack)*scale+scale;
 
                             var (h1a, h1b) = gradients[i];
                             var (h2a, h2b) = gradients[i + 1];
@@ -513,7 +520,7 @@ namespace GameLogic
         }
 
 
-        private Texture2D HSVToTexture(GraphicsDevice graphics, int width, int height)
+        private Texture2D HSVToTexture(GraphicsDevice graphics, int width, int height, float t)
         {
             Color[] colors = new Color[width * height];
             var scale = 0.5f;
@@ -533,9 +540,9 @@ namespace GameLogic
                         for (int x = 0; x < width; x++)
                         {
                             float xf = ((float)x / (float)width) * 2.0f - 1.0f;
-                            var h = Wrap0To1(Machines[0].Execute(xf, yf, hStack) * scale + scale);
-                            var s = Wrap0To1(Machines[1].Execute(xf, yf, sStack) * scale + scale);
-                            var v = Wrap0To1(Machines[2].Execute(xf, yf, vStack) * scale + scale);
+                            var h = Wrap0To1(Machines[0].Execute(xf, yf,t,hStack) * scale + scale);
+                            var s = Wrap0To1(Machines[1].Execute(xf, yf,t,sStack) * scale + scale);
+                            var v = Wrap0To1(Machines[2].Execute(xf, yf,t,vStack) * scale + scale);
                             var (rf, gf, bf) = HSV2RGB(h, s, v);                            
                             colors[yw + x] = new Color(rf,gf,bf);
                         }

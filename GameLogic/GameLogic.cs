@@ -341,6 +341,8 @@ namespace GameLogic
 
         public GameState ZoomUpdate(GameTime gameTime)
         {
+            
+            
             if (state.zoomedPic.editEquationButton.WasLeftClicked(state.inputState))
             {
                 state.screen = Screen.EDIT;
@@ -354,7 +356,11 @@ namespace GameLogic
                 state.zoomedPic.zoomed = false;
                 state.zoomedPic = null;
                 LayoutUI();
+                return state;
             }
+           
+            
+
             return state;
         }
 
@@ -375,15 +381,15 @@ namespace GameLogic
             Pic p;
             if (chooser == 0)
             {
-                p = new Pic(PicType.RGB, r, Settings.MIN_GEN_SIZE, Settings.MAX_GEN_SIZE, state.g, state.w);
+                p = new Pic(PicType.RGB, r, Settings.MIN_GEN_SIZE, Settings.MAX_GEN_SIZE, state.g, state.w,state.videoMode);
             }
             else if (chooser == 1)
             {
-                p = new Pic(PicType.HSV, r, Settings.MIN_GEN_SIZE, Settings.MAX_GEN_SIZE, state.g, state.w);
+                p = new Pic(PicType.HSV, r, Settings.MIN_GEN_SIZE, Settings.MAX_GEN_SIZE, state.g, state.w, state.videoMode);
             }
             else
             {
-                p = new Pic(PicType.GRADIENT, r, Settings.MIN_GEN_SIZE, Settings.MAX_GEN_SIZE, state.g, state.w);
+                p = new Pic(PicType.GRADIENT, r, Settings.MIN_GEN_SIZE, Settings.MAX_GEN_SIZE, state.g, state.w, state.videoMode);
             }
 
             for (int i = 0; i < p.Trees.Count(); i++)
@@ -404,15 +410,15 @@ namespace GameLogic
             Pic p;
             if (chooser == 0)
             {
-                p = new Pic(PicType.RGB, r, Settings.MIN_GEN_SIZE, Settings.MAX_GEN_SIZE, state.g, state.w);
+                p = new Pic(PicType.RGB, r, Settings.MIN_GEN_SIZE, Settings.MAX_GEN_SIZE, state.g, state.w, state.videoMode);
             }
             else if (chooser == 1)
             {
-                p = new Pic(PicType.HSV, r, Settings.MIN_GEN_SIZE, Settings.MAX_GEN_SIZE, state.g, state.w);
+                p = new Pic(PicType.HSV, r, Settings.MIN_GEN_SIZE, Settings.MAX_GEN_SIZE, state.g, state.w, state.videoMode);
             }
             else
             {
-                p = new Pic(PicType.GRADIENT, r, Settings.MIN_GEN_SIZE, Settings.MAX_GEN_SIZE, state.g, state.w);
+                p = new Pic(PicType.GRADIENT, r, Settings.MIN_GEN_SIZE, Settings.MAX_GEN_SIZE, state.g, state.w, state.videoMode);
             }
 
             return p;

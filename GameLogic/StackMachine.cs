@@ -181,20 +181,7 @@ namespace GameLogic
                                 break;
                             case NodeType.ABS:
                                 stackPointer[sp] = (float)Math.Abs(stackPointer[sp]);
-                                break;
-                                /* this just seems to be garbage
-                            case NodeType.HASH:
-                                {                                   
-                                    int hash = 1337;                                    
-                                    hash ^= 1619 * new floatint { f = (stackPointer[sp]) }.i;
-                                    hash ^= 31337 * new floatint { f = (stackPointer[sp - 1]) }.i;
-                                    hash = hash * hash * hash * 60493;
-                                    hash = (hash >> 13) ^ hash;
-                                    var fi = new floatint { i = hash };
-                                    stackPointer[sp - 1] = FastNoise.Lerp(MathUtils.Constrain(fi.f, -1.0f, 1.0001f), stackPointer[sp - 1], 0.5f);
-                                    sp--;
-                                }
-                                break;*/
+                                break;                               
                             case NodeType.MOD:
                                 stackPointer[sp - 1] = stackPointer[sp] % stackPointer[sp - 1];
                                 sp--;
@@ -240,14 +227,8 @@ namespace GameLogic
                             case NodeType.PICTURE:
                                 {
                                     var image = GameState.externalImages[(int)ins.value];
-                                    var xf = (stackPointer[sp] + 1.0f) / 2.0f;
-                                    //xf = PicFunctions.Wrap0To1(xf);
-                                    //if (xf >= 1) xf = x/2.0f + 0.5f;
-                                    //if (xf < 0) xf = x / 2.0f + 0.5f;
-                                    var yf = (stackPointer[sp - 1] + 1.0f) / 2.0f;
-                                    //yf = PicFunctions.Wrap0To1(yf);
-                                    //if (yf >= 1) yf = y / 2.0f + 0.5f;
-                                    //if (yf < 0) yf = y / 2.0f + 0.5f;
+                                    var xf = (stackPointer[sp] + 1.0f) / 2.0f;                                    
+                                    var yf = (stackPointer[sp - 1] + 1.0f) / 2.0f;                                    
                                     var xi = (int)(xf * image.w);
                                     var yi = (int)(yf * image.h);
                                     var index = yi * image.w + xi;

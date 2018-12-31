@@ -7,7 +7,7 @@ namespace GameLogic
 
     [DataContract(IsReference = true)]
     public class AptNode
-    {
+    {        
         [DataMember]
         const int NUM_LEAF_TYPES = 6;
         [DataMember]
@@ -69,7 +69,7 @@ namespace GameLogic
 
         }
 
-        public static void ReplaceNode(AptNode nodeToMutate, AptNode newNode,Random r)
+        public static void ReplaceNode(AptNode nodeToMutate, AptNode newNode,Random r, bool video)
         {
             nodeToMutate.type = newNode.type;
             nodeToMutate.value = newNode.value;
@@ -81,15 +81,15 @@ namespace GameLogic
                     newNode.children[i] = nodeToMutate.children[i];
                 }
             }
-            while (newNode.AddLeaf(GetRandomLeaf(r))) { }
+            while (newNode.AddLeaf(GetRandomLeaf(r,video))) { }
             nodeToMutate.children = newNode.children;
         }
 
-        public void BreedWith(AptNode partner, Random r)
+        public void BreedWith(AptNode partner, Random r, bool video)
         {
             var (newNode, _) = partner.GetNthNode(r.Next(0, partner.Count()));
             var (nodeToMutate, _) = this.GetNthNode(r.Next(0, this.Count()));
-            ReplaceNode(nodeToMutate, newNode,r);
+            ReplaceNode(nodeToMutate, newNode,r,video);
         }
 
         public AptNode Clone()
@@ -109,7 +109,7 @@ namespace GameLogic
             return result;
         }
 
-        public void InsertWarp(Random r)
+        public void InsertWarp(Random r, bool video)
         {
             var node = this;
             if (node.children == null) return;
@@ -131,7 +131,7 @@ namespace GameLogic
                 warp.children[4].parent = warp;
 
                 //fill in the stuff the warp node needs
-                while (warp.AddLeaf(GetRandomLeaf(r)))
+                while (warp.AddLeaf(GetRandomLeaf(r,video)))
                 {
                 }
                 newChildren[0] = warp;
@@ -147,7 +147,7 @@ namespace GameLogic
             {
                 foreach (var child in node.children)
                 {
-                    child.InsertWarp(r);
+                    child.InsertWarp(r,video);
                 }
             }
 
@@ -292,6 +292,7 @@ namespace GameLogic
                 case NodeType.EMPTY:
                 case NodeType.X:
                 case NodeType.Y:
+                case NodeType.T:
                 case NodeType.CONSTANT:
                     return OpString();
                 case NodeType.PICTURE:
@@ -372,18 +373,20 @@ namespace GameLogic
 
         }
 
-        public static AptNode GetRandomLeaf(Random r)
-        {
-            //We start at 2 because 0 is EMPTY  and 1 is Time for videos only          
+        public static AptNode GetRandomLeaf(Random r, bool videoMode)
+        {            
             var picChance = r.Next(0, 3);
             NodeType type;
+            //We start at 2 because 0 is EMPTY  and 1 is Time for videos only          
+            int start = 2;
+            if (videoMode) start = 1;            
             if (picChance == 0)
             {
-                type = (NodeType)r.Next(2, NUM_LEAF_TYPES);
+                type = (NodeType)r.Next(start, NUM_LEAF_TYPES);
             }
             else
             {
-                type = (NodeType)r.Next(2, NUM_LEAF_TYPES - 1);
+                type = (NodeType)r.Next(start, NUM_LEAF_TYPES - 1);
             }
 
             switch (type)
@@ -403,23 +406,23 @@ namespace GameLogic
             }
         }
 
-        public static AptNode GenerateTree(int nodeCount, Random r)
+        public static AptNode GenerateTree(int nodeCount, Random r,bool video)
         {
             AptNode first = GetRandomNode(r);
             for (int i = 1; i < nodeCount; i++)
             {
                 first.AddRandom(GetRandomNode(r), r);
             }
-            while (first.AddLeaf(GetRandomLeaf(r)))
+            while (first.AddLeaf(GetRandomLeaf(r,video)))
             {
                 //just keep adding leaves until we can't 
             };
-            first.InsertWarp(r);
+            first.InsertWarp(r,video);
 
             return first;
         }
 
-        public void Mutate(Random r)
+        public void Mutate(Random r, bool video)
         {
             var nodeIndex = r.Next(0, Count());
             var (nodeToMutate, _) = GetNthNode(nodeIndex);
@@ -428,13 +431,13 @@ namespace GameLogic
             AptNode newNode;
             if (leafChance == 0)
             {
-                newNode = GetRandomLeaf(r);
+                newNode = GetRandomLeaf(r,video);
             }
             else
             {
                 newNode = GetRandomNode(r);
             }
-            ReplaceNode(nodeToMutate, newNode, r);
+            ReplaceNode(nodeToMutate, newNode, r,video);
         }
     }
 
