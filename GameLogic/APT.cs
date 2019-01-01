@@ -4,11 +4,11 @@ using System.Runtime.Serialization;
 
 namespace GameLogic
 {
-    public enum NodeType : byte { EMPTY = 0,T, CONSTANT, X, Y,PICTURE, IF, ABS,WRAP,CLAMP, NEGATE, ADD, SUB, MUL, DIV, SIN, COS, LOG, ATAN, ATAN2, SQRT, FLOOR, CEIL, MAX, MIN, MOD, SQUARE, FBM, BILLOW, CELL1, WARP1 };
+    public enum NodeType : byte { EMPTY = 0, T, CONSTANT, X, Y, PICTURE, IF, ABS, WRAP, CLAMP, NEGATE, ADD, SUB, MUL, DIV, SIN, COS, LOG, ATAN, ATAN2, SQRT, FLOOR, CEIL, MAX, MIN, MOD, SQUARE, FBM, BILLOW, CELL1, WARP1 };
 
     [DataContract(IsReference = true)]
     public class AptNode
-    {        
+    {
         [DataMember]
         const int NUM_LEAF_TYPES = 6;
         [DataMember]
@@ -70,40 +70,243 @@ namespace GameLogic
 
         }
 
-        public static float Evaluate(AptNode node, float x, float y, float t) {
+        public static float Evaluate(AptNode node, float x, float y, float t)
+        {
             StackMachine m = new StackMachine(node);
             var stack = new float[m.nodeCount];
-            return m.Execute(x, y, t,stack);
+            return m.Execute(x, y, t, stack);
+        }
+
+        //todo both same completely?
+        //todo can pic work here?
+        public static bool BothSameVariables(AptNode a, AptNode b)
+        {
+            switch (a.type)
+            {
+                case NodeType.X:
+                case NodeType.Y:
+                case NodeType.T:
+                    return a.type == b.type;
+            }
+            return false;
         }
 
         public static AptNode ConstantFolding(AptNode node)
         {
-            var clone = new AptNode { type = node.type, children = new AptNode[node.children.Length]};
-            switch (node.type) {
+
+            var clone = node.ShallowClone();
+            if (node.children != null)
+            {
+                clone.children = new AptNode[node.children.Length];
+            }
+
+            switch (node.type)
+            {
                 case NodeType.X:
                 case NodeType.T:
                 case NodeType.Y:
                 case NodeType.CONSTANT:
                     return clone;
-                default:
-                    bool allConstants = true;
-                    
-                    for (int i = 0; i < node.children.Length;i++)
-                    {
-                        clone.children[i] = ConstantFolding(node.children[i]);
-                        if (clone.children[i].type != NodeType.CONSTANT) allConstants = false;
-                    }
-
-                    if (allConstants)
-                    {
-                        var v = Evaluate(clone,0,0,0);
-                        return new AptNode { type = NodeType.CONSTANT, value = v };
-                    }
-            return clone;
             }
+
+            // if all are constants, return the evaluation of the constant
+            bool allConstants = true;
+            for (int i = 0; i < node.children.Length; i++)
+            {
+                clone.children[i] = ConstantFolding(node.children[i]);
+                if (clone.children[i].type != NodeType.CONSTANT) allConstants = false;
+            }
+
+            if (allConstants)
+            {
+                var v = Evaluate(clone, 0, 0, 0);
+                return new AptNode { type = NodeType.CONSTANT, value = v };
+            }
+
+            // Deal with constants of 1 or 0 on 1 side
+            if (clone.children.Length == 2)
+            {
+                for (int i = 0; i < 2; i++)
+                {
+                    if (clone.children[i].type == NodeType.CONSTANT)
+                    {
+                        var constNode = clone.children[i];
+                        var otherNode = clone.children[(i + 1) % 2];
+
+                        if (clone.type == NodeType.MUL)
+                        {
+
+                            if (constNode.value == 1.0f)
+                                return otherNode;
+                            if (constNode.value == 0.0f)
+                                return new AptNode { type = NodeType.CONSTANT, value = 0.0f };
+                        }
+                        else if (clone.type == NodeType.DIV)
+                        {
+
+                            if (constNode.value == 1.0f)
+                                return otherNode;
+                        }
+                        else if (clone.type == NodeType.ADD)
+                        {
+                            if (constNode.value == 0.0f)
+                                return otherNode;
+                        }
+                        else if (clone.type == NodeType.SUB)
+                        {
+                            if (constNode.value == 0.0f)
+                                return otherNode;
+                        }
+                    }
+                }
+
+                if (clone.type == NodeType.MUL)
+                {
+                    if (BothSameVariables(clone.children[0], clone.children[1]))
+                    {
+                        var square = new AptNode { type = NodeType.SQUARE, children = new AptNode[1] };
+                        square.children[0] = clone.children[0];
+
+                        //dont return yet because SQUARE nodes are subject to more opts
+                        clone = square;
+                    }
+                }
+
+                if (clone.type == NodeType.DIV)
+                {
+                    if (BothSameVariables(clone.children[0], clone.children[1]))
+                    {
+                        return new AptNode { type = NodeType.CONSTANT, value = 1.0f };
+                    }
+                }
+
+                if (clone.type == NodeType.MOD)
+                {
+                    if (BothSameVariables(clone.children[0], clone.children[1]))
+                    {
+                        return new AptNode { type = NodeType.CONSTANT, value = 0.0f };
+                    }
+                }
+
+                if (clone.type == NodeType.SUB)
+                {
+                    if (BothSameVariables(clone.children[0], clone.children[1]))
+                    {
+                        return new AptNode { type = NodeType.CONSTANT, value = 0.0f };
+                    }
+                }
+
+                // Min or Max of the same things = the thing
+                if (clone.type == NodeType.MIN || clone.type == NodeType.MAX)
+                {
+                    if (BothSameVariables(clone.children[0], clone.children[1]))
+                    {
+                        return clone.children[0];
+                    }
+                }
+            }
+
+            
+
+            //abs of abs is redunant
+            //abs of square is redundant
+            if (clone.type == NodeType.ABS &&
+        (clone.children[0].type == NodeType.ABS || clone.children[0].type == NodeType.SQUARE))
+            {
+                return clone.children[0];
+            }
+
+            //negate twice is the thing again
+            if (clone.type == NodeType.NEGATE && clone.children[0].type == NodeType.NEGATE)
+            {
+                return clone.children[0].children[0];
+            }
+
+            //wrap and clamp in a row is redundant
+            if (clone.type == NodeType.WRAP || clone.type == NodeType.CLAMP)
+            {
+                //X/Y/T need not be wrapped or clamped
+                if (BothSameVariables(clone.children[0], clone.children[0]))
+                {
+                    return clone.children[0];
+                }
+
+                //Pictures need not be wrapped or clamped
+                if (clone.children[0].type == NodeType.PICTURE) {
+                    return clone.children[0];
+                }
+
+                //FBM need not be wrapped or clamped
+                if (clone.children[0].type == NodeType.FBM)
+                {
+                    return clone.children[0];
+                }
+
+                //Billow need not be wrapped or clamped
+                if (clone.children[0].type == NodeType.BILLOW)
+                {
+                    return clone.children[0];
+                }
+
+                //Cell need not be wrapped or clamped
+                if (clone.children[0].type == NodeType.CELL1)
+                {
+                    return clone.children[0];
+                }
+
+                if (clone.children[0].type == NodeType.WRAP || clone.children[0].type == NodeType.CLAMP)
+                {
+                    return clone.children[0];
+                }
+            }
+
+            //square of sqrt and vice versa is just the thing
+            if (clone.type == NodeType.SQUARE || clone.type == NodeType.SQRT)
+            {
+                if (clone.children[0].type == NodeType.SQRT || clone.children[0].type == NodeType.SQRT)
+                {
+                    return clone.children[0].children[0];
+                }
+            }
+
+            //ceil or floor in a row is redunant
+            //todo clamp then ceil would be too
+            if (clone.type == NodeType.CEIL || clone.type == NodeType.FLOOR)
+            {
+                if (clone.children[0].type == NodeType.CEIL || clone.children[0].type == NodeType.FLOOR)
+                {
+                    return clone.children[0];
+                }
+            }
+
+            //if the if condition is constant, or both choices are same, fold it away
+            if (clone.type == NodeType.IF && clone.children.Length == 3)
+            {
+                var child1 = clone.children[0];
+                var child2 = clone.children[1];
+                var child3 = clone.children[2];
+
+                if (child1.type == NodeType.CONSTANT)
+                {
+                    if (child1.value < 0.0f)
+                    {
+                        return child2;
+                    }
+                    else
+                    {
+                        return child3;
+                    }
+                }
+
+                if (BothSameVariables(child2, child3))
+                {
+                    return child2;
+                }
+            }
+            return clone;
         }
 
-        public static void ReplaceNode(AptNode nodeToMutate, AptNode newNode,Random r, bool video)
+        public static void ReplaceNode(AptNode nodeToMutate, AptNode newNode, Random r, bool video)
         {
             nodeToMutate.type = newNode.type;
             nodeToMutate.value = newNode.value;
@@ -115,7 +318,7 @@ namespace GameLogic
                     newNode.children[i] = nodeToMutate.children[i];
                 }
             }
-            while (newNode.AddLeaf(GetRandomLeaf(r,video))) { }
+            while (newNode.AddLeaf(GetRandomLeaf(r, video))) { }
             nodeToMutate.children = newNode.children;
         }
 
@@ -123,19 +326,26 @@ namespace GameLogic
         {
             var (newNode, _) = partner.GetNthNode(r.Next(0, partner.Count()));
             var (nodeToMutate, _) = this.GetNthNode(r.Next(0, this.Count()));
-            ReplaceNode(nodeToMutate, newNode,r,video);
+            ReplaceNode(nodeToMutate, newNode, r, video);
         }
 
-        public AptNode Clone()
+        public AptNode ShallowClone()
         {
             AptNode result = new AptNode { };
             result.type = type;
             result.value = value;
             result.filename = filename;
+            return result;
+        }
+
+        public AptNode Clone()
+        {
+            AptNode result = ShallowClone();
+
             if (children != null)
             {
                 result.children = new AptNode[children.Length];
-                for (int i = 0; i < children.Length;i++)
+                for (int i = 0; i < children.Length; i++)
                 {
                     result.children[i] = children[i].Clone();
                 }
@@ -165,7 +375,7 @@ namespace GameLogic
                 warp.children[4].parent = warp;
 
                 //fill in the stuff the warp node needs
-                while (warp.AddLeaf(GetRandomLeaf(r,video)))
+                while (warp.AddLeaf(GetRandomLeaf(r, video)))
                 {
                 }
                 newChildren[0] = warp;
@@ -181,14 +391,14 @@ namespace GameLogic
             {
                 foreach (var child in node.children)
                 {
-                    child.InsertWarp(r,video);
+                    child.InsertWarp(r, video);
                 }
             }
 
         }
 
-        
-       
+
+
 
         public int LeafCount()
         {
@@ -262,7 +472,7 @@ namespace GameLogic
                 case NodeType.CONSTANT:
                     return value.ToString("0.000");
                 case NodeType.ABS:
-                    return "Abs";                
+                    return "Abs";
                 case NodeType.CLAMP:
                     return "Clamp";
                 case NodeType.WRAP:
@@ -335,7 +545,7 @@ namespace GameLogic
                     string result = "( " + OpString() + " ";
                     if (type == NodeType.PICTURE)
                     {
-                       result += "\"" + filename + "\" ";
+                        result += "\"" + filename + "\" ";
                     }
                     for (int i = 0; i < children.Length; i++)
                     {
@@ -351,7 +561,7 @@ namespace GameLogic
             switch (type)
             {
                 case NodeType.FBM:
-                case NodeType.BILLOW:                    
+                case NodeType.BILLOW:
                 case NodeType.CELL1:
                 case NodeType.IF:
                     result = new AptNode { type = type, children = new AptNode[3] };
@@ -363,7 +573,7 @@ namespace GameLogic
                 case NodeType.ATAN2:
                 case NodeType.MIN:
                 case NodeType.MAX:
-                case NodeType.MOD:                
+                case NodeType.MOD:
                     result = new AptNode { type = type, children = new AptNode[2] };
                     break;
                 case NodeType.SIN:
@@ -377,7 +587,7 @@ namespace GameLogic
                 case NodeType.ABS:
                 case NodeType.NEGATE:
                 case NodeType.CLAMP:
-                case NodeType.WRAP:                
+                case NodeType.WRAP:
                     result = new AptNode { type = type, children = new AptNode[1] };
                     break;
                 case NodeType.X:
@@ -386,10 +596,10 @@ namespace GameLogic
                     result = new AptNode { type = type };
                     break;
                 case NodeType.PICTURE:
-                    result = new AptNode { type = type, children = new AptNode[2]};
-                    break;                                
+                    result = new AptNode { type = type, children = new AptNode[2] };
+                    break;
                 case NodeType.WARP1:
-                    result =new AptNode { type = type, children = new AptNode[5] };
+                    result = new AptNode { type = type, children = new AptNode[5] };
                     break;
                 default:
                     throw new Exception("MakeNode failed to match the switch");
@@ -408,12 +618,12 @@ namespace GameLogic
         }
 
         public static AptNode GetRandomLeaf(Random r, bool videoMode)
-        {            
+        {
             var picChance = r.Next(0, 3);
             NodeType type;
             //We start at 2 because 0 is EMPTY  and 1 is Time for videos only          
             int start = 2;
-            if (videoMode) start = 1;            
+            if (videoMode) start = 1;
             if (picChance == 0)
             {
                 type = (NodeType)r.Next(start, NUM_LEAF_TYPES);
@@ -440,20 +650,20 @@ namespace GameLogic
             }
         }
 
-        public static AptNode GenerateTree(int nodeCount, Random r,bool video)
+        public static AptNode GenerateTree(int nodeCount, Random r, bool video)
         {
             AptNode first = GetRandomNode(r);
             for (int i = 1; i < nodeCount; i++)
             {
                 first.AddRandom(GetRandomNode(r), r);
             }
-            while (first.AddLeaf(GetRandomLeaf(r,video)))
+            while (first.AddLeaf(GetRandomLeaf(r, video)))
             {
                 //just keep adding leaves until we can't 
             };
-            first.InsertWarp(r,video);
+            first.InsertWarp(r, video);
 
-            return first;
+            return ConstantFolding(first);
         }
 
         public void Mutate(Random r, bool video)
@@ -465,13 +675,13 @@ namespace GameLogic
             AptNode newNode;
             if (leafChance == 0)
             {
-                newNode = GetRandomLeaf(r,video);
+                newNode = GetRandomLeaf(r, video);
             }
             else
             {
                 newNode = GetRandomNode(r);
             }
-            ReplaceNode(nodeToMutate, newNode, r,video);
+            ReplaceNode(nodeToMutate, newNode, r, video);
         }
     }
 

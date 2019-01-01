@@ -1,8 +1,6 @@
 ﻿// todo - handle typing beyond edge of text box
 // todo - transition / hourglass animation while processing
 // todo - test text box edge cases -- highlight to end, hit delete, causes exception
-// todo - constant folding / optimizations on AST
-// todo - set cursor pos to 0/0 whenever opening text editor
 // todo - gradients don't have enough data to rebuild from the lisp output!
 // todo - consider filter nodes attached to top level pic nodes (sepia, etc)
 
@@ -273,6 +271,7 @@ namespace GameLogic
 
                     var child = first.BreedWith(second, state.r);
                     child = child.Mutate(state.r);
+                    child.Optimize();
                     nextGeneration.Add(child);
 
                 }
@@ -345,6 +344,17 @@ namespace GameLogic
 
                 state.zoomedPic.textBox.error = null;
             }
+            if (state.zoomedPic.constantFoldButton.WasLeftClicked(state.inputState))
+            {
+                for (int i = 0; i < state.zoomedPic.Trees.Length; i++)
+                {
+                    state.zoomedPic.Trees[i] = AptNode.ConstantFolding(state.zoomedPic.Trees[i]);
+                    state.zoomedPic.Machines[i] = new StackMachine(state.zoomedPic.Trees[i]);
+                }
+                state.zoomedPic.RegenTex(state.g);
+                state.zoomedPic.textBox.SetText(state.zoomedPic.ToLisp());
+                
+            }
             return state;
         }
 
@@ -355,6 +365,7 @@ namespace GameLogic
             if (state.zoomedPic.editEquationButton.WasLeftClicked(state.inputState))
             {
                 state.screen = Screen.EDIT;
+                state.zoomedPic.textBox.cursorPos = new Point(0, 0);
                 state.zoomedPic.textBox.SetActive(true);
                 return state;
             }
