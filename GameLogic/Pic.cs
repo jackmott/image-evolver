@@ -578,7 +578,7 @@ namespace GameLogic
 
         public static float Wrap0To1(float v)
         {
-            return v - (float)Math.Floor(v);
+            return v % 1.0001f;
         }
 
 

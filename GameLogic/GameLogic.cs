@@ -5,6 +5,7 @@
 // todo - consider filter nodes attached to top level pic nodes (sepia, etc)
 
 
+
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using System;
@@ -40,6 +41,10 @@ namespace GameLogic
 
         public GameState Init(GraphicsDevice g, GameWindow window, ContentManager content)
         {
+            var test = "(RGB 1 1 1";
+            Lexer l = new Lexer(test);
+            l.BeginLexing();
+            Console.ReadLine();
             state = new GameState();
             state.r = new Random();
             state.g = g;
@@ -338,6 +343,8 @@ namespace GameLogic
                 catch (ParseException ex)
                 {
                     Console.WriteLine(ex);
+                    Console.WriteLine(ex.token.type);
+                    Console.WriteLine("start:" + ex.token.start + " len:" + ex.token.len);
                     state.zoomedPic.textBox.error = ex;
                     return state;
                 }
