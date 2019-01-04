@@ -3,8 +3,8 @@
 // todo - test text box edge cases -- highlight to end, hit delete, causes exception
 // todo - gradients don't have enough data to rebuild from the lisp output!
 // todo - consider filter nodes attached to top level pic nodes (sepia, etc)
-
-
+// todo - some kinda bug where saving the code changes the image. maybe gradients only? maybe after an evolution only?
+// todo - the fixed stackPointer is sometimes null, how the shit?
 
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
@@ -16,6 +16,7 @@ using Microsoft.Xna.Framework.Content;
 using System.Runtime.Serialization;
 using System.Xml;
 using static GameLogic.GraphUtils;
+using static GameLogic.Tests;
 
 
 namespace GameLogic
@@ -41,10 +42,6 @@ namespace GameLogic
 
         public GameState Init(GraphicsDevice g, GameWindow window, ContentManager content)
         {
-            var test = "(RGB 1 1 1";
-            Lexer l = new Lexer(test);
-            l.BeginLexing();
-            Console.ReadLine();
             state = new GameState();
             state.r = new Random();
             state.g = g;
@@ -82,6 +79,11 @@ namespace GameLogic
                     throw e;
                 }
             }
+
+           // Parsing(g, window);
+           // Optimizing(g, window);
+            //Console.ReadLine();
+
 
             state.populationSize = Settings.POP_SIZE_COLUMNS * (Settings.POP_SIZE_COLUMNS - 1);            
             Random r = state.r;
@@ -406,6 +408,7 @@ namespace GameLogic
 
             int chooser = r.Next(0, 3);
             Pic p;
+            chooser = 0;
             if (chooser == 0)
             {
                 p = new Pic(PicType.RGB, r, Settings.MIN_GEN_SIZE, Settings.MAX_GEN_SIZE, state.g, state.w,state.videoMode);
@@ -433,22 +436,10 @@ namespace GameLogic
 
         public Pic GenTree(Random r)
         {
-            int chooser = r.Next(0, 3);            
-            Pic p;
-            if (chooser == 0)
-            {
-                p = new Pic(PicType.RGB, r, Settings.MIN_GEN_SIZE, Settings.MAX_GEN_SIZE, state.g, state.w, state.videoMode);
-            }
-            else if (chooser == 1)
-            {
-                p = new Pic(PicType.HSV, r, Settings.MIN_GEN_SIZE, Settings.MAX_GEN_SIZE, state.g, state.w, state.videoMode);
-            }
-            else
-            {
-                p = new Pic(PicType.GRADIENT, r, Settings.MIN_GEN_SIZE, Settings.MAX_GEN_SIZE, state.g, state.w, state.videoMode);
-            }
-
-            return p;
+            int chooser = r.Next(0, 3);
+            PicType type = (PicType)chooser;
+          
+            return new Pic(type, r, Settings.MIN_GEN_SIZE,Settings.MAX_GEN_SIZE,state.g, state.w, state.videoMode);
         }
 
         public void ClearPics(List<Pic> pics)

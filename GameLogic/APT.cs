@@ -141,22 +141,13 @@ namespace GameLogic
                             if (constNode.value == 0.0f)
                                 return new AptNode { type = NodeType.CONSTANT, value = 0.0f };
                         }
-                        else if (clone.type == NodeType.DIV)
-                        {
-
-                            if (constNode.value == 1.0f)
-                                return otherNode;
-                        }
+                     
                         else if (clone.type == NodeType.ADD)
                         {
                             if (constNode.value == 0.0f)
                                 return otherNode;
                         }
-                        else if (clone.type == NodeType.SUB)
-                        {
-                            if (constNode.value == 0.0f)
-                                return otherNode;
-                        }
+                       
                     }
                 }
 
@@ -180,13 +171,7 @@ namespace GameLogic
                     }
                 }
 
-                if (clone.type == NodeType.MOD)
-                {
-                    if (BothSameVariables(clone.children[0], clone.children[1]))
-                    {
-                        return new AptNode { type = NodeType.CONSTANT, value = 0.0f };
-                    }
-                }
+              
 
                 if (clone.type == NodeType.SUB)
                 {
@@ -260,24 +245,23 @@ namespace GameLogic
                 }
             }
 
-            //square of sqrt and vice versa is just the thing
-            if (clone.type == NodeType.SQUARE || clone.type == NodeType.SQRT)
+
+            if (clone.type == NodeType.SQRT && clone.children[0].type == NodeType.SQUARE)
             {
-                if (clone.children[0].type == NodeType.SQRT || clone.children[0].type == NodeType.SQRT)
-                {
-                    return clone.children[0].children[0];
-                }
+                var n = clone.children[0].children[0];
+                var abs = MakeNode(NodeType.ABS);
+                abs.children[0] = n;
+                return abs;
             }
 
-            //ceil or floor in a row is redunant
-            //todo clamp then ceil would be too
-            if (clone.type == NodeType.CEIL || clone.type == NodeType.FLOOR)
+            if (clone.type == NodeType.SQUARE && clone.children[0].type == NodeType.SQRT)
             {
-                if (clone.children[0].type == NodeType.CEIL || clone.children[0].type == NodeType.FLOOR)
-                {
-                    return clone.children[0];
-                }
+                var n = clone.children[0].children[0];
+                var abs = MakeNode(NodeType.ABS);
+                abs.children[0] = n;
+                return abs;
             }
+
 
             //if the if condition is constant, or both choices are same, fold it away
             if (clone.type == NodeType.IF && clone.children.Length == 3)
@@ -310,6 +294,7 @@ namespace GameLogic
         {
             nodeToMutate.type = newNode.type;
             nodeToMutate.value = newNode.value;
+            nodeToMutate.filename = newNode.filename;
             if (nodeToMutate.children != null && newNode.children != null)
             {
                 for (int i = 0; i < nodeToMutate.children.Length; i++)
@@ -364,7 +349,7 @@ namespace GameLogic
                 (node.children[1].type == NodeType.X && node.children[0].type == NodeType.Y)))
             {
 
-                Console.WriteLine("WARP");
+              
                 var newChildren = new AptNode[node.children.Length - 1];
                 var warp = new AptNode { type = NodeType.WARP1, children = new AptNode[5] };
                 warp.children[0] = new AptNode { type = NodeType.X };
@@ -539,8 +524,6 @@ namespace GameLogic
                 case NodeType.T:
                 case NodeType.CONSTANT:
                     return OpString();
-                case NodeType.PICTURE:
-
                 default:
                     string result = "( " + OpString() + " ";
                     if (type == NodeType.PICTURE)
@@ -663,7 +646,7 @@ namespace GameLogic
             };
             first.InsertWarp(r, video);
 
-            return ConstantFolding(first);
+            return first;
         }
 
         public void Mutate(Random r, bool video)

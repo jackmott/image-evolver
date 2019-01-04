@@ -300,6 +300,7 @@ namespace GameLogic
                             contents.RemoveAt(contents.Count - 1);
                         }
                     }
+                    UpdateRawText();
                 }
                 else if (TextUtils.IsKey(Keys.Home, state))
                 {

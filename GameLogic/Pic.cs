@@ -11,6 +11,7 @@ using static GameLogic.ColorTools;
 
 namespace GameLogic
 {
+
     public enum PicType { RGB, HSV, GRADIENT }
     public enum GradientType { RANDOM, DIAD, DOUBLE_COMPLEMENT, COMPLEMENTARY, SPLIT_COMPLEMENTARY, TRIADIC, TETRADIC, SQUARE, ANALOGOUS }
     [DataContract]
@@ -32,7 +33,7 @@ namespace GameLogic
         //or if one of the nullable colors is null
         // a hard stop
         [DataMember]
-        public (float?, float?)[] gradients;
+        public float[] hues;
         [DataMember]
         public float[] pos;
 
@@ -64,6 +65,7 @@ namespace GameLogic
         GraphicsDevice g;
         GameWindow w;
 
+     
         public Pic(PicType type, GraphicsDevice g, GameWindow w)
         {
             this.g = g;
@@ -107,7 +109,7 @@ namespace GameLogic
                     Machines[i] = new StackMachine(Trees[i]);
                 }
 
-                float[] hues = null;
+               
                 var enum_size = Enum.GetNames(typeof(GradientType)).Length;
                 var gradType = (GradientType)rand.Next(0, enum_size);
                 gradType = GradientType.TRIADIC;
@@ -173,26 +175,12 @@ namespace GameLogic
                         }
                 }
 
-
-                var numGradients = hues.Length;
-                gradients = new (float?, float?)[numGradients];
-                pos = new float[numGradients];
-                for (int i = 0; i < gradients.Length; i++)
+                pos = new float[hues.Length];
+                for (int i = 0; i < hues.Length; i++)
                 {
-                    bool isSuddenShift = rand.Next(0, Settings.CHANCE_HARD_GRADIENT) == 0;
-                    if (!isSuddenShift)
-                    {
-                        gradients[i] = (hues[i], null);
-                    }
-                    else
-                    {
-                        gradients[i] = (hues[i], hues[(i + 1) % hues.Length]);
-                    }
                     pos[i] = (float)(rand.NextDouble() * 2.0 - 1.0);
-                    Array.Sort(pos);
                 }
-                pos[0] = -1.0f;
-                pos[pos.Length - 1] = 1.0f;
+                Array.Sort(pos);
 
             }
             SetupTextbox();
@@ -251,17 +239,17 @@ namespace GameLogic
         public Pic Clone()
         {
             Pic pic = new Pic(type, g, w);
-            if (gradients != null)
+            if (hues != null)
             {
-                var newGradients = new (float?, float?)[gradients.Length];
+                var newHues = new float[hues.Length];
                 var newPos = new float[pos.Length];
 
-                for (int i = 0; i < newGradients.Length; i++)
+                for (int i = 0; i < hues.Length; i++)
                 {
-                    newGradients[i] = gradients[i];
+                    newHues[i] = hues[i];
                     newPos[i] = pos[i];
                 }
-                pic.gradients = newGradients;
+                pic.hues = newHues;
                 pic.pos = newPos;
             }
             for (int i = 0; i < Trees.Length; i++)
@@ -341,14 +329,14 @@ namespace GameLogic
                 {
                     result.pos = new float[partner.pos.Length];
                     Array.Copy(partner.pos, result.pos, partner.pos.Length);
-                    result.gradients = new (float?, float?)[partner.gradients.Length];
-                    Array.Copy(partner.gradients, result.gradients, partner.gradients.Length);
+                    result.hues = new float[partner.hues.Length];
+                    Array.Copy(partner.hues, result.hues, partner.hues.Length);
                 }
                 // clear gradient data if we are changing type FROM gradient
                 else if (result.type == PicType.GRADIENT)
                 {
                     result.pos = null;
-                    result.gradients = null;
+                    result.hues = null;
                 }
                 result.type = partner.type;
 
@@ -446,16 +434,23 @@ namespace GameLogic
 
             Console.WriteLine("min:" + min + " max:" + max + " range:" + (max - min));
         }
+
+
         private Texture2D RGBToTexture(GraphicsDevice graphics, int w, int h, float t)
         {
             Color[] colors = new Color[w * h];
             var scale = 0.5f;
-            var partition = Partitioner.Create(0, h);
 
-            Parallel.ForEach(
-                partition,
-                (range, state) =>
+            var cpuCount = Environment.ProcessorCount;
+            int chunk = h / cpuCount;
+
+            Task[] tasks = new Task[cpuCount+1];
+            var extRange = (0, chunk);
+            for (int i = 0; i < tasks.Length; i++) {
+
+                tasks[i] = new Task(o =>
                 {
+                    var range = (ValueTuple<int,int>)o;
                     var rStack = new float[Machines[0].nodeCount];
                     var gStack = new float[Machines[1].nodeCount];
                     var bStack = new float[Machines[2].nodeCount];
@@ -472,7 +467,14 @@ namespace GameLogic
                             colors[yw + x] = new Color(rf, gf, bf);
                         }
                     }
-                });
+                },extRange);
+                tasks[i].Start();
+                extRange.Item1 += chunk;
+                extRange.Item2 += chunk;
+                extRange.Item2 = Math.Min(h, extRange.Item2);
+            }
+            Task.WaitAll(tasks);
+            
             Texture2D tex = new Texture2D(graphics, w, h);
             var tex2 = new Texture2D(graphics, w, h);
             tex.SetData(colors);
@@ -502,11 +504,12 @@ namespace GameLogic
                         for (int x = 0; x < w; x++)
                         {
                             float xf = ((float)x / (float)w) * 2.0f - 1.0f;
-                            var hues = Machines[0].Execute(xf, yf, t, hStack);
+                            var hueIndex = Machines[0].Execute(xf, yf, t, hStack);
+                            hueIndex = MathUtils.WrapMinMax(hueIndex, -1.0f, 1.0f);
                             int i = 0;
-                            for (; i < pos.Length - 2; i++)
+                            for (; i < pos.Length-1; i++)
                             {
-                                if (hues >= pos[i] && hues <= pos[i + 1])
+                                if (hueIndex >= pos[i] && hueIndex <= pos[i + 1])
                                 {
                                     break;
                                 }
@@ -514,23 +517,19 @@ namespace GameLogic
                             var s = Machines[1].Execute(xf, yf, t, sStack) * scale + scale;
                             var v = Machines[2].Execute(xf, yf, t, vStack) * scale + scale;
 
-                            var (h1a, h1b) = gradients[i];
-                            var (h2a, h2b) = gradients[i + 1];
+                            var f1 = hues[i];
+                            var f2 = hues[(i + 1)%hues.Length];
 
-                            float posDiff = hues - pos[i];
-                            float totalDiff = pos[i + 1] - pos[i];
+                            float posDiff = hueIndex - pos[i];
+                            float totalDiff = pos[(i + 1)%hues.Length] - pos[i];
                             float pct = posDiff / totalDiff;
 
-                            float h1;
-                            if (h1b == null) h1 = h1a.Value;
-                            else h1 = h1b.Value;
+                            var (c1r, c1g, c1b) = HSV2RGB(f1, s, v);
+                            var (c2r, c2g, c2b) = HSV2RGB(f2, s, v);
+                            var c1 = new Color(c1r, c1g, c1b);
+                            var c2 = new Color(c2r, c2g, c2b);
 
-                            var (c1r, c1g, c1b) = HSV2RGB(h1, s, v);
-                            var (c2ar, c2ag, c2ab) = HSV2RGB(h2a.Value, s, v);
-                            Color c1 = new Color(c1r, c1g, c1b);
-                            Color c2a = new Color(c2ar, c2ag, c2ab);
-
-                            colors[yw + x] = Color.Lerp(c1, c2a, pct);
+                            colors[yw + x] = Color.Lerp(c1, c2, pct);
 
                         }
                     }

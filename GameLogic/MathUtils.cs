@@ -18,9 +18,10 @@ namespace GameLogic
         public static int FastFloor(float f) { return (f >= 0 ? (int)f : (int)f - 1); }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static float Constrain(float x, float lo, float hi)
+        public static float WrapMinMax(float x, float lo, float hi)
         {
-            if (float.IsNaN(x)) { return 0.0f; }
+            if (x >= lo && x <= hi) return x;
+            if (float.IsNaN(x)) { return 1.0f; }
             if (float.IsPositiveInfinity(x)) { return 1.0f; }
             if (float.IsNegativeInfinity(x)) { return -1.0f; }
             float t = (x - lo) / (hi - lo);
@@ -31,7 +32,7 @@ namespace GameLogic
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static float FixNan(float x)
         {
-            if (float.IsNaN(x)) { return 0.0f; }
+            if (float.IsNaN(x)) { return 1.0f; }
             if (float.IsPositiveInfinity(x)) { return 1.0f; }
             if (float.IsNegativeInfinity(x)) { return -1.0f; }
             return x;
