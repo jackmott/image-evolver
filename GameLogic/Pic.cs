@@ -7,7 +7,7 @@ using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using static GameLogic.GraphUtils;
 using static GameLogic.ColorTools;
-
+using System.Threading;
 
 namespace GameLogic
 {
@@ -444,11 +444,11 @@ namespace GameLogic
             var cpuCount = Environment.ProcessorCount;
             int chunk = h / cpuCount;
 
-            Task[] tasks = new Task[cpuCount+1];
+            Thread[] threads = new Thread[cpuCount+1];
             var extRange = (0, chunk);
-            for (int i = 0; i < tasks.Length; i++) {
+            for (int i = 0; i < threads.Length; i++) {
 
-                tasks[i] = new Task(o =>
+                threads[i] = new Thread(o =>
                 {
                     var range = (ValueTuple<int,int>)o;
                     var rStack = new float[Machines[0].nodeCount];
@@ -467,13 +467,16 @@ namespace GameLogic
                             colors[yw + x] = new Color(rf, gf, bf);
                         }
                     }
-                },extRange);
-                tasks[i].Start();
+                });
+                threads[i].Start(extRange);
                 extRange.Item1 += chunk;
                 extRange.Item2 += chunk;
                 extRange.Item2 = Math.Min(h, extRange.Item2);
             }
-            Task.WaitAll(tasks);
+
+            foreach (var thread in threads) {
+                thread.Join();
+            }
             
             Texture2D tex = new Texture2D(graphics, w, h);
             var tex2 = new Texture2D(graphics, w, h);
