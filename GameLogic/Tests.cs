@@ -58,7 +58,7 @@ namespace GameLogic
 
         public static void Parsing(GraphicsDevice g, GameWindow w)
         {
-            const int TEST_SIZE = 10000;
+            const int TEST_SIZE = 1000;
             Random r = new Random();
 
             for (int i = 0; i < TEST_SIZE; i++)
@@ -69,6 +69,7 @@ namespace GameLogic
                 var p = new Pic(type, r, 1, 200, g, w, false);
 
                 var s = p.ToLisp();
+               
                 try
                 {
                     var lexer = new Lexer(s);

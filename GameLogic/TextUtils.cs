@@ -62,6 +62,11 @@ namespace GameLogic
 
         }
 
+        public static bool IsSelectAll(InputState state)
+        {
+            return IsControl(state) && IsKey(Keys.A, state);
+        }
+
 
     }
 

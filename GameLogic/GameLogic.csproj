@@ -62,7 +62,6 @@
     <Compile Include="GraphUtils.cs" />
     <Compile Include="Lexer.cs" />
     <Compile Include="MathUtils.cs" />
-    <Compile Include="ParHelper.cs" />
     <Compile Include="Pic.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Settings.cs" />

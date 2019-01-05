@@ -1,10 +1,8 @@
 ﻿// todo - handle typing beyond edge of text box
 // todo - transition / hourglass animation while processing
-// todo - test text box edge cases -- highlight to end, hit delete, causes exception
-// todo - gradients don't have enough data to rebuild from the lisp output!
 // todo - consider filter nodes attached to top level pic nodes (sepia, etc)
-// todo - some kinda bug where saving the code changes the image. maybe gradients only? maybe after an evolution only?
-// todo - the fixed stackPointer is sometimes null, how the shit?
+// todo - the fixed stackPointer is sometimes null, how the shit? 
+// todo - investigate very and horiz lines popping up too much
 
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
@@ -17,7 +15,6 @@ using System.Runtime.Serialization;
 using System.Xml;
 using static GameLogic.GraphUtils;
 using static GameLogic.Tests;
-
 
 namespace GameLogic
 {
@@ -279,6 +276,7 @@ namespace GameLogic
                     var child = first.BreedWith(second, state.r);
                     child = child.Mutate(state.r);
                     child.Optimize();
+                    child.textBox.SetText(child.ToLisp());
                     nextGeneration.Add(child);
 
                 }
@@ -338,6 +336,9 @@ namespace GameLogic
                     state.zoomedPic.Trees = p.Trees;
                     state.zoomedPic.Machines = p.Machines;
                     state.zoomedPic.type = p.type;
+                    state.zoomedPic.hues = p.hues;
+                    state.zoomedPic.pos = p.pos;
+                    state.zoomedPic.textBox.SetText(state.zoomedPic.ToLisp());
                     state.zoomedPic.RegenTex(state.g);
                     state.screen = Screen.ZOOM;
                     state.zoomedPic.textBox.SetActive(false);
@@ -408,7 +409,7 @@ namespace GameLogic
 
             int chooser = r.Next(0, 3);
             Pic p;
-            chooser = 0;
+           // chooser = 0;
             if (chooser == 0)
             {
                 p = new Pic(PicType.RGB, r, Settings.MIN_GEN_SIZE, Settings.MAX_GEN_SIZE, state.g, state.w,state.videoMode);

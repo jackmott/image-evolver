@@ -117,7 +117,7 @@ namespace GameLogic
             }
             catch (InvalidOperationException)
             {
-                throw new Exception("Expected tokentype " + type + " but reached EOF");
+                throw new ParseException("Expected tokentype " + type + " but reached EOF", new Token { });
             }
 
 
@@ -148,6 +148,42 @@ namespace GameLogic
             if (s == "gradient")
             {
                 p = new Pic(PicType.GRADIENT, g, w);
+                ParseExpect(TokenType.OPEN_PAREN);
+                t = ParseExpect(TokenType.OP);
+                s = input.Slice(t.start, t.len).ToString().ToLower();
+                if (s != "hues")
+                {
+                    throw new ParseException("hues array expected after gradient",t);
+                }
+
+                var tempHues = new List<float>();
+                while(true)
+                {
+                    t = ParseExpect(new[] { TokenType.CONSTANT, TokenType.CLOSE_PAREN });
+                    if (t.type == TokenType.CLOSE_PAREN) break;
+                    string numStr = input.Slice(t.start, t.len).ToString();
+                    tempHues.Add(float.Parse(numStr));
+                } 
+                p.hues = tempHues.ToArray();
+                ParseExpect(TokenType.OPEN_PAREN);
+                t = ParseExpect(TokenType.OP);
+                s = input.Slice(t.start, t.len).ToString().ToLower();
+                if (s != "positions")
+                {
+                    throw new ParseException("position array expected after hues", t);
+                }
+                var tempPos = new List<float>();
+                while (true)
+                {
+                    t = ParseExpect(new[] { TokenType.CONSTANT, TokenType.CLOSE_PAREN });
+                    if (t.type == TokenType.CLOSE_PAREN) break;
+                    string numStr = input.Slice(t.start, t.len).ToString();
+                    tempPos.Add(float.Parse(numStr));
+                }
+                tempPos.Sort();
+                p.pos = tempPos.ToArray();
+
+
                 p.Trees[0] = ParseNodes();
                 p.Machines[0] = new StackMachine(p.Trees[0]);
 

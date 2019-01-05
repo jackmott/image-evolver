@@ -645,7 +645,7 @@ namespace GameLogic
                 //just keep adding leaves until we can't 
             };
             first.InsertWarp(r, video);
-
+            first = ConstantFolding(first);
             return first;
         }
 
