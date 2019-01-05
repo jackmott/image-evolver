@@ -205,7 +205,7 @@ namespace GameLogic
             editEquationButton = new Button(Settings.equationTexture, new Rectangle());
             saveEquationButton = new Button(Settings.saveEquationTexture, new Rectangle());
             cancelEditButton = new Button(Settings.cancelEditTexture, new Rectangle());
-            panel = new SlidingPanel(Settings.panelTexture, new Rectangle(), new Rectangle(), 1000.0);
+            panel = new SlidingPanel(Settings.panelTexture, new Rectangle(), new Rectangle(), 500.0);
         }
 
         public void SetupTextbox()
