@@ -72,7 +72,10 @@ namespace GameLogic
 
         public void UpdateRawText()
         {
-            rawContents = contents.Aggregate((a, b) => a +"\n"+ b );
+            if (contents.Count > 0)
+                rawContents = contents.Aggregate((a, b) => a + "\n" + b);
+            else
+                rawContents = string.Empty;
         }
 
         public void PreHighlight(InputState state)
@@ -133,7 +136,7 @@ namespace GameLogic
             {
                 System.Windows.Forms.Clipboard.SetText(ProcessHighlight(state, true));
             }
-                
+
         }
 
         public void CheckPaste(InputState state)
@@ -151,11 +154,21 @@ namespace GameLogic
             }
         }
 
+        public void CheckSelectAll(InputState state)
+        {
+            if (TextUtils.IsSelectAll(state))
+            {
+                highlightStart = Point.Zero;
+                highlightEnd = new Point(contents.Last().Length - 1, contents.Count - 1);
+                cursorPos = highlightEnd;
+            }
+        }
+
         public string ProcessHighlight(InputState state, bool delete = false)
         {
-            string text = "";
-            if (delete) cursorPos = highlightStart;
+            string text = string.Empty;
             var (start, end) = GetHighlightSorted();
+            if (delete) cursorPos = start;
             for (int y = start.Y; y <= end.Y; y++)
             {
                 int xStart = 0;
@@ -166,15 +179,19 @@ namespace GameLogic
                 }
                 if (y == end.Y)
                 {
-                    xEnd = end.X + 1;
+                    xEnd = end.X;
                 }
-                
-                
-                text += contents[y].Substring(xStart, Math.Min(contents[y].Length,xEnd) - xStart);
-                
+
+
+                text += contents[y].Substring(xStart, Math.Min(contents[y].Length, xEnd + 1) - xStart);
+
                 if (delete)
-                    //todo the logic is off here, why?
-                    contents[y] = contents[y].Substring(0, xStart) + contents[y].Substring(xEnd);
+                {
+                    var rightSide = string.Empty;
+                    if (xEnd + 1 < contents[y].Length) rightSide = contents[y].Substring(xEnd);
+                    contents[y] = contents[y].Substring(0, xStart) + rightSide;
+
+                }
                 if (y != end.Y) { text += "\n"; }
             }
 
@@ -184,10 +201,14 @@ namespace GameLogic
                 contents[start.Y] += contents[end.Y];
                 contents.RemoveAt(end.Y);
                 contents = contents.Where(s => s.Length != 0).ToList();
+                if (contents.Count == 0)
+                {
+                    contents.Add(string.Empty);
+                }
             }
             if (delete)
             {
-                cursorPos = highlightStart;
+ 
                 highlightStart = Point.Zero;
                 highlightEnd = Point.Zero;
 
@@ -236,10 +257,10 @@ namespace GameLogic
                     if (highlightStart == highlightEnd)
                     {
                         highlightStart = pre;
-                     
+
                     }
                     highlightEnd = cur;
-                    
+
                 }
             }
         }
@@ -252,6 +273,7 @@ namespace GameLogic
                 CheckCopy(state);
                 CheckCut(state);
                 CheckPaste(state);
+                CheckSelectAll(state);
                 PreHighlight(state);
                 if (TextUtils.IsKey(Keys.Back, state))
                 {
@@ -265,7 +287,6 @@ namespace GameLogic
                         {
                             cursorPos.X--;
                             contents[cursorPos.Y] = contents[cursorPos.Y].Remove(cursorPos.X, 1);
-                            UpdateRawText();
                         }
                         else if (cursorPos.Y > 0)
                         {
@@ -273,11 +294,9 @@ namespace GameLogic
                             contents[cursorPos.Y - 1] += contents[cursorPos.Y];
                             contents.RemoveAt(cursorPos.Y);
                             cursorPos.Y--;
-
-                            UpdateRawText();
                         }
                     }
-
+                    UpdateRawText();
                 }
                 else if (TextUtils.IsKey(Keys.Delete, state))
                 {
@@ -300,6 +319,7 @@ namespace GameLogic
                             contents.RemoveAt(contents.Count - 1);
                         }
                     }
+                    UpdateRawText();
                 }
                 else if (TextUtils.IsKey(Keys.Home, state))
                 {
@@ -394,8 +414,8 @@ namespace GameLogic
                     }
 
                     contents[cursorPos.Y] = contents[cursorPos.Y].Insert(cursorPos.X, toInsert);
-                    
-                    
+
+
                     cursorPos.X++;
                     UpdateRawText();
                 }
@@ -478,7 +498,7 @@ namespace GameLogic
 
             for (int i = 0; i < contents.Count; i++)
             {
-                batch.DrawString(font, contents[i], new Vector2(bounds.X, bounds.Y + letterSize.Y * i), c);                
+                batch.DrawString(font, contents[i], new Vector2(bounds.X, bounds.Y + letterSize.Y * i), c);
             }
             border.Draw(batch, c);
 

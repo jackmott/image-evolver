@@ -7,19 +7,20 @@ using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using static GameLogic.GraphUtils;
 using static GameLogic.ColorTools;
-
+using System.Threading;
 
 namespace GameLogic
 {
+
     public enum PicType { RGB, HSV, GRADIENT }
-    public enum GradientType { RANDOM, DIAD,DOUBLE_COMPLEMENT,COMPLEMENTARY, SPLIT_COMPLEMENTARY, TRIADIC, TETRADIC, SQUARE, ANALOGOUS }
+    public enum GradientType { RANDOM, DIAD, DOUBLE_COMPLEMENT, COMPLEMENTARY, SPLIT_COMPLEMENTARY, TRIADIC, TETRADIC, SQUARE, ANALOGOUS }
     [DataContract]
     public class Pic
     {
         [DataMember]
         bool video;
         [DataMember]
-        public float t=0.0f;
+        public float t = 0.0f;
         [DataMember]
         public bool videoForward;
         [DataMember]
@@ -32,7 +33,7 @@ namespace GameLogic
         //or if one of the nullable colors is null
         // a hard stop
         [DataMember]
-        public (float?, float?)[] gradients;
+        public float[] hues;
         [DataMember]
         public float[] pos;
 
@@ -42,6 +43,8 @@ namespace GameLogic
         public Button injectButton;
         [DataMember]
         public Button editEquationButton;
+        [DataMember]
+        public Button constantFoldButton;
         [DataMember]
         public Button saveEquationButton;
         [DataMember]
@@ -61,6 +64,7 @@ namespace GameLogic
 
         GraphicsDevice g;
         GameWindow w;
+
 
         public Pic(PicType type, GraphicsDevice g, GameWindow w)
         {
@@ -86,114 +90,90 @@ namespace GameLogic
             this.w = w;
             this.type = type;
             InitButtons();
-            switch (type)
+
+            Trees = new AptNode[3];
+            Machines = new StackMachine[3];
+            for (int i = 0; i < 3; i++)
             {
-                case PicType.RGB:
-                case PicType.HSV:
-                    Trees = new AptNode[3];
-                    Machines = new StackMachine[3];
-                    for (int i = 0; i < 3; i++)
-                    {
-                        Trees[i] = AptNode.GenerateTree(rand.Next(min, max), rand,video);
-                        Machines[i] = new StackMachine(Trees[i]);
-                    }
-                    break;
-                case PicType.GRADIENT:
-                    Trees = new AptNode[3];
-                    Machines = new StackMachine[3];
-                    for (int i = 0; i < 3; i++)
-                    {
-                        Trees[i] = AptNode.GenerateTree(rand.Next(min, max), rand,video);
-                        Machines[i] = new StackMachine(Trees[i]);
-                    }
+                Trees[i] = AptNode.GenerateTree(rand.Next(min, max), rand, video);
+                Machines[i] = new StackMachine(Trees[i]);
+            }
 
-                    float[] hues = null;
-                    var enum_size = Enum.GetNames(typeof(GradientType)).Length;
-                    var gradType = (GradientType)rand.Next(0, enum_size);
-                    gradType = GradientType.TRIADIC;
-                    switch (gradType)
-                    {
-                        case GradientType.ANALOGOUS:
-                            {
-                                hues = new float[3];
-                                (hues[0], hues[1], hues[2]) = GetAnalogousHues((float)rand.NextDouble());
-                                break;
-                            }
-                        case GradientType.COMPLEMENTARY:
-                            {
-                                hues = new float[2];
-                                (hues[0], hues[1]) = GetComplementaryHues((float)rand.NextDouble());
-                                break;
-                            }
-                        case GradientType.SPLIT_COMPLEMENTARY:
-                            {
-                                hues = new float[3];
-                                (hues[0], hues[1], hues[2]) = GetSplitComplementaryHues((float)rand.NextDouble());
+            if (type == PicType.GRADIENT)
+            {
 
-                                break;
-                            }
-                        case GradientType.SQUARE:
-                            {
-                                hues = new float[4];
-                                (hues[0], hues[1], hues[2], hues[3]) = GetSquareHues((float)rand.NextDouble());
-                                break;
-                            }
-                        case GradientType.TETRADIC:
-                            {
-                                hues = new float[4];
-                                (hues[0], hues[1], hues[2], hues[3]) = GetTetradicHues((float)rand.NextDouble());
-                                break;
-                            }
-                        case GradientType.TRIADIC:
-                            {
-                                hues = new float[3];
-                                (hues[0], hues[1], hues[2]) = GetTriadicHues((float)rand.NextDouble());
-                                break;
-                            }
-                        case GradientType.RANDOM:
-                            {
-                                hues = new float[rand.Next(Settings.MIN_GRADIENTS, Settings.MAX_GRADIENTS)];
-                                for (int i = 0; i < hues.Length; i++)
-                                {
-                                    hues[i] = (float)rand.NextDouble();
-                                }
-                                break;
-                            }
-                        case GradientType.DOUBLE_COMPLEMENT:
-                            {
-                                hues = new float[4];
-                                (hues[0], hues[1], hues[2], hues[3]) = GetTetradicHues((float)rand.NextDouble());
-                                break;
-                            }
-                        case GradientType.DIAD:
-                            {
-                                hues = new float[2];
-                                (hues[0], hues[1]) = GetComplementaryHues((float)rand.NextDouble());
-                                break;
-                            }
-                    }
-
-
-                    var numGradients = hues.Length;
-                    gradients = new (float?, float?)[numGradients];
-                    pos = new float[numGradients];
-                    for (int i = 0; i < gradients.Length; i++)
-                    {
-                        bool isSuddenShift = rand.Next(0, Settings.CHANCE_HARD_GRADIENT) == 0;
-                        if (!isSuddenShift)
+                var enum_size = Enum.GetNames(typeof(GradientType)).Length;
+                var gradType = (GradientType)rand.Next(0, enum_size);
+                gradType = GradientType.TRIADIC;
+                switch (gradType)
+                {
+                    case GradientType.ANALOGOUS:
                         {
-                            gradients[i] = (hues[i], null);
+                            hues = new float[3];
+                            (hues[0], hues[1], hues[2]) = GetAnalogousHues((float)rand.NextDouble());
+                            break;
                         }
-                        else
+                    case GradientType.COMPLEMENTARY:
                         {
-                            gradients[i] = (hues[i],hues[(i+1)%hues.Length]);
+                            hues = new float[2];
+                            (hues[0], hues[1]) = GetComplementaryHues((float)rand.NextDouble());
+                            break;
                         }
-                        pos[i] = (float)(rand.NextDouble() * 2.0 - 1.0);
-                        Array.Sort(pos);
-                    }
-                    pos[0] = -1.0f;
-                    pos[pos.Length - 1] = 1.0f;
-                    break;
+                    case GradientType.SPLIT_COMPLEMENTARY:
+                        {
+                            hues = new float[3];
+                            (hues[0], hues[1], hues[2]) = GetSplitComplementaryHues((float)rand.NextDouble());
+
+                            break;
+                        }
+                    case GradientType.SQUARE:
+                        {
+                            hues = new float[4];
+                            (hues[0], hues[1], hues[2], hues[3]) = GetSquareHues((float)rand.NextDouble());
+                            break;
+                        }
+                    case GradientType.TETRADIC:
+                        {
+                            hues = new float[4];
+                            (hues[0], hues[1], hues[2], hues[3]) = GetTetradicHues((float)rand.NextDouble());
+                            break;
+                        }
+                    case GradientType.TRIADIC:
+                        {
+                            hues = new float[3];
+                            (hues[0], hues[1], hues[2]) = GetTriadicHues((float)rand.NextDouble());
+                            break;
+                        }
+                    case GradientType.RANDOM:
+                        {
+                            hues = new float[rand.Next(Settings.MIN_GRADIENTS, Settings.MAX_GRADIENTS)];
+                            for (int i = 0; i < hues.Length; i++)
+                            {
+                                hues[i] = (float)rand.NextDouble();
+                            }
+                            break;
+                        }
+                    case GradientType.DOUBLE_COMPLEMENT:
+                        {
+                            hues = new float[4];
+                            (hues[0], hues[1], hues[2], hues[3]) = GetTetradicHues((float)rand.NextDouble());
+                            break;
+                        }
+                    case GradientType.DIAD:
+                        {
+                            hues = new float[2];
+                            (hues[0], hues[1]) = GetComplementaryHues((float)rand.NextDouble());
+                            break;
+                        }
+                }
+
+                pos = new float[hues.Length];
+                for (int i = 0; i < hues.Length; i++)
+                {
+                    pos[i] = (float)(rand.NextDouble() * 2.0 - 1.0);
+                }
+                Array.Sort(pos);
+
             }
             SetupTextbox();
         }
@@ -204,6 +184,7 @@ namespace GameLogic
             injectButton = new Button(Settings.injectTexture, new Rectangle());
             editEquationButton = new Button(Settings.equationTexture, new Rectangle());
             saveEquationButton = new Button(Settings.saveEquationTexture, new Rectangle());
+            constantFoldButton = new Button(GraphUtils.GetTexture(g, Color.Blue), new Rectangle());
             cancelEditButton = new Button(Settings.cancelEditTexture, new Rectangle());
             panel = new SlidingPanel(Settings.panelTexture, new Rectangle(), new Rectangle(), 500.0);
         }
@@ -221,6 +202,18 @@ namespace GameLogic
                 case PicType.GRADIENT:
                     {
                         string result = "( Gradient \n";
+                        result += "( Hues";
+                        foreach (var hue in hues)
+                        {
+                            result += " " + hue.ToString("0.000");
+                        }
+                        result += " )\n";
+                        result += "( Positions";
+                        foreach (var p in pos)
+                        {
+                            result += " " + p.ToString("0.000");
+                        }
+                        result += " )\n";
                         result += Trees[0].ToLisp() + "\n";
                         result += Trees[1].ToLisp() + "\n";
                         result += Trees[2].ToLisp() + " )";
@@ -250,17 +243,17 @@ namespace GameLogic
         public Pic Clone()
         {
             Pic pic = new Pic(type, g, w);
-            if (gradients != null)
+            if (hues != null)
             {
-                var newGradients = new (float?, float?)[gradients.Length];
+                var newHues = new float[hues.Length];
                 var newPos = new float[pos.Length];
 
-                for (int i = 0; i < newGradients.Length; i++)
+                for (int i = 0; i < hues.Length; i++)
                 {
-                    newGradients[i] = gradients[i];
+                    newHues[i] = hues[i];
                     newPos[i] = pos[i];
                 }
-                pic.gradients = newGradients;
+                pic.hues = newHues;
                 pic.pos = newPos;
             }
             for (int i = 0; i < Trees.Length; i++)
@@ -291,13 +284,14 @@ namespace GameLogic
             picButton.Draw(batch, gameTime);
             textBox.Draw(batch, gameTime);
             saveEquationButton.Draw(batch, gameTime);
+            constantFoldButton.Draw(batch, gameTime);
             cancelEditButton.Draw(batch, gameTime);
         }
 
-        public void ZoomDraw(SpriteBatch batch, GameTime gameTime,InputState state)
-        {            
+        public void ZoomDraw(SpriteBatch batch, GameTime gameTime, InputState state)
+        {
             picButton.Draw(batch, gameTime);
-                        
+
             panel.Draw(batch, gameTime, state);
             var panelBounds = panel.GetBounds(state);
             editEquationButton.bounds = FRect(panelBounds.X + panelBounds.Width * .1f, panelBounds.Y + panelBounds.Height * .25f, panelBounds.Width * .1f, panelBounds.Height * .5f);
@@ -314,12 +308,14 @@ namespace GameLogic
 
             var textBounds = ScaleCentered(bounds, 0.75f);
             textBox.SetNewBounds(textBounds);
-            injectButton.bounds = FRect(bounds.X+ bounds.Width * .025, bounds.Y + bounds.Height *.9, bounds.Width * .1, bounds.Height * .1);
+            injectButton.bounds = FRect(bounds.X + bounds.Width * .025, bounds.Y + bounds.Height * .9, bounds.Width * .1, bounds.Height * .1);
             saveEquationButton.bounds = FRect(textBounds.X, bounds.Height * .9f, bounds.Width * .1f, bounds.Height * .05f);
+            constantFoldButton.bounds = FRect(textBounds.X + textBounds.Width * 0.4f, bounds.Height * .9f, bounds.Width * .1f, bounds.Height * .05f);
+
             cancelEditButton.bounds = FRect(textBounds.X + textBounds.Width - bounds.Width * .1f, bounds.Height * .9f, bounds.Width * .1f, bounds.Height * .05f);
 
             panel.activeBounds = FRect(0, bounds.Height * .85f, bounds.Width, bounds.Height * .15f);
-            panel.hiddenBounds = FRect(0, bounds.Height * 1.001, bounds.Width, bounds.Height * .15f);            
+            panel.hiddenBounds = FRect(0, bounds.Height * 1.001, bounds.Width, bounds.Height * .15f);
 
             RegenTex(g);
         }
@@ -337,25 +333,24 @@ namespace GameLogic
                 {
                     result.pos = new float[partner.pos.Length];
                     Array.Copy(partner.pos, result.pos, partner.pos.Length);
-                    result.gradients = new (float?,float?)[partner.gradients.Length];
-                    Array.Copy(partner.gradients, result.gradients, partner.gradients.Length);
+                    result.hues = new float[partner.hues.Length];
+                    Array.Copy(partner.hues, result.hues, partner.hues.Length);
                 }
                 // clear gradient data if we are changing type FROM gradient
                 else if (result.type == PicType.GRADIENT)
                 {
                     result.pos = null;
-                    result.gradients = null;
+                    result.hues = null;
                 }
                 result.type = partner.type;
-                
+
                 return result;
             }
             else
             {
                 var (ft, fs) = result.GetRandomTree(r);
                 var (st, ss) = partnerClone.GetRandomTree(r);
-                ft.BreedWith(st, r,video);
-                fs.RebuildInstructions(ft);
+                ft.BreedWith(st, r, video);
                 return result;
             }
         }
@@ -366,6 +361,15 @@ namespace GameLogic
             return (Trees[index], Machines[index]);
         }
 
+        public void Optimize()
+        {
+            for (int i = 0; i < Trees.Length; i++)
+            {
+                Trees[i] = AptNode.ConstantFolding(Trees[i]);
+                Machines[i].RebuildInstructions(Trees[i]);
+            }
+        }
+
 
         public Pic Mutate(Random r)
         {
@@ -373,7 +377,7 @@ namespace GameLogic
             if (r.Next(0, Settings.MUTATE_CHANCE) == 0)
             {
                 var (t, s) = result.GetRandomTree(r);
-                t.Mutate(r,video);
+                t.Mutate(r, video);
                 s.RebuildInstructions(t);
             }
             return result;
@@ -390,186 +394,152 @@ namespace GameLogic
             switch (type)
             {
                 case PicType.RGB:
-                    return RGBToTexture(graphics, w, h,t);
+                    return ParallelImageGen(g, w, h, RGBToTexture);
                 case PicType.HSV:
-                    return HSVToTexture(graphics, w, h,t);
+                    return ParallelImageGen(g, w, h, HSVToTexture);
                 case PicType.GRADIENT:
-                    return GradientToTexture(graphics, w, h,t);
+                    return ParallelImageGen(g, w, h, GradientToTexture);
                 default:
                     throw new Exception("wat");
 
             }
         }
 
-        public void RangeTest()
+       
+        private Texture2D ParallelImageGen(GraphicsDevice g, int w, int h, Action<int, int, int, int, Color[]> f)
         {
-            float min = float.MaxValue;
-            float max = float.MinValue;
+            Color[] colors = new Color[w * h];
+            var cpuCount = Environment.ProcessorCount;
+            int chunk = h / cpuCount;
 
-            float[][] stacks = new float[Machines.Length][];
-            for (int i = 0; i < stacks.Length; i++)
+            Thread[] threads = new Thread[cpuCount + 1];
+            var extRange = (0, chunk);
+            for (int i = 0; i < threads.Length; i++)
             {
-                stacks[i] = new float[Machines[i].nodeCount];
+                threads[i] = new Thread(o =>
+                {
+                    var range = (ValueTuple<int, int>)o;
+                    f.Invoke(range.Item1, range.Item2, w, h, colors);
+                });
+
+                threads[i].Start(extRange);
+                extRange.Item1 += chunk;
+                extRange.Item2 += chunk;
+                extRange.Item2 = Math.Min(h, extRange.Item2);
             }
 
-            int h = 500;
-            int w = 500;
-            for (int y = 0; y < h; y++)
+            foreach (var thread in threads)
+            {
+                thread.Join();
+            }
+
+            Texture2D tex = new Texture2D(g, w, h);
+            var tex2 = new Texture2D(g, w, h);
+            tex.SetData(colors);
+            return tex;
+
+        }
+
+        private void RGBToTexture(int start, int end, int w, int h, Color[] colors)
+        {
+            var scale = 0.5f;
+
+            var rStack = new float[Machines[0].nodeCount];
+            var gStack = new float[Machines[1].nodeCount];
+            var bStack = new float[Machines[2].nodeCount];
+            for (int y = start; y < end; y++)
             {
                 float yf = ((float)y / (float)h) * 2.0f - 1.0f;
                 int yw = y * w;
                 for (int x = 0; x < w; x++)
                 {
                     float xf = ((float)x / (float)w) * 2.0f - 1.0f;
-
-                    for (int i = 0; i < Machines.Length; i++)
-                    {
-                        var f = Machines[i].Execute(xf, yf, stacks[i]);
-                        if (f < min) min = f;
-                        if (f > max) max = f;
-                    }
+                    var rf = Wrap0To1(Machines[0].Execute(xf, yf, t, rStack) * scale + scale);
+                    var gf = Wrap0To1(Machines[1].Execute(xf, yf, t, gStack) * scale + scale);
+                    var bf = Wrap0To1(Machines[2].Execute(xf, yf, t, bStack) * scale + scale);
+                    colors[yw + x] = new Color(rf, gf, bf);
                 }
+            }
+        }
 
+
+        private void GradientToTexture(int start, int end, int w, int h, Color[] colors)
+        {
+            var scale = 0.5f;
+            var hStack = new float[Machines[0].nodeCount];
+            var sStack = new float[Machines[1].nodeCount];
+            var vStack = new float[Machines[2].nodeCount];
+
+            for (int y = start; y < end; y++)
+            {
+                float yf = ((float)y / (float)h) * 2.0f - 1.0f;
+                int yw = y * w;
+                for (int x = 0; x < w; x++)
+                {
+                    float xf = ((float)x / (float)w) * 2.0f - 1.0f;
+                    var hueIndex = Machines[0].Execute(xf, yf, t, hStack);
+                    hueIndex = MathUtils.WrapMinMax(hueIndex, -1.0f, 1.0f);
+                    int i = 0;
+                    for (; i < pos.Length - 1; i++)
+                    {
+                        if (hueIndex >= pos[i] && hueIndex <= pos[i + 1])
+                        {
+                            break;
+                        }
+                    }
+                    var s = Machines[1].Execute(xf, yf, t, sStack) * scale + scale;
+                    var v = Machines[2].Execute(xf, yf, t, vStack) * scale + scale;
+
+                    var f1 = hues[i];
+                    var f2 = hues[(i + 1) % hues.Length];
+
+                    float posDiff = hueIndex - pos[i];
+                    float totalDiff = pos[(i + 1) % hues.Length] - pos[i];
+                    float pct = posDiff / totalDiff;
+
+                    var (c1r, c1g, c1b) = HSV2RGB(f1, s, v);
+                    var (c2r, c2g, c2b) = HSV2RGB(f2, s, v);
+                    var c1 = new Color(c1r, c1g, c1b);
+                    var c2 = new Color(c2r, c2g, c2b);
+
+                    colors[yw + x] = Color.Lerp(c1, c2, pct);
+
+                }
+            }
+        }
+
+
+        private void HSVToTexture(int start, int end, int width, int height, Color[] colors)
+        {
+            var scale = 0.5f;
+
+
+            var hStack = new float[Machines[0].nodeCount];
+            var sStack = new float[Machines[1].nodeCount];
+            var vStack = new float[Machines[2].nodeCount];
+            for (int y = start; y < end; y++)
+            {
+                float yf = ((float)y / (float)height) * 2.0f - 1.0f;
+                int yw = y * width;
+                for (int x = 0; x < width; x++)
+                {
+                    float xf = ((float)x / (float)width) * 2.0f - 1.0f;
+                    var h = Wrap0To1(Machines[0].Execute(xf, yf, t, hStack) * scale + scale);
+                    var s = Wrap0To1(Machines[1].Execute(xf, yf, t, sStack) * scale + scale);
+                    var v = Wrap0To1(Machines[2].Execute(xf, yf, t, vStack) * scale + scale);
+                    var (rf, gf, bf) = HSV2RGB(h, s, v);
+                    colors[yw + x] = new Color(rf, gf, bf);
+                }
             }
 
-            Console.WriteLine("min:" + min + " max:" + max + " range:" + (max - min));
-        }
-        private Texture2D RGBToTexture(GraphicsDevice graphics, int w, int h, float t)
-        {
-            Color[] colors = new Color[w * h];
-            var scale = 0.5f;
-            var partition = Partitioner.Create(0, h);
-                                    
-            Parallel.ForEach(
-                partition,
-                (range, state) =>
-                {
-                    var rStack = new float[Machines[0].nodeCount];
-                    var gStack = new float[Machines[1].nodeCount];
-                    var bStack = new float[Machines[2].nodeCount];
-                    for (int y = range.Item1; y < range.Item2; y++)
-                    {
-                        float yf = ((float)y / (float)h) * 2.0f - 1.0f;
-                        int yw = y * w;
-                        for (int x = 0; x < w; x++)
-                        {
-                            float xf = ((float)x / (float)w) * 2.0f - 1.0f;
-                            var rf = Wrap0To1(Machines[0].Execute(xf, yf,t,rStack) * scale + scale);
-                            var gf = Wrap0To1(Machines[1].Execute(xf, yf,t,gStack) * scale + scale);
-                            var bf = Wrap0To1(Machines[2].Execute(xf, yf,t,bStack) * scale + scale);                                                       
-                            colors[yw + x] = new Color(rf,gf,bf);
-                        }
-                    }
-                });
-            Texture2D tex = new Texture2D(graphics, w, h);
-            var tex2 = new Texture2D(graphics, w, h);
-            tex.SetData(colors);
-            return tex;
-        }
-
-
-
-        private Texture2D GradientToTexture(GraphicsDevice graphics, int w, int h, float t)
-        {
-            Color[] colors = new Color[w * h];
-            var partition = Partitioner.Create(0, h);
-            var scale = 0.5f;
-            Parallel.ForEach(
-                partition,
-                (range, state) =>
-                {
-
-                    var hStack = new float[Machines[0].nodeCount];
-                    var sStack = new float[Machines[1].nodeCount];
-                    var vStack = new float[Machines[2].nodeCount];
-
-                    for (int y = range.Item1; y < range.Item2; y++)
-                    {
-                        float yf = ((float)y / (float)h) * 2.0f - 1.0f;
-                        int yw = y * w;
-                        for (int x = 0; x < w; x++)
-                        {
-                            float xf = ((float)x / (float)w) * 2.0f - 1.0f;
-                            var hues = Machines[0].Execute(xf, yf,t, hStack);
-                            int i = 0;
-                            for (; i < pos.Length - 2; i++)
-                            {
-                                if (hues >= pos[i] && hues <= pos[i + 1])
-                                {
-                                    break;
-                                }
-                            }
-                            var s = Machines[1].Execute(xf, yf,t, sStack)*scale+scale;
-                            var v = Machines[2].Execute(xf, yf,t, vStack)*scale+scale;
-
-                            var (h1a, h1b) = gradients[i];
-                            var (h2a, h2b) = gradients[i + 1];
-
-                            float posDiff = hues - pos[i];
-                            float totalDiff = pos[i + 1] - pos[i];
-                            float pct = posDiff / totalDiff;
-
-                            float h1;
-                            if (h1b == null) h1 = h1a.Value;
-                            else h1 = h1b.Value;
-
-                            var (c1r,c1g,c1b) = HSV2RGB(h1, s, v);
-                            var (c2ar,c2ag,c2ab) = HSV2RGB(h2a.Value, s, v);
-                            Color c1 = new Color(c1r, c1g, c1b);
-                            Color c2a = new Color(c2ar, c2ag, c2ab);
-
-                            colors[yw + x] = Color.Lerp(c1, c2a, pct);
-
-                        }
-                    }
-                });
-            Texture2D tex = new Texture2D(graphics, w, h);
-            var tex2 = new Texture2D(graphics, w, h);
-            tex.SetData(colors);
-            return tex;
-        }
-
-
-        private Texture2D HSVToTexture(GraphicsDevice graphics, int width, int height, float t)
-        {
-            Color[] colors = new Color[width * height];
-            var scale = 0.5f;
-
-            var partition = Partitioner.Create(0, height);
-            Parallel.ForEach(
-                partition,
-                (range, state) =>
-                {
-                    var hStack = new float[Machines[0].nodeCount];
-                    var sStack = new float[Machines[1].nodeCount];
-                    var vStack = new float[Machines[2].nodeCount];
-                    for (int y = range.Item1; y < range.Item2; y++)
-                    {
-                        float yf = ((float)y / (float)height) * 2.0f - 1.0f;
-                        int yw = y * width;
-                        for (int x = 0; x < width; x++)
-                        {
-                            float xf = ((float)x / (float)width) * 2.0f - 1.0f;
-                            var h = Wrap0To1(Machines[0].Execute(xf, yf,t,hStack) * scale + scale);
-                            var s = Wrap0To1(Machines[1].Execute(xf, yf,t,sStack) * scale + scale);
-                            var v = Wrap0To1(Machines[2].Execute(xf, yf,t,vStack) * scale + scale);
-                            var (rf, gf, bf) = HSV2RGB(h, s, v);                            
-                            colors[yw + x] = new Color(rf,gf,bf);
-                        }
-                    }
-                });
-            Texture2D tex = new Texture2D(graphics, width, height);
-            var tex2 = new Texture2D(graphics, width, height);
-            tex.SetData(colors);
-            return tex;
         }
 
         public static float Wrap0To1(float v)
         {
-            return v - (float)Math.Floor(v);
+            return v % 1.0001f;
         }
 
-      
+
     }
 }
 

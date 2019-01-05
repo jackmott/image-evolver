@@ -1,11 +1,8 @@
 ﻿// todo - handle typing beyond edge of text box
 // todo - transition / hourglass animation while processing
-// todo - test text box edge cases -- highlight to end, hit delete, causes exception
-// todo - constant folding / optimizations on AST
-// todo - set cursor pos to 0/0 whenever opening text editor
-// todo - gradients don't have enough data to rebuild from the lisp output!
 // todo - consider filter nodes attached to top level pic nodes (sepia, etc)
-
+// todo - the fixed stackPointer is sometimes null, how the shit? 
+// todo - investigate very and horiz lines popping up too much
 
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
@@ -17,7 +14,7 @@ using Microsoft.Xna.Framework.Content;
 using System.Runtime.Serialization;
 using System.Xml;
 using static GameLogic.GraphUtils;
-
+using static GameLogic.Tests;
 
 namespace GameLogic
 {
@@ -79,6 +76,11 @@ namespace GameLogic
                     throw e;
                 }
             }
+
+           // Parsing(g, window);
+           // Optimizing(g, window);
+            //Console.ReadLine();
+
 
             state.populationSize = Settings.POP_SIZE_COLUMNS * (Settings.POP_SIZE_COLUMNS - 1);            
             Random r = state.r;
@@ -273,6 +275,8 @@ namespace GameLogic
 
                     var child = first.BreedWith(second, state.r);
                     child = child.Mutate(state.r);
+                    child.Optimize();
+                    child.textBox.SetText(child.ToLisp());
                     nextGeneration.Add(child);
 
                 }
@@ -332,6 +336,9 @@ namespace GameLogic
                     state.zoomedPic.Trees = p.Trees;
                     state.zoomedPic.Machines = p.Machines;
                     state.zoomedPic.type = p.type;
+                    state.zoomedPic.hues = p.hues;
+                    state.zoomedPic.pos = p.pos;
+                    state.zoomedPic.textBox.SetText(state.zoomedPic.ToLisp());
                     state.zoomedPic.RegenTex(state.g);
                     state.screen = Screen.ZOOM;
                     state.zoomedPic.textBox.SetActive(false);
@@ -339,11 +346,24 @@ namespace GameLogic
                 catch (ParseException ex)
                 {
                     Console.WriteLine(ex);
+                    Console.WriteLine(ex.token.type);
+                    Console.WriteLine("start:" + ex.token.start + " len:" + ex.token.len);
                     state.zoomedPic.textBox.error = ex;
                     return state;
                 }
 
                 state.zoomedPic.textBox.error = null;
+            }
+            if (state.zoomedPic.constantFoldButton.WasLeftClicked(state.inputState))
+            {
+                for (int i = 0; i < state.zoomedPic.Trees.Length; i++)
+                {
+                    state.zoomedPic.Trees[i] = AptNode.ConstantFolding(state.zoomedPic.Trees[i]);
+                    state.zoomedPic.Machines[i] = new StackMachine(state.zoomedPic.Trees[i]);
+                }
+                state.zoomedPic.RegenTex(state.g);
+                state.zoomedPic.textBox.SetText(state.zoomedPic.ToLisp());
+                
             }
             return state;
         }
@@ -355,6 +375,7 @@ namespace GameLogic
             if (state.zoomedPic.editEquationButton.WasLeftClicked(state.inputState))
             {
                 state.screen = Screen.EDIT;
+                state.zoomedPic.textBox.cursorPos = new Point(0, 0);
                 state.zoomedPic.textBox.SetActive(true);
                 return state;
             }
@@ -388,6 +409,7 @@ namespace GameLogic
 
             int chooser = r.Next(0, 3);
             Pic p;
+           // chooser = 0;
             if (chooser == 0)
             {
                 p = new Pic(PicType.RGB, r, Settings.MIN_GEN_SIZE, Settings.MAX_GEN_SIZE, state.g, state.w,state.videoMode);
@@ -415,22 +437,10 @@ namespace GameLogic
 
         public Pic GenTree(Random r)
         {
-            int chooser = r.Next(0, 3);            
-            Pic p;
-            if (chooser == 0)
-            {
-                p = new Pic(PicType.RGB, r, Settings.MIN_GEN_SIZE, Settings.MAX_GEN_SIZE, state.g, state.w, state.videoMode);
-            }
-            else if (chooser == 1)
-            {
-                p = new Pic(PicType.HSV, r, Settings.MIN_GEN_SIZE, Settings.MAX_GEN_SIZE, state.g, state.w, state.videoMode);
-            }
-            else
-            {
-                p = new Pic(PicType.GRADIENT, r, Settings.MIN_GEN_SIZE, Settings.MAX_GEN_SIZE, state.g, state.w, state.videoMode);
-            }
-
-            return p;
+            int chooser = r.Next(0, 3);
+            PicType type = (PicType)chooser;
+          
+            return new Pic(type, r, Settings.MIN_GEN_SIZE,Settings.MAX_GEN_SIZE,state.g, state.w, state.videoMode);
         }
 
         public void ClearPics(List<Pic> pics)

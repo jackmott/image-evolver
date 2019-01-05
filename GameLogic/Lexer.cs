@@ -7,7 +7,7 @@ using System.Collections.Generic;
 
 namespace GameLogic
 {
-    public enum TokenType : byte { OPEN_PAREN, CLOSE_PAREN, OP, STRING, CONSTANT }
+    public enum TokenType : byte { OPEN_PAREN, CLOSE_PAREN, OP, VARIABLE, STRING, CONSTANT }
     public enum State : byte { DETERMINE, OP, NUMBER, STRING, EOF }
 
     public class ParseException : Exception
@@ -93,152 +93,191 @@ namespace GameLogic
 
         }
 
-        public Pic ParsePic(GraphicsDevice g, GameWindow w)
+        public Token ParseExpect()
         {
-            while (true)
+            try
             {
-                var t = new Token { };
-
-                try
+                return tokens.Dequeue();
+            }
+            catch (InvalidOperationException)
+            {
+                throw new Exception("Expected token but reached EOF");
+            }
+        }
+        public Token ParseExpect(TokenType type)
+        {
+            try
+            {
+                var t = tokens.Dequeue();
+                if (t.type != type)
                 {
-                    t = tokens.Dequeue();
+                    throw new ParseException("Expected tokentype " + type + " but got " + t.type, t);
                 }
-                catch (Exception)
+                return t;
+            }
+            catch (InvalidOperationException)
+            {
+                throw new ParseException("Expected tokentype " + type + " but reached EOF", new Token { });
+            }
+
+
+        }
+
+        public Token ParseExpect(TokenType[] validTokens)
+        {
+
+            var t = ParseExpect();
+            foreach (var valid in validTokens)
+            {
+                if (valid == t.type)
                 {
-                    throw new ParseException("Top level type must be RGB, Gradient, or HSV",t);
-                }
-                var s = input.Slice(t.start, t.len).ToString().ToLower();
-
-                switch (t.type)
-                {
-                    case TokenType.OP:
-                        {
-
-                            if (s == "gradient")
-                            {
-                                Pic p = new Pic(PicType.GRADIENT, g, w);
-                                p.Trees[0] = ParseNodes();
-                                p.Machines[0] = new StackMachine(p.Trees[0]);
-
-                                p.Trees[1] = ParseNodes();
-                                p.Machines[1] = new StackMachine(p.Trees[1]);
-
-                                p.Trees[2] = ParseNodes();
-                                p.Machines[2] = new StackMachine(p.Trees[2]);
-                                return p;
-                            }
-                            else if (s == "rgb")
-                            {
-                                Pic p = new Pic(PicType.RGB, g, w);
-                                p.Trees[0] = ParseNodes();
-                                p.Machines[0] = new StackMachine(p.Trees[0]);
-
-                                p.Trees[1] = ParseNodes();
-                                p.Machines[1] = new StackMachine(p.Trees[1]);
-
-                                p.Trees[2] = ParseNodes();
-                                p.Machines[2] = new StackMachine(p.Trees[2]);
-                                return p;
-                            }
-                            else if (s == "hsv")
-                            {
-                                Pic p = new Pic(PicType.HSV, g, w);
-                                p.Trees[0] = ParseNodes();
-                                p.Machines[0] = new StackMachine(p.Trees[0]);
-
-                                p.Trees[1] = ParseNodes();
-                                p.Machines[1] = new StackMachine(p.Trees[1]);
-
-                                p.Trees[2] = ParseNodes();
-                                p.Machines[2] = new StackMachine(p.Trees[2]);
-                                return p;
-                            }
-                            else
-                            {
-                                throw new ParseException("Top level type must be RGB, Gradient, or HSV", t);
-                           
-                            }
-
-                        }
-                    case TokenType.CONSTANT:
-                        {
-                            throw new ParseException("Top level type must be RGB, Gradient, or HSV", t);
-                        }
-                    case TokenType.CLOSE_PAREN:
-                    case TokenType.OPEN_PAREN:
-                        continue;
+                    return t;
                 }
             }
+            throw new ParseException("Invalid token", t);
+
+
+        }
+
+        public Pic ParsePic(GraphicsDevice g, GameWindow w)
+        {
+            ParseExpect(TokenType.OPEN_PAREN);
+            var t = ParseExpect(TokenType.OP);
+            var s = input.Slice(t.start, t.len).ToString().ToLower();
+            Pic p;
+            if (s == "gradient")
+            {
+                p = new Pic(PicType.GRADIENT, g, w);
+                ParseExpect(TokenType.OPEN_PAREN);
+                t = ParseExpect(TokenType.OP);
+                s = input.Slice(t.start, t.len).ToString().ToLower();
+                if (s != "hues")
+                {
+                    throw new ParseException("hues array expected after gradient",t);
+                }
+
+                var tempHues = new List<float>();
+                while(true)
+                {
+                    t = ParseExpect(new[] { TokenType.CONSTANT, TokenType.CLOSE_PAREN });
+                    if (t.type == TokenType.CLOSE_PAREN) break;
+                    string numStr = input.Slice(t.start, t.len).ToString();
+                    tempHues.Add(float.Parse(numStr));
+                } 
+                p.hues = tempHues.ToArray();
+                ParseExpect(TokenType.OPEN_PAREN);
+                t = ParseExpect(TokenType.OP);
+                s = input.Slice(t.start, t.len).ToString().ToLower();
+                if (s != "positions")
+                {
+                    throw new ParseException("position array expected after hues", t);
+                }
+                var tempPos = new List<float>();
+                while (true)
+                {
+                    t = ParseExpect(new[] { TokenType.CONSTANT, TokenType.CLOSE_PAREN });
+                    if (t.type == TokenType.CLOSE_PAREN) break;
+                    string numStr = input.Slice(t.start, t.len).ToString();
+                    tempPos.Add(float.Parse(numStr));
+                }
+                tempPos.Sort();
+                p.pos = tempPos.ToArray();
+
+
+                p.Trees[0] = ParseNodes();
+                p.Machines[0] = new StackMachine(p.Trees[0]);
+
+                p.Trees[1] = ParseNodes();
+                p.Machines[1] = new StackMachine(p.Trees[1]);
+
+                p.Trees[2] = ParseNodes();
+                p.Machines[2] = new StackMachine(p.Trees[2]);
+            }
+            else if (s == "rgb")
+            {
+                p = new Pic(PicType.RGB, g, w);
+                p.Trees[0] = ParseNodes();
+                p.Machines[0] = new StackMachine(p.Trees[0]);
+
+                p.Trees[1] = ParseNodes();
+                p.Machines[1] = new StackMachine(p.Trees[1]);
+
+                p.Trees[2] = ParseNodes();
+                p.Machines[2] = new StackMachine(p.Trees[2]);
+            }
+            else if (s == "hsv")
+            {
+                p = new Pic(PicType.HSV, g, w);
+                p.Trees[0] = ParseNodes();
+                p.Machines[0] = new StackMachine(p.Trees[0]);
+
+                p.Trees[1] = ParseNodes();
+                p.Machines[1] = new StackMachine(p.Trees[1]);
+
+                p.Trees[2] = ParseNodes();
+                p.Machines[2] = new StackMachine(p.Trees[2]);
+            }
+            else
+            {
+                throw new ParseException("Top level type must be RGB, Gradient, or HSV", t);
+
+            }
+
+            ParseExpect(TokenType.CLOSE_PAREN);
+            return p;
+
         }
 
         public AptNode ParseNodes()
         {
-
-            while (true)
+            var t = ParseExpect(new[] { TokenType.OPEN_PAREN, TokenType.CONSTANT, TokenType.VARIABLE });
+            if (t.type == TokenType.VARIABLE)
             {
-                var t = new Token { };
-                try
+                var s = input.Slice(t.start, t.len).ToString().ToLower();
+                return stringToNode(s, t);
+            }
+            else if (t.type == TokenType.CONSTANT)
+            {
+                var result = new AptNode { type = NodeType.CONSTANT };
+                string numStr = input.Slice(t.start, t.len).ToString();
+                result.value = float.Parse(numStr);
+                return result;
+            }
+            else
+            {
+                t = ParseExpect(TokenType.OP);
+                var s = input.Slice(t.start, t.len).ToString().ToLower();
+                var result = stringToNode(s, t);
+                if (result.type == NodeType.PICTURE)
                 {
-                    t = tokens.Dequeue();
+                    var filenameToken = ParseExpect(TokenType.STRING);
+                    result.filename = input.Slice(filenameToken.start, filenameToken.len).ToString();
+
                 }
-                catch (Exception)
+
+                int warpCount = 0;
+                for (int i = 0; i < result.children.Length; i++)
                 {
-                    throw new ParseException("Argument count wrong", t);
+                    result.children[i - warpCount] = ParseNodes();
+                    // warp returns two values, so it is a special case
+                    if (result.children[i - warpCount].type == NodeType.WARP1)
+                    {
+                        warpCount++;
+                        i++;
+                    }
                 }
-                switch (t.type)
+                if (warpCount > 0)
                 {
-                    case TokenType.OP:
-                        {
-                            var s = input.Slice(t.start, t.len).ToString().ToLower();
-                            var node = stringToNode(s, t);
-                            if (node.children != null)
-                            {
-                                if (node.type == NodeType.PICTURE)
-                                {
-                                    var filenameToken = tokens.Dequeue();
-                                    if (filenameToken.type != TokenType.STRING)
-                                    {
-                                        throw new ParseException("Picture did not have a file name", t);
-                                    }
-                                    node.filename = input.Slice(filenameToken.start, filenameToken.len).ToString();
-
-                                }
-                                int warpCount = 0;
-                                for (int i = 0; i < node.children.Length; i++)
-                                {
-                                    node.children[i - warpCount] = ParseNodes();
-                                    // warp returns two values, so it is a special case
-                                    if (node.children[i - warpCount].type == NodeType.WARP1)
-                                    {
-                                        warpCount++;
-                                        i++;
-                                    }
-                                }
-                                if (warpCount > 0)
-                                {
-                                    var newChildren = new AptNode[node.children.Length - warpCount];
-                                    for (int i = 0; i < newChildren.Length; i++)
-                                    {
-                                        newChildren[i] = node.children[i];
-                                    }
-                                    node.children = newChildren;
-                                }
-
-                            }
-                            return node;
-                        }
-                    case TokenType.CONSTANT:
-                        {
-                            var node = new AptNode { type = NodeType.CONSTANT };
-                            string numStr = input.Slice(t.start, t.len).ToString();
-                            node.value = float.Parse(numStr);
-                            return node;
-                        }
-
-                    case TokenType.CLOSE_PAREN:
-                    case TokenType.OPEN_PAREN:
-                        continue;
+                    var newChildren = new AptNode[result.children.Length - warpCount];
+                    for (int i = 0; i < newChildren.Length; i++)
+                    {
+                        newChildren[i] = result.children[i];
+                    }
+                    result.children = newChildren;
                 }
+
+                ParseExpect(TokenType.CLOSE_PAREN);
+                return result;
             }
 
         }
@@ -255,9 +294,11 @@ namespace GameLogic
 
         public State DetermineToken()
         {
+
             while (true)
             {
-                char c = next();
+                var c = next();
+
                 if (IsWhiteSpace(c))
                 {
                     ignore();
@@ -280,9 +321,14 @@ namespace GameLogic
                 {
                     return State.NUMBER;
                 }
-                else if (pos >= input.Length)
+                else if (c == char.MaxValue)
                 {
                     return State.EOF;
+                }
+                else if (c == 'x' || c == 'y' || c == 't' || c == 'X' || c == 'Y' || c== 'T')
+                {
+                    emit(TokenType.VARIABLE);
+                    ignore();
                 }
                 else
                 {
@@ -334,12 +380,12 @@ namespace GameLogic
             {
                 emit(TokenType.CONSTANT);
             }
-
             return State.DETERMINE;
         }
 
         public bool accept(string valid)
         {
+
             if (valid.IndexOf(next()) >= 0)
             {
                 return true;
@@ -367,7 +413,7 @@ namespace GameLogic
                 pos++;
                 return c;
             }
-
+            pos++;
             return char.MaxValue;
         }
 

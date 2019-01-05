@@ -63,7 +63,7 @@ namespace GameLogic
                     inPtr++;
                     break;
                 case NodeType.PICTURE:
-                    var value = 0;
+                    var value = -1;
                     for (int i = 0; i < GameState.externalImages.Count; i++)
                     {
                         var filename = GameState.externalImages[i].filename;
@@ -73,6 +73,7 @@ namespace GameLogic
                             break;
                         }
                     }
+                    if (value == -1) throw new Exception ("picture string invalid");
                     instructions[inPtr] = new Instruction { type = node.type, value = value};
                     inPtr++;
                     break;                
@@ -97,6 +98,10 @@ namespace GameLogic
                     int sp = 0;
                     foreach (var ins in instructions)
                     {
+                        if (sp < 0 || sp >= stack.Length)
+                        {
+                            throw new Exception("oh shit");
+                        }
                         switch (ins.type)
                         {
                             case NodeType.X:
@@ -151,7 +156,19 @@ namespace GameLogic
                                 stackPointer[sp] = stackPointer[sp] * stackPointer[sp];
                                 break;
                             case NodeType.SQRT:
-                                stackPointer[sp] = (float)Math.Sqrt(stackPointer[sp]);
+                                {
+                                    var n = stackPointer[sp];
+                                    if (n >= 0)
+                                    {
+                                        stackPointer[sp] = (float)Math.Sqrt(n);
+                                    }
+                                    else
+                                    {
+                                        n = n * -1;
+                                        n = (float)Math.Sqrt(n);
+                                        stackPointer[sp] = n * -1;
+                                    }
+                                }
                                 break;
                             case NodeType.CEIL:
                                 stackPointer[sp] = (float)Math.Ceiling(stackPointer[sp]);
@@ -174,7 +191,7 @@ namespace GameLogic
                                 stackPointer[sp] = v;                                
                                 break;
                             case NodeType.WRAP:
-                                stackPointer[sp] = MathUtils.Constrain(stackPointer[sp], -1.0f, 1.001f);
+                                stackPointer[sp] = MathUtils.WrapMinMax(stackPointer[sp], -1.0f, 1.001f);
                                 break;
                             case NodeType.NEGATE:
                                 stackPointer[sp] = -1.0f * stackPointer[sp];
@@ -220,7 +237,7 @@ namespace GameLogic
                                     var octaves = (int)(Math.Abs(stackPointer[sp - 4]) * 2.0f + 1.0f);
                                     var (xf, yf) = FastNoise.GradientPerturbFractal(stackPointer[sp], stackPointer[sp - 1], 2f * stackPointer[sp - 2], stackPointer[sp - 3] / 3.0f, 1337, octaves, 2.0f, 0.5f, FastNoise.Interp.Quintic);
                                     stackPointer[sp - 3] = xf;
-                                    stackPointer[sp - 4] = MathUtils.Constrain(yf, -1.0f, 1.0f);
+                                    stackPointer[sp - 4] = MathUtils.WrapMinMax(yf, -1.0f, 1.0f);
                                     sp -= 3;
                                     break;
                                 }
