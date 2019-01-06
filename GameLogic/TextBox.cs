@@ -275,6 +275,7 @@ namespace GameLogic
                 CheckPaste(state);
                 CheckSelectAll(state);
                 PreHighlight(state);
+
                 if (TextUtils.IsKey(Keys.Back, state))
                 {
                     if (highlightStart != highlightEnd)

@@ -1,8 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 
@@ -12,14 +8,14 @@ namespace GameLogic
     {
         public static void Optimizing(GraphicsDevice g, GameWindow w)
         {
-            const int TEST_SIZE = 1000;
+            const int TEST_SIZE = 100;
             Random r = new Random();
 
             Console.WriteLine("start opt test");
             for (int i = 0; i < TEST_SIZE; i++)
             {
                 Console.WriteLine(i);
-                var tree = AptNode.GenerateTree(8, r, false);
+                var tree = AptNode.GenerateTree(25, r, false);
                 var machine = new StackMachine(tree);
 
                 var optTree = AptNode.ConstantFolding(tree);
@@ -27,7 +23,8 @@ namespace GameLogic
                 var stack = new float[machine.nodeCount];
                 var optStack = new float[optMachine.nodeCount];
 
-                for (float y = -1.0f; y <= 1.0f; y += .01f) {
+                for (float y = -1.0f; y <= 1.0f; y += .01f)
+                {
                     for (float x = -1.0f; x <= 1.0f; x += .01f)
                     {
                         float result = machine.Execute(x, y, stack);
@@ -47,7 +44,7 @@ namespace GameLogic
 
                     }
                 }
-              
+
             }
             Console.WriteLine("done opt test");
 
@@ -69,7 +66,7 @@ namespace GameLogic
                 var p = new Pic(type, r, 1, 200, g, w, false);
 
                 var s = p.ToLisp();
-               
+
                 try
                 {
                     var lexer = new Lexer(s);

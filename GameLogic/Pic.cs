@@ -41,7 +41,7 @@ namespace GameLogic
         [DataMember]
         public Button editEquationButton;
         [DataMember]
-        public Button constantFoldButton;
+        public Button playButton;
         [DataMember]
         public Button saveEquationButton;
         [DataMember]
@@ -181,9 +181,9 @@ namespace GameLogic
             injectButton = new Button(Settings.injectTexture, new Rectangle());
             editEquationButton = new Button(Settings.equationTexture, new Rectangle());
             saveEquationButton = new Button(Settings.saveEquationTexture, new Rectangle());
-            constantFoldButton = new Button(GraphUtils.GetTexture(g, Color.Blue), new Rectangle());
+            playButton = new Button(GraphUtils.GetTexture(g, Color.Blue), new Rectangle());
             cancelEditButton = new Button(Settings.cancelEditTexture, new Rectangle());
-            panel = new SlidingPanel(Settings.panelTexture, new Rectangle(), new Rectangle(), 1000.0);
+            panel = new SlidingPanel(Settings.panelTexture, new Rectangle(), new Rectangle(), 500.0);
         }
 
         public void SetupTextbox()
@@ -280,8 +280,7 @@ namespace GameLogic
         {
             picButton.Draw(batch, gameTime);
             textBox.Draw(batch, gameTime);
-            saveEquationButton.Draw(batch, gameTime);
-            constantFoldButton.Draw(batch, gameTime);
+            saveEquationButton.Draw(batch, gameTime);           
             cancelEditButton.Draw(batch, gameTime);
         }
 
@@ -293,6 +292,13 @@ namespace GameLogic
             var panelBounds = panel.GetBounds(state);
             editEquationButton.bounds = FRect(panelBounds.X + panelBounds.Width * .1f, panelBounds.Y + panelBounds.Height * .25f, panelBounds.Width * .1f, panelBounds.Height * .5f);
             editEquationButton.Draw(batch, gameTime);
+
+            if (video)
+            {
+                playButton.bounds = editEquationButton.bounds;
+                playButton.bounds.X += (int)(playButton.bounds.Width * 1.1f);
+                playButton.Draw(batch, gameTime);
+            }
         }
 
         public void SetNewBounds(Rectangle bounds, GraphicsDevice g)
@@ -307,7 +313,7 @@ namespace GameLogic
             textBox.SetNewBounds(textBounds);
             injectButton.bounds = FRect(bounds.X + bounds.Width * .025, bounds.Y + bounds.Height * .9, bounds.Width * .1, bounds.Height * .1);
             saveEquationButton.bounds = FRect(textBounds.X, bounds.Height * .9f, bounds.Width * .1f, bounds.Height * .05f);
-            constantFoldButton.bounds = FRect(textBounds.X + textBounds.Width * 0.4f, bounds.Height * .9f, bounds.Width * .1f, bounds.Height * .05f);
+            playButton.bounds = FRect(textBounds.X + textBounds.Width * 0.4f, bounds.Height * .9f, bounds.Width * .1f, bounds.Height * .05f);
 
             cancelEditButton.bounds = FRect(textBounds.X + textBounds.Width - bounds.Width * .1f, bounds.Height * .9f, bounds.Width * .1f, bounds.Height * .05f);
 
