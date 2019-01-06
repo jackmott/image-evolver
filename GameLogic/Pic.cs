@@ -6,6 +6,7 @@ using static GameLogic.GraphUtils;
 using static GameLogic.ColorTools;
 using System.Threading;
 
+
 namespace GameLogic
 {
 
@@ -14,10 +15,9 @@ namespace GameLogic
     [DataContract]
     public class Pic
     {
+        public Texture2D[] videoFrames;
         [DataMember]
         bool video;
-        [DataMember]
-        public float t = 0.0f;
         [DataMember]
         public bool videoForward;
         [DataMember]
@@ -286,7 +286,22 @@ namespace GameLogic
 
         public void ZoomDraw(SpriteBatch batch, GameTime gameTime, InputState state)
         {
-            picButton.Draw(batch, gameTime);
+            if (video && videoFrames != null)
+            {
+                var seconds = gameTime.TotalGameTime.TotalSeconds % (Settings.VIDEO_LENGTH*2.0f);
+                var frameIndex = (int)(seconds * Settings.FPS);
+                if (frameIndex >= videoFrames.Length)
+                {
+                    var backIndex = frameIndex - videoFrames.Length;
+                    frameIndex = videoFrames.Length - backIndex - 1;
+                }
+                batch.Draw(videoFrames[frameIndex], picButton.bounds, Color.White);
+
+            }
+            else
+            {
+                picButton.Draw(batch, gameTime);
+            }
 
             panel.Draw(batch, gameTime, state);
             var panelBounds = panel.GetBounds(state);
@@ -300,6 +315,7 @@ namespace GameLogic
                 playButton.Draw(batch, gameTime);
             }
         }
+
 
         public void SetNewBounds(Rectangle bounds, GraphicsDevice g)
         {
@@ -373,6 +389,30 @@ namespace GameLogic
             }
         }
 
+        public void GenerateVideo(int w, int h)
+        {
+            //clear all old video textures
+            if (videoFrames != null) {
+                foreach (var frame in videoFrames)
+                {
+                    frame.Dispose();
+                }
+                videoFrames = null;
+            }
+            //5 seconds at 30fps
+            const int frameCount = Settings.FPS * Settings.VIDEO_LENGTH;
+            videoFrames = new Texture2D[frameCount];
+            var stepSize = 2.0f / frameCount;
+            float t = -1.0f;
+            for (int i = 0; i < videoFrames.Length; i++)
+            {
+                videoFrames[i] = ToTexture(g, w, h,t);
+                t += stepSize;
+                Console.WriteLine("generated frame " + i+"/"+frameCount);
+            }
+
+        }
+
 
         public Pic Mutate(Random r)
         {
@@ -392,16 +432,16 @@ namespace GameLogic
             picButton.tex = ToTexture(graphics, picButton.bounds.Width, picButton.bounds.Height);
         }
 
-        public Texture2D ToTexture(GraphicsDevice graphics, int w, int h)
+        public Texture2D ToTexture(GraphicsDevice graphics, int w, int h,float t = 0.0f)
         {
             switch (type)
             {
                 case PicType.RGB:
-                    return ParallelImageGen(g, w, h, RGBToTexture);
+                    return ParallelImageGen(g, w, h,t, RGBToTexture);
                 case PicType.HSV:
-                    return ParallelImageGen(g, w, h, HSVToTexture);
+                    return ParallelImageGen(g, w, h,t, HSVToTexture);
                 case PicType.GRADIENT:
-                    return ParallelImageGen(g, w, h, GradientToTexture);
+                    return ParallelImageGen(g, w, h,t, GradientToTexture);
                 default:
                     throw new Exception("wat");
 
@@ -409,7 +449,7 @@ namespace GameLogic
         }
 
        
-        private Texture2D ParallelImageGen(GraphicsDevice g, int w, int h, Action<int, int, int, int, Color[]> f)
+        private Texture2D ParallelImageGen(GraphicsDevice g, int w, int h,float t, Action<int, int, int, int,float, Color[]> f)
         {
             Color[] colors = new Color[w * h];
             var cpuCount = Environment.ProcessorCount;
@@ -422,7 +462,7 @@ namespace GameLogic
                 threads[i] = new Thread(o =>
                 {
                     var range = (ValueTuple<int, int>)o;
-                    f.Invoke(range.Item1, range.Item2, w, h, colors);
+                    f.Invoke(range.Item1, range.Item2, w, h,t, colors);
                 });
 
                 threads[i].Start(extRange);
@@ -443,7 +483,7 @@ namespace GameLogic
 
         }
 
-        private void RGBToTexture(int start, int end, int w, int h, Color[] colors)
+        private void RGBToTexture(int start, int end, int w, int h,float t, Color[] colors)
         {
             var scale = 0.5f;
 
@@ -466,7 +506,7 @@ namespace GameLogic
         }
 
 
-        private void GradientToTexture(int start, int end, int w, int h, Color[] colors)
+        private void GradientToTexture(int start, int end, int w, int h,float t, Color[] colors)
         {
             var scale = 0.5f;
             var hStack = new float[Machines[0].nodeCount];
@@ -512,7 +552,7 @@ namespace GameLogic
         }
 
 
-        private void HSVToTexture(int start, int end, int width, int height, Color[] colors)
+        private void HSVToTexture(int start, int end, int width, int height,float t, Color[] colors)
         {
             var scale = 0.5f;
 

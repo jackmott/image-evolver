@@ -92,15 +92,16 @@ namespace GameLogic
             return Execute(x, y, 0.0f, stack);
         }
 
-        public float Execute(float x, float y, float t, float[] stack)
+        public float Execute(float x, float y, float t, float[] stackPointer)
         {
-            unsafe
-            {
-                fixed (float* stackPointer = stack) //this fails with an implicit cast error
-                {
-                    int sp = -1;
-                    foreach (var ins in instructions)
+           // unsafe
+            //{
+              //  fixed (float* stackPointer = stack) //this fails with an implicit cast error
+               // {
+                          int sp = -1;
+                    for (int i = 0; i < instructions.Length;i++) 
                     {
+                var ins = instructions[i];
                         switch (ins.type)
                         {
                             case NodeType.X:
@@ -263,8 +264,8 @@ namespace GameLogic
                         stackPointer[sp] = MathUtils.FixNan(stackPointer[sp]);
                     }
                     return stackPointer[sp];
-                }
-            }
+                //}
+          //  }
         }
 
 

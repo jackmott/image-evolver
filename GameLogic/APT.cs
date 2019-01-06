@@ -310,8 +310,17 @@ namespace GameLogic
         public void BreedWith(AptNode partner, Random r, bool video)
         {
             var (newNode, _) = partner.GetNthNode(r.Next(0, partner.Count()));
-            var (nodeToMutate, _) = this.GetNthNode(r.Next(0, this.Count()));
-            ReplaceNode(nodeToMutate, newNode, r, video);
+            var (nodeToReplace, _) = this.GetNthNode(r.Next(0, this.Count()));
+            var parent = nodeToReplace.parent;
+            for (int i = 0; i < parent.children.Length; i++)
+            {
+                var child = parent.children[i];
+                if (child == nodeToReplace)
+                {
+                    parent.children[i] = newNode;
+                    newNode.parent = parent;
+                }
+            }
         }
 
         public AptNode ShallowClone()
@@ -326,7 +335,7 @@ namespace GameLogic
         public AptNode Clone()
         {
             AptNode result = ShallowClone();
-
+            result.parent = parent;
             if (children != null)
             {
                 result.children = new AptNode[children.Length];

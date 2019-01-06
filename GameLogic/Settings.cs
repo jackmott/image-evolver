@@ -22,6 +22,9 @@ namespace GameLogic
         public const float HORIZONTAL_SPACING = .01f;
         public const float VERTICAL_SPACING = .01f;
 
+        public const int FPS = 30;
+        public const int VIDEO_LENGTH = 5; //seconds
+
         public static Texture2D injectTexture;
         public static Texture2D equationTexture;
         public static Texture2D selectedTexture;
