@@ -369,6 +369,7 @@ namespace GameLogic
                 state.zoomedPic.textBox.SetActive(true);
                 return state;
             }
+
             if (state.zoomedPic.playButton.WasLeftClicked(state.inputState))
             {
                 Console.WriteLine("Play");

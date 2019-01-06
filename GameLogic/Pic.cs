@@ -356,7 +356,18 @@ namespace GameLogic
             {
                 var (ft, fs) = result.GetRandomTree(r);
                 var (st, ss) = partnerClone.GetRandomTree(r);
-                ft.BreedWith(st, r, video);
+                var rootBred = ft.BreedWith(st, r, video);
+                if (rootBred != null)
+                {
+                    for (int i = 0; i < result.Trees.Length; i++)
+                    {
+                        if (result.Trees[i] == ft)
+                        {
+                            result.Trees[i] = rootBred;
+                        }
+                    }
+
+                }
                 return result;
             }
         }
@@ -383,7 +394,19 @@ namespace GameLogic
             if (r.Next(0, Settings.MUTATE_CHANCE) == 0)
             {
                 var (t, s) = result.GetRandomTree(r);
-                t.Mutate(r, video);
+                var rootMutated = t.Mutate(r, video);
+                if (rootMutated != null)
+                {
+                    //t = rootMutated;
+                    for (int i = 0; i < Trees.Length; i++)
+                    {
+                        if (Trees[i] == t)
+                        {
+                            Trees[i] = rootMutated;
+                        }
+                        t = rootMutated;
+                    }
+                }
                 s.RebuildInstructions(t);
             }
             return result;

@@ -290,28 +290,28 @@ namespace GameLogic
             return clone;
         }
 
-        public static void ReplaceNode(AptNode nodeToMutate, AptNode newNode, Random r, bool video)
-        {
-            nodeToMutate.type = newNode.type;
-            nodeToMutate.value = newNode.value;
-            nodeToMutate.filename = newNode.filename;
-            if (nodeToMutate.children != null && newNode.children != null)
-            {
-                for (int i = 0; i < nodeToMutate.children.Length; i++)
-                {
-                    if (i == newNode.children.Length) break;
-                    newNode.children[i] = nodeToMutate.children[i];
-                }
-            }
-            while (newNode.AddLeaf(GetRandomLeaf(r, video))) { }
-            nodeToMutate.children = newNode.children;
-        }
-
-        public void BreedWith(AptNode partner, Random r, bool video)
+       
+        public AptNode BreedWith(AptNode partner, Random r, bool video)
         {
             var (newNode, _) = partner.GetNthNode(r.Next(0, partner.Count()));
             var (nodeToMutate, _) = this.GetNthNode(r.Next(0, this.Count()));
-            ReplaceNode(nodeToMutate, newNode, r, video);
+            newNode.parent = nodeToMutate.parent;
+
+            if (newNode.parent != null)
+            {
+                for (int i = 0; i < newNode.parent.children.Length; i++)
+                {
+                    if (newNode.parent.children[i] == nodeToMutate)
+                    {
+                        newNode.parent.children[i] = newNode;
+                    }
+                }
+                return null;
+            }
+            else
+            {
+                return newNode;
+            }
         }
 
         public AptNode ShallowClone()
@@ -333,8 +333,10 @@ namespace GameLogic
                 for (int i = 0; i < children.Length; i++)
                 {
                     result.children[i] = children[i].Clone();
+                    result.children[i].parent = result;
                 }
             }
+            
             return result;
         }
 
@@ -649,7 +651,7 @@ namespace GameLogic
             return first;
         }
 
-        public void Mutate(Random r, bool video)
+        public AptNode Mutate(Random r, bool video)
         {
             var nodeIndex = r.Next(0, Count());
             var (nodeToMutate, _) = GetNthNode(nodeIndex);
@@ -664,7 +666,33 @@ namespace GameLogic
             {
                 newNode = GetRandomNode(r);
             }
-            ReplaceNode(nodeToMutate, newNode, r, video);
+            newNode.parent = nodeToMutate.parent;
+            if (nodeToMutate.children != null && newNode.children != null) {
+                for (int i = 0; i < nodeToMutate.children.Length; i++)
+                {
+                    if (i == newNode.children.Length) break;
+                    newNode.children[i] = nodeToMutate.children[i];
+                    newNode.children[i].parent = newNode;
+                }
+            }
+            while (newNode.AddLeaf(AptNode.GetRandomLeaf(r, video))) { }
+
+            if (newNode.parent != null)
+            {
+                for (int i = 0; i < newNode.parent.children.Length; i++)
+                {
+                    if (newNode.parent.children[i] == nodeToMutate)
+                    {
+                        newNode.parent.children[i] = newNode;
+                    }
+                }
+                return null;
+            }
+            else
+            {
+                return newNode;
+            }
+
         }
     }
 

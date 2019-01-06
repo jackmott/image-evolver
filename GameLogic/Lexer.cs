@@ -259,6 +259,7 @@ namespace GameLogic
                 for (int i = 0; i < result.children.Length; i++)
                 {
                     result.children[i - warpCount] = ParseNodes();
+                    result.children[i - warpCount].parent = result;                    
                     // warp returns two values, so it is a special case
                     if (result.children[i - warpCount].type == NodeType.WARP1)
                     {
