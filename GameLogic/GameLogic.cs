@@ -1,8 +1,10 @@
 ﻿// todo - handle typing beyond edge of text box
 // todo - transition / hourglass animation while processing
 // todo - consider filter nodes attached to top level pic nodes (sepia, etc)
-// todo - the fixed stackPointer is sometimes null, how the shit? 
+// todo - inexplicable array index out of bounds exceptions in stackmachine execute
+// todo - breed process created a picture with only 1 child node
 // todo - investigate very and horiz lines popping up too much
+// todo - breed process was totally borked. revisit how parent node works
 
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
@@ -372,7 +374,7 @@ namespace GameLogic
 
             if (state.zoomedPic.playButton.WasLeftClicked(state.inputState))
             {
-                Console.WriteLine("Play");
+                state.zoomedPic.GenerateVideo(1920, 1080);
             }
 
             if (state.zoomedPic.picButton.WasRightClicked(state.inputState))

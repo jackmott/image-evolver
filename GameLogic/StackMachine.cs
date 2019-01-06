@@ -98,9 +98,10 @@ namespace GameLogic
             {
                 fixed (float* stackPointer = stack) //this fails with an implicit cast error
                 {
-                    int sp = -1;
-                    foreach (var ins in instructions)
+                          int sp = -1;
+                    for (int i = 0; i < instructions.Length;i++) 
                     {
+                var ins = instructions[i];
                         switch (ins.type)
                         {
                             case NodeType.X:

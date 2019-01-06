@@ -5,7 +5,7 @@ namespace GameLogic
     public static class Settings
     {
         public const int MIN_GEN_SIZE = 1;
-        public const int MAX_GEN_SIZE = 12;
+        public const int MAX_GEN_SIZE = 20;
         public const int POP_SIZE_COLUMNS = 5;
         //Chance of a mutation happening on a pic
         public const int MUTATE_CHANCE = 2; // 1 in X
@@ -21,6 +21,9 @@ namespace GameLogic
         public const int MAX_GRADIENTS = 10;
         public const float HORIZONTAL_SPACING = .01f;
         public const float VERTICAL_SPACING = .01f;
+
+        public const int FPS = 30;
+        public const int VIDEO_LENGTH = 5; //seconds
 
         public static Texture2D injectTexture;
         public static Texture2D equationTexture;

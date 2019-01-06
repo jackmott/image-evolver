@@ -312,6 +312,7 @@ namespace GameLogic
             {
                 return newNode;
             }
+
         }
 
         public AptNode ShallowClone()
@@ -325,8 +326,7 @@ namespace GameLogic
 
         public AptNode Clone()
         {
-            AptNode result = ShallowClone();
-
+            AptNode result = ShallowClone();            
             if (children != null)
             {
                 result.children = new AptNode[children.Length];
@@ -629,7 +629,25 @@ namespace GameLogic
                         return result;
                     }
                 case NodeType.CONSTANT:
-                    return new AptNode { type = type, value = (float)r.NextDouble() * 2.0f - 1.0f };
+                    {
+                        var c = new AptNode { type = type, value = (float)r.NextDouble() * 2.0f - 1.0f };
+                        if (!videoMode)
+                        {
+                            return c;
+                        }
+                        else
+                        {
+                            int half = r.Next(0, 2);
+                            if (half == 0)
+                            {
+                                return c;
+                            }
+                            else
+                            {
+                                return new AptNode { type = NodeType.T };
+                            }
+                        }
+                    }
                 default:
                     return new AptNode { type = type };
             }
