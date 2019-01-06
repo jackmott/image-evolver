@@ -13,12 +13,13 @@ namespace GameLogic
     }
 
     [StructLayout(LayoutKind.Explicit)]
-    public struct floatint {
+    public struct floatint
+    {
         [FieldOffset(0)]
         public float f;
         [FieldOffset(0)]
-        public int i; 
-     }
+        public int i;
+    }
 
     [DataContract]
     public class StackMachine
@@ -30,13 +31,13 @@ namespace GameLogic
         [DataMember]
         public int nodeCount;
 
-                                
+
         public StackMachine(AptNode node)
         {
             nodeCount = node.Count();
             instructions = new Instruction[nodeCount];
             inPtr = 0;
-            BuildInstructions(node);            
+            BuildInstructions(node);
         }
 
         public void RebuildInstructions(AptNode node)
@@ -47,15 +48,17 @@ namespace GameLogic
             BuildInstructions(node);
         }
 
-        public void BuildInstructions(AptNode node) {            
+        public void BuildInstructions(AptNode node)
+        {
             if (node.children != null)
             {
-                for (int i = node.children.Length-1; i >= 0; i--)
+                for (int i = node.children.Length - 1; i >= 0; i--)
                 {
                     BuildInstructions(node.children[i]);
                 }
             }
-            switch (node.type) {
+            switch (node.type)
+            {
                 case NodeType.EMPTY:
                     throw new Exception("can't BuildInstructions with a non finished APT");
                 case NodeType.CONSTANT:
@@ -73,35 +76,31 @@ namespace GameLogic
                             break;
                         }
                     }
-                    if (value == -1) throw new Exception ("picture string invalid");
-                    instructions[inPtr] = new Instruction { type = node.type, value = value};
+                    if (value == -1) throw new Exception("picture string invalid");
+                    instructions[inPtr] = new Instruction { type = node.type, value = value };
                     inPtr++;
-                    break;                
-                default:                
+                    break;
+                default:
                     instructions[inPtr] = new Instruction { type = node.type };
                     inPtr++;
                     break;
             }
         }
 
-        public float Execute(float x, float y,float[] stack)
+        public float Execute(float x, float y, float[] stack)
         {
             return Execute(x, y, 0.0f, stack);
         }
 
-        public float Execute(float x, float y,float t, float[] stack)
+        public float Execute(float x, float y, float t, float[] stack)
         {
             unsafe
             {
                 fixed (float* stackPointer = stack) //this fails with an implicit cast error
                 {
-                    int sp = 0;
+                    int sp = -1;
                     foreach (var ins in instructions)
                     {
-                        if (sp < 0 || sp >= stack.Length)
-                        {
-                            throw new Exception("oh shit");
-                        }
                         switch (ins.type)
                         {
                             case NodeType.X:
@@ -137,26 +136,27 @@ namespace GameLogic
                                 sp--;
                                 break;
                             case NodeType.SIN:
-                                stackPointer[sp] = (float)Math.Sin(Math.PI*stackPointer[sp]);
+                                stackPointer[sp] = (float)Math.Sin(Math.PI * stackPointer[sp]);
                                 break;
                             case NodeType.COS:
-                                stackPointer[sp] = (float)Math.Cos(Math.PI*stackPointer[sp]);
+                                stackPointer[sp] = (float)Math.Cos(Math.PI * stackPointer[sp]);
                                 break;
                             case NodeType.ATAN:
-                                stackPointer[sp] = 0.6366f*(float)Math.Atan(5.0f*stackPointer[sp]);
+                                stackPointer[sp] = 0.6366f * (float)Math.Atan(5.0f * stackPointer[sp]);
                                 break;
                             case NodeType.ATAN2:
-                                stackPointer[sp - 1] = (float)(Math.Atan2(stackPointer[sp], stackPointer[sp - 1])/Math.PI);
+                                stackPointer[sp - 1] = (float)(Math.Atan2(stackPointer[sp], stackPointer[sp - 1]) / Math.PI);
                                 sp--;
                                 break;
                             case NodeType.LOG:
-                                stackPointer[sp] = ((float)Math.Log(stackPointer[sp]*7.0f))/2.0f;
+                                stackPointer[sp] = ((float)Math.Log(stackPointer[sp] * 7.0f)) / 2.0f;
                                 break;
                             case NodeType.SQUARE:
                                 stackPointer[sp] = stackPointer[sp] * stackPointer[sp];
                                 break;
                             case NodeType.SQRT:
                                 {
+                                    // Modify sqrt to work on negatives for art's sake
                                     var n = stackPointer[sp];
                                     if (n >= 0)
                                     {
@@ -185,10 +185,10 @@ namespace GameLogic
                                 sp--;
                                 break;
                             case NodeType.CLAMP:
-                                var v = stackPointer[sp];              
+                                var v = stackPointer[sp];
                                 if (v > 1.0f) v = 1.0f;
                                 else if (v < -1.0f) v = -1.0f;
-                                stackPointer[sp] = v;                                
+                                stackPointer[sp] = v;
                                 break;
                             case NodeType.WRAP:
                                 stackPointer[sp] = MathUtils.WrapMinMax(stackPointer[sp], -1.0f, 1.001f);
@@ -198,7 +198,7 @@ namespace GameLogic
                                 break;
                             case NodeType.ABS:
                                 stackPointer[sp] = (float)Math.Abs(stackPointer[sp]);
-                                break;                               
+                                break;
                             case NodeType.MOD:
                                 stackPointer[sp - 1] = stackPointer[sp] % stackPointer[sp - 1];
                                 sp--;
@@ -213,11 +213,11 @@ namespace GameLogic
                             case NodeType.FBM:
                                 {
                                     const float lac = 2.0f;
-                                    const float  gain = 0.5f;
+                                    const float gain = 0.5f;
                                     stackPointer[sp - 2] = 2.0f * 0.49f * FastNoise.SingleSimplexFractalFBM(stackPointer[sp], stackPointer[sp - 1], stackPointer[sp - 2], 1337, 3, lac, gain);
                                     sp -= 2;
                                     break;
-                                }                            
+                                }
                             case NodeType.BILLOW:
                                 {
                                     const float lac = 2.0f;
@@ -244,8 +244,8 @@ namespace GameLogic
                             case NodeType.PICTURE:
                                 {
                                     var image = GameState.externalImages[(int)ins.value];
-                                    var xf = (stackPointer[sp] + 1.0f) / 2.0f;                                    
-                                    var yf = (stackPointer[sp - 1] + 1.0f) / 2.0f;                                    
+                                    var xf = (stackPointer[sp] + 1.0f) / 2.0f;
+                                    var yf = (stackPointer[sp - 1] + 1.0f) / 2.0f;
                                     var xi = (int)(xf * image.w);
                                     var yi = (int)(yf * image.h);
                                     var index = yi * image.w + xi;

@@ -77,7 +77,7 @@ namespace GameLogic
                 }
             }
 
-           // Parsing(g, window);
+            //Parsing(g, window);
            // Optimizing(g, window);
             //Console.ReadLine();
 
@@ -354,17 +354,7 @@ namespace GameLogic
 
                 state.zoomedPic.textBox.error = null;
             }
-            if (state.zoomedPic.constantFoldButton.WasLeftClicked(state.inputState))
-            {
-                for (int i = 0; i < state.zoomedPic.Trees.Length; i++)
-                {
-                    state.zoomedPic.Trees[i] = AptNode.ConstantFolding(state.zoomedPic.Trees[i]);
-                    state.zoomedPic.Machines[i] = new StackMachine(state.zoomedPic.Trees[i]);
-                }
-                state.zoomedPic.RegenTex(state.g);
-                state.zoomedPic.textBox.SetText(state.zoomedPic.ToLisp());
-                
-            }
+           
             return state;
         }
 
@@ -378,6 +368,10 @@ namespace GameLogic
                 state.zoomedPic.textBox.cursorPos = new Point(0, 0);
                 state.zoomedPic.textBox.SetActive(true);
                 return state;
+            }
+            if (state.zoomedPic.playButton.WasLeftClicked(state.inputState))
+            {
+                Console.WriteLine("Play");
             }
 
             if (state.zoomedPic.picButton.WasRightClicked(state.inputState))
