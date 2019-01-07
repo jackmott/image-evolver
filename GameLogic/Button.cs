@@ -104,10 +104,9 @@ namespace GameLogic
 
         public void Draw(SpriteBatch batch, GameTime gameTime)
         {
-            if (tex != null)
-            {
-                batch.Draw(tex, bounds, Color.White);
-            }
+           
+            batch.Draw(tex, bounds, Color.White);
+           
         }
 
         public bool WasLeftClicked(InputState state)

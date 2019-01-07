@@ -4,7 +4,6 @@ using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using static GameLogic.GraphUtils;
 using static GameLogic.ColorTools;
-using System.Threading;
 using System.Threading.Tasks;
 
 namespace GameLogic
@@ -267,15 +266,19 @@ namespace GameLogic
 
         public void Draw(SpriteBatch batch, GameTime gameTime, InputState state)
         {
-            if (selected)
+            // only draw if the tex is ready
+            if (picButton.tex != null)
             {
-                Rectangle rect = new Rectangle(picButton.bounds.X - 5, picButton.bounds.Y - 5, picButton.bounds.Width + 10, picButton.bounds.Height + 10);
-                batch.Draw(Settings.selectedTexture, rect, Color.White);
-            }
-            picButton.Draw(batch, gameTime);
-            if (picButton.bounds.Contains(state.mouseState.Position))
-            {
-                injectButton.Draw(batch, gameTime);
+                if (selected)
+                {
+                    Rectangle rect = new Rectangle(picButton.bounds.X - 5, picButton.bounds.Y - 5, picButton.bounds.Width + 10, picButton.bounds.Height + 10);
+                    batch.Draw(Settings.selectedTexture, rect, Color.White);
+                }
+                picButton.Draw(batch, gameTime);
+                if (picButton.bounds.Contains(state.mouseState.Position))
+                {
+                    injectButton.Draw(batch, gameTime);
+                }
             }
         }
 
@@ -283,29 +286,14 @@ namespace GameLogic
         {
             picButton.Draw(batch, gameTime);
             textBox.Draw(batch, gameTime);
-            saveEquationButton.Draw(batch, gameTime);           
+            saveEquationButton.Draw(batch, gameTime);
             cancelEditButton.Draw(batch, gameTime);
         }
 
-        public void ZoomDraw(SpriteBatch batch, GameTime gameTime, InputState state)
+
+
+        public void PanelDraw(SpriteBatch batch, GameTime gameTime, InputState state)
         {
-            if (video && videoFrames != null)
-            {
-                var seconds = gameTime.TotalGameTime.TotalSeconds % (Settings.VIDEO_LENGTH*2.0f);
-                var frameIndex = (int)(seconds * Settings.FPS);
-                if (frameIndex >= videoFrames.Length)
-                {
-                    var backIndex = frameIndex - videoFrames.Length;
-                    frameIndex = videoFrames.Length - backIndex - 1;
-                }
-                batch.Draw(videoFrames[frameIndex], picButton.bounds, Color.White);
-
-            }
-            else
-            {
-                picButton.Draw(batch, gameTime);
-            }
-
             panel.Draw(batch, gameTime, state);
             var panelBounds = panel.GetBounds(state);
             editEquationButton.bounds = FRect(panelBounds.X + panelBounds.Width * .1f, panelBounds.Y + panelBounds.Height * .25f, panelBounds.Width * .1f, panelBounds.Height * .5f);
@@ -323,14 +311,30 @@ namespace GameLogic
             }
         }
 
+        public void VideoPlayingDraw(SpriteBatch batch, GameTime gameTime, InputState state)
+        {
+            var seconds = gameTime.TotalGameTime.TotalSeconds % (Settings.VIDEO_LENGTH * 2.0f);
+            var frameIndex = (int)(seconds * Settings.FPS);
+            if (frameIndex >= videoFrames.Length)
+            {
+                var backIndex = frameIndex - videoFrames.Length;
+                frameIndex = videoFrames.Length - backIndex - 1;
+            }
+            batch.Draw(videoFrames[frameIndex], picButton.bounds, Color.White);
+            PanelDraw(batch, gameTime, state);
+        }
 
-        public void SetNewBounds(Rectangle bounds, GraphicsDevice g)
+        public void ZoomDraw(SpriteBatch batch, GameTime gameTime, InputState state)
+        {
+            picButton.Draw(batch, gameTime);
+            PanelDraw(batch, gameTime, state);
+        }
+
+
+        public void SetNewBounds(Rectangle bounds)
         {
             picButton.bounds = bounds;
-            if (picButton.tex != null)
-            {
-                picButton.tex.Dispose();
-            }
+
 
             var textBounds = ScaleCentered(bounds, 0.75f);
             textBox.SetNewBounds(textBounds);
@@ -342,8 +346,6 @@ namespace GameLogic
 
             panel.activeBounds = FRect(0, bounds.Height * .85f, bounds.Width, bounds.Height * .15f);
             panel.hiddenBounds = FRect(0, bounds.Height * 1.001, bounds.Width, bounds.Height * .15f);
-
-            RegenTex(g);
         }
 
         public Pic BreedWith(Pic partner, Random r)
@@ -409,25 +411,40 @@ namespace GameLogic
 
         public void GenerateVideo(int w, int h)
         {
-            //clear all old video textures
-            if (videoFrames != null) {
-                foreach (var frame in videoFrames)
-                {
-                    frame.Dispose();
-                }
-                videoFrames = null;
-            }
-            //5 seconds at 30fps
-            const int frameCount = Settings.FPS * Settings.VIDEO_LENGTH;
-            videoFrames = new Texture2D[frameCount];
-            var stepSize = 2.0f / frameCount;
-            float t = -1.0f;
-            for (int i = 0; i < videoFrames.Length; i++)
+            new Task(() =>
             {
-                videoFrames[i] = ToTexture(g, w, h,t);
-                t += stepSize;               
-            }
-            
+                //clear all old video textures
+                if (videoFrames != null)
+                {
+                    foreach (var frame in videoFrames)
+                    {
+                        frame.Dispose();
+                    }
+                    videoFrames = null;
+                }
+                //5 seconds at 30fps
+                const int frameCount = Settings.FPS * Settings.VIDEO_LENGTH;
+                videoFrames = new Texture2D[frameCount];
+                Task[] tasks = new Task[frameCount];
+                var stepSize = 2.0f / frameCount;
+                float t = -1.0f;
+                for (int i = 0; i < videoFrames.Length; i++)
+                {
+                    int index = i;
+                    float time = t;
+                    tasks[i] = new Task(() =>
+                    {
+                        videoFrames[index] = new Texture2D(g, w, h, false, SurfaceFormat.Color);
+                        ToTexture(videoFrames[index], false, time);
+                        Console.WriteLine("frame done");
+                        Transition.AddProgress(1.0f / frameCount);
+                    });
+                    tasks[i].Start();
+                    t += stepSize;                    
+                }
+                Task.WaitAll(tasks);
+                Transition.Complete();
+            }).Start();
         }
 
 
@@ -455,37 +472,86 @@ namespace GameLogic
             return result;
         }
 
-        public void RegenTex(GraphicsDevice graphics)
+        public void RegenTex(GraphicsDevice graphics, bool parallel)
         {
+
             if (picButton.tex != null) { picButton.tex.Dispose(); }
+            picButton.tex = new Texture2D(graphics, picButton.bounds.Width, picButton.bounds.Height, false, SurfaceFormat.Color);
+
             new Task(() =>
             {
-                picButton.tex = ToTexture(graphics, picButton.bounds.Width, picButton.bounds.Height);
+                ToTexture(picButton.tex, parallel);
+
             }).Start();
         }
 
-        public Texture2D ToTexture(GraphicsDevice graphics, int w, int h,float t = -1.0f)
+        public void ToTexture(Texture2D tex, bool parallel, float t = -1.0f)
         {
             switch (type)
             {
                 case PicType.RGB:
-                    return ParallelImageGen(g, w, h,t, RGBToTexture);
+                    if (parallel)
+                    {
+                        ParallelImageGen(tex, t, RGBToTexture);
+                    }
+                    else
+                    {
+                        ScalarImageGen(tex, t, RGBToTexture);
+                    }
+                    break;
                 case PicType.HSV:
-                    return ParallelImageGen(g, w, h,t, HSVToTexture);
+                    if (parallel)
+                    {
+                        ParallelImageGen(tex, t, HSVToTexture);
+                    }
+                    else
+                    {
+                        ScalarImageGen(tex, t, HSVToTexture);
+                    }
+                    break;
                 case PicType.GRADIENT:
-                    return ParallelImageGen(g, w, h,t, GradientToTexture);
+                    if (parallel)
+                    {
+                        ParallelImageGen(tex, t, GradientToTexture);
+                    }
+                    else
+                    {
+                        ScalarImageGen(tex, t, GradientToTexture);
+                    }
+                    break;
                 default:
                     throw new Exception("wat");
 
             }
         }
 
-       
-        private Texture2D ParallelImageGen(GraphicsDevice g, int w, int h,float t, Action<int, int, int, int,float, Color[]> f)
-        {            
+        private bool AllTasksComplete(Task[] tasks)
+        {
+            foreach (var task in tasks)
+            {
+                if (!task.IsCompleted) return false;
+            }
+            return true;
+        }
+
+        private void ScalarImageGen(Texture2D tex, float t, Action<int, int, float, Color[], Texture2D> f)
+        {
+            int w = tex.Width;
+            int h = tex.Height;
             Color[] colors = new Color[w * h];
-            var cpuCount = Environment.ProcessorCount;
-            int chunk = h / cpuCount;            
+            tex.SetData(colors); //need to clear data or we get old random texture data
+            f.Invoke(0, h, t, colors, tex);
+            tex.SetData(colors);
+
+        }
+
+        private void ParallelImageGen(Texture2D tex, float t, Action<int, int, float, Color[], Texture2D> f)
+        {
+            int w = tex.Width;
+            int h = tex.Height;
+            Color[] colors = new Color[w * h];
+            var cpuCount = Environment.ProcessorCount * 3;
+            int chunk = (int)Math.Ceiling((float)h / (float)cpuCount);
             Task[] tasks = new Task[cpuCount + 1];
             var extRange = (0, chunk);
             for (int i = 0; i < tasks.Length; i++)
@@ -493,31 +559,32 @@ namespace GameLogic
                 tasks[i] = new Task(o =>
                 {
                     var range = (ValueTuple<int, int>)o;
-                    f.Invoke(range.Item1, range.Item2, w, h,t, colors);
-                },extRange);
+                    f.Invoke(range.Item1, range.Item2, t, colors, tex);
+                    //todo do we need to lock?
+                    tex.SetData(0, new Rectangle(0, range.Item1, w, range.Item2 - range.Item1), colors, range.Item1 * w, (range.Item2 - range.Item1) * w);
+
+                }, extRange);
 
                 tasks[i].Start();
                 extRange.Item1 += chunk;
+                extRange.Item1 = Math.Min(h, extRange.Item1);
                 extRange.Item2 += chunk;
                 extRange.Item2 = Math.Min(h, extRange.Item2);
+                if (extRange.Item1 == extRange.Item2) break;
             }
 
             Task.WaitAll(tasks);
-            Transition.Complete();
-            Texture2D tex = new Texture2D(g, w, h,false,SurfaceFormat.Color);
-            var tex2 = new Texture2D(g, w, h);
-            tex.SetData(colors);                        
-            return tex;
-
         }
 
-        private void RGBToTexture(int start, int end, int w, int h,float t, Color[] colors)
+        private void RGBToTexture(int start, int end, float t, Color[] colors, Texture2D tex)
         {
+            int w = tex.Width;
+            int h = tex.Height;
             var scale = 0.5f;
-            int progressPerLine = Transition.RESOLUTION / h;
             var rStack = new float[Machines[0].nodeCount];
             var gStack = new float[Machines[1].nodeCount];
             var bStack = new float[Machines[2].nodeCount];
+
             for (int y = start; y < end; y++)
             {
                 float yf = ((float)y / (float)h) * 2.0f - 1.0f;
@@ -530,18 +597,21 @@ namespace GameLogic
                     var bf = Wrap0To1(Machines[2].Execute(xf, yf, t, bStack) * scale + scale);
                     colors[yw + x] = new Color(rf, gf, bf);
                 }
-                Interlocked.Add(ref Transition.progress, progressPerLine);
+
+
             }
         }
 
 
-        private void GradientToTexture(int start, int end, int w, int h,float t, Color[] colors)
+        private void GradientToTexture(int start, int end, float t, Color[] colors, Texture2D tex)
         {
+            int w = tex.Width;
+            int h = tex.Height;
             var scale = 0.5f;
             var hStack = new float[Machines[0].nodeCount];
             var sStack = new float[Machines[1].nodeCount];
             var vStack = new float[Machines[2].nodeCount];
-            int progressPerLine = Transition.RESOLUTION / h;
+
             for (int y = start; y < end; y++)
             {
                 float yf = ((float)y / (float)h) * 2.0f - 1.0f;
@@ -577,20 +647,21 @@ namespace GameLogic
                     colors[yw + x] = Color.Lerp(c1, c2, pct);
 
                 }
-                Interlocked.Add(ref Transition.progress, progressPerLine);
+
             }
         }
 
 
-        private void HSVToTexture(int start, int end, int width, int height,float t, Color[] colors)
+        private void HSVToTexture(int start, int end, float t, Color[] colors, Texture2D tex)
         {
             var scale = 0.5f;
-
+            int width = tex.Width;
+            int height = tex.Height;
 
             var hStack = new float[Machines[0].nodeCount];
             var sStack = new float[Machines[1].nodeCount];
             var vStack = new float[Machines[2].nodeCount];
-            int progressPerLine = Transition.RESOLUTION / height;
+
             for (int y = start; y < end; y++)
             {
                 float yf = ((float)y / (float)height) * 2.0f - 1.0f;
@@ -604,7 +675,7 @@ namespace GameLogic
                     var (rf, gf, bf) = HSV2RGB(h, s, v);
                     colors[yw + x] = new Color(rf, gf, bf);
                 }
-                Interlocked.Add(ref Transition.progress, progressPerLine);
+
             }
 
         }
