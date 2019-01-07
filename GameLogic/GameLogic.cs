@@ -20,6 +20,55 @@ using static GameLogic.Tests;
 
 namespace GameLogic
 {
+    //Used when transitioning from one state to another that will take time
+    public static class Transition
+    {
+        //1 to 100000
+        private static object Lock = new object();
+        public const int RESOLUTION = 100000;
+        public static int progress;
+        public static Screen currentScreen;
+        public static Screen nextScreen;
+
+        public static void StartTransition(GameState state,Screen to)
+        {
+            currentScreen = state.screen;
+            state.screen = Screen.TRANSITION;            
+            nextScreen = to;
+            progress = 0;
+        }
+
+        public static void Complete()
+        {
+            lock (Lock)
+            {
+                progress = RESOLUTION;
+            }
+        }
+
+        public static void Update(GameState state)
+        {
+            lock (Lock)
+            {
+                if (progress >= RESOLUTION)
+                {
+                    state.screen = nextScreen;
+                }
+            }
+        }
+        public static void Draw(SpriteBatch b,GraphicsDevice g, GameTime gametime)
+        {
+            int winW = g.Viewport.Width;
+            int winH = g.Viewport.Height;
+            Rectangle rect = CenteredRect(new Rectangle(0, 0, winW, winH), winW / 4, winH / 20);
+            b.Begin();
+            lock (Lock)
+            {
+                ProgressBar.Draw(b, g, rect, Color.Cyan, Color.Blue, (float)progress / (float)RESOLUTION);
+            }
+            b.End();
+        }
+    }
 
     public class GameLogic
     {
@@ -154,6 +203,12 @@ namespace GameLogic
 
         public void Draw(SpriteBatch batch, GameTime gameTime)
         {
+            var screen = state.screen;
+            if (screen == Screen.TRANSITION)
+            {
+                Transition.Draw(batch, state.g, gameTime);
+                screen = Transition.currentScreen;
+            }
 
             if (state.screen == Screen.CHOOSE)
             {
@@ -209,9 +264,13 @@ namespace GameLogic
         }
 
         public GameState Update(GameTime gameTime)
-        {
-
-            if (state.screen == Screen.CHOOSE)
+        {            
+            if (state.screen == Screen.TRANSITION)
+            {
+                Transition.Update(state);
+                return state;
+            }
+            else if (state.screen == Screen.CHOOSE)
             {
                 return ChooseUpdate(gameTime);
             }
@@ -307,8 +366,7 @@ namespace GameLogic
                     state.zoomedPic = pic;
                     pic.zoomed = true;
                     pic.SetNewBounds(new Rectangle(0, 0, state.g.Viewport.Width, state.g.Viewport.Height), state.g);
-                    Console.WriteLine(state.zoomedPic.ToLisp());
-                    state.screen = Screen.ZOOM;
+                    Transition.StartTransition(state, Screen.ZOOM);
                 }
             }
 
@@ -372,9 +430,14 @@ namespace GameLogic
                 return state;
             }
 
+            if (state.zoomedPic.previewButton.WasLeftClicked(state.inputState))
+            {
+                state.zoomedPic.GenerateVideo(Settings.PREVIEW_VIDEO_WIDTH, Settings.PREVIEW_VIDEO_HEIGHT);
+            }
+
             if (state.zoomedPic.playButton.WasLeftClicked(state.inputState))
             {
-                state.zoomedPic.GenerateVideo(1920, 1080);
+                state.zoomedPic.GenerateVideo(state.zoomedPic.picButton.bounds.Width,state.zoomedPic.picButton.bounds.Height);
             }
 
             if (state.zoomedPic.picButton.WasRightClicked(state.inputState))

@@ -94,10 +94,11 @@ namespace GameLogic
 
         public float Execute(float x, float y, float t, float[] stack)
         {
-            unsafe
-            {
-                fixed (float* stackPointer = stack) //this fails with an implicit cast error
-                {
+            //unsafe
+            //{
+              //  fixed (float* TstackPointer = stack) //this fails with an implicit cast error
+//                {
+                    var stackPointer = stack;
                           int sp = -1;
                     for (int i = 0; i < instructions.Length;i++) 
                     {
@@ -264,8 +265,8 @@ namespace GameLogic
                         stackPointer[sp] = MathUtils.FixNan(stackPointer[sp]);
                     }
                     return stackPointer[sp];
-                }
-            }
+             //  }
+           // }
         }
 
 

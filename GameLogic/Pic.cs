@@ -5,7 +5,7 @@ using Microsoft.Xna.Framework.Graphics;
 using static GameLogic.GraphUtils;
 using static GameLogic.ColorTools;
 using System.Threading;
-
+using System.Threading.Tasks;
 
 namespace GameLogic
 {
@@ -40,6 +40,8 @@ namespace GameLogic
         public Button injectButton;
         [DataMember]
         public Button editEquationButton;
+        [DataMember]
+        public Button previewButton;
         [DataMember]
         public Button playButton;
         [DataMember]
@@ -181,7 +183,8 @@ namespace GameLogic
             injectButton = new Button(Settings.injectTexture, new Rectangle());
             editEquationButton = new Button(Settings.equationTexture, new Rectangle());
             saveEquationButton = new Button(Settings.saveEquationTexture, new Rectangle());
-            playButton = new Button(GraphUtils.GetTexture(g, Color.Blue), new Rectangle());
+            previewButton = new Button(GraphUtils.GetTexture(g, Color.Blue), new Rectangle());
+            playButton = new Button(GraphUtils.GetTexture(g, Color.Red), new Rectangle());
             cancelEditButton = new Button(Settings.cancelEditTexture, new Rectangle());
             panel = new SlidingPanel(Settings.panelTexture, new Rectangle(), new Rectangle(), 500.0);
         }
@@ -310,8 +313,12 @@ namespace GameLogic
 
             if (video)
             {
-                playButton.bounds = editEquationButton.bounds;
-                playButton.bounds.X += (int)(playButton.bounds.Width * 1.1f);
+                previewButton.bounds = editEquationButton.bounds;
+                previewButton.bounds.X += (int)(previewButton.bounds.Width * 1.1f);
+                previewButton.Draw(batch, gameTime);
+
+                playButton.bounds = previewButton.bounds;
+                playButton.bounds.X += (int)(previewButton.bounds.Width * 1.1f);
                 playButton.Draw(batch, gameTime);
             }
         }
@@ -329,7 +336,7 @@ namespace GameLogic
             textBox.SetNewBounds(textBounds);
             injectButton.bounds = FRect(bounds.X + bounds.Width * .025, bounds.Y + bounds.Height * .9, bounds.Width * .1, bounds.Height * .1);
             saveEquationButton.bounds = FRect(textBounds.X, bounds.Height * .9f, bounds.Width * .1f, bounds.Height * .05f);
-            playButton.bounds = FRect(textBounds.X + textBounds.Width * 0.4f, bounds.Height * .9f, bounds.Width * .1f, bounds.Height * .05f);
+            previewButton.bounds = FRect(textBounds.X + textBounds.Width * 0.4f, bounds.Height * .9f, bounds.Width * .1f, bounds.Height * .05f);
 
             cancelEditButton.bounds = FRect(textBounds.X + textBounds.Width - bounds.Width * .1f, bounds.Height * .9f, bounds.Width * .1f, bounds.Height * .05f);
 
@@ -418,10 +425,9 @@ namespace GameLogic
             for (int i = 0; i < videoFrames.Length; i++)
             {
                 videoFrames[i] = ToTexture(g, w, h,t);
-                t += stepSize;
-                Console.WriteLine("generated frame " + i+"/"+frameCount);
+                t += stepSize;               
             }
-
+            
         }
 
 
@@ -452,10 +458,13 @@ namespace GameLogic
         public void RegenTex(GraphicsDevice graphics)
         {
             if (picButton.tex != null) { picButton.tex.Dispose(); }
-            picButton.tex = ToTexture(graphics, picButton.bounds.Width, picButton.bounds.Height);
+            new Task(() =>
+            {
+                picButton.tex = ToTexture(graphics, picButton.bounds.Width, picButton.bounds.Height);
+            }).Start();
         }
 
-        public Texture2D ToTexture(GraphicsDevice graphics, int w, int h,float t = 0.0f)
+        public Texture2D ToTexture(GraphicsDevice graphics, int w, int h,float t = -1.0f)
         {
             switch (type)
             {
@@ -473,32 +482,28 @@ namespace GameLogic
 
        
         private Texture2D ParallelImageGen(GraphicsDevice g, int w, int h,float t, Action<int, int, int, int,float, Color[]> f)
-        {
+        {            
             Color[] colors = new Color[w * h];
             var cpuCount = Environment.ProcessorCount;
-            int chunk = h / cpuCount;
-
-            Thread[] threads = new Thread[cpuCount + 1];
+            int chunk = h / cpuCount;            
+            Task[] tasks = new Task[cpuCount + 1];
             var extRange = (0, chunk);
-            for (int i = 0; i < threads.Length; i++)
+            for (int i = 0; i < tasks.Length; i++)
             {
-                threads[i] = new Thread(o =>
+                tasks[i] = new Task(o =>
                 {
                     var range = (ValueTuple<int, int>)o;
                     f.Invoke(range.Item1, range.Item2, w, h,t, colors);
-                });
+                },extRange);
 
-                threads[i].Start(extRange);
+                tasks[i].Start();
                 extRange.Item1 += chunk;
                 extRange.Item2 += chunk;
                 extRange.Item2 = Math.Min(h, extRange.Item2);
             }
 
-            foreach (var thread in threads)
-            {
-                thread.Join();
-            }
-
+            Task.WaitAll(tasks);
+            Transition.Complete();
             Texture2D tex = new Texture2D(g, w, h,false,SurfaceFormat.Color);
             var tex2 = new Texture2D(g, w, h);
             tex.SetData(colors);                        
@@ -509,7 +514,7 @@ namespace GameLogic
         private void RGBToTexture(int start, int end, int w, int h,float t, Color[] colors)
         {
             var scale = 0.5f;
-
+            int progressPerLine = Transition.RESOLUTION / h;
             var rStack = new float[Machines[0].nodeCount];
             var gStack = new float[Machines[1].nodeCount];
             var bStack = new float[Machines[2].nodeCount];
@@ -525,6 +530,7 @@ namespace GameLogic
                     var bf = Wrap0To1(Machines[2].Execute(xf, yf, t, bStack) * scale + scale);
                     colors[yw + x] = new Color(rf, gf, bf);
                 }
+                Interlocked.Add(ref Transition.progress, progressPerLine);
             }
         }
 
@@ -535,7 +541,7 @@ namespace GameLogic
             var hStack = new float[Machines[0].nodeCount];
             var sStack = new float[Machines[1].nodeCount];
             var vStack = new float[Machines[2].nodeCount];
-
+            int progressPerLine = Transition.RESOLUTION / h;
             for (int y = start; y < end; y++)
             {
                 float yf = ((float)y / (float)h) * 2.0f - 1.0f;
@@ -571,6 +577,7 @@ namespace GameLogic
                     colors[yw + x] = Color.Lerp(c1, c2, pct);
 
                 }
+                Interlocked.Add(ref Transition.progress, progressPerLine);
             }
         }
 
@@ -583,6 +590,7 @@ namespace GameLogic
             var hStack = new float[Machines[0].nodeCount];
             var sStack = new float[Machines[1].nodeCount];
             var vStack = new float[Machines[2].nodeCount];
+            int progressPerLine = Transition.RESOLUTION / height;
             for (int y = start; y < end; y++)
             {
                 float yf = ((float)y / (float)height) * 2.0f - 1.0f;
@@ -596,6 +604,7 @@ namespace GameLogic
                     var (rf, gf, bf) = HSV2RGB(h, s, v);
                     colors[yw + x] = new Color(rf, gf, bf);
                 }
+                Interlocked.Add(ref Transition.progress, progressPerLine);
             }
 
         }

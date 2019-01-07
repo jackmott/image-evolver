@@ -40,6 +40,17 @@ namespace GameLogic
             return new Rectangle((int)x, (int)y, (int)w, (int)h);
         }
 
+        public static Rectangle CenteredRect(Rectangle bounds, int w, int h)
+        {
+            var xDiff = bounds.Width - w;
+            var x = bounds.X + xDiff / 2;
+
+            var yDiff = bounds.Height - h;
+            var y = bounds.Y + yDiff / 2;
+
+            return new Rectangle(x, y, w, h);
+        }
+
         public static Rectangle RectLerp(Rectangle a, Rectangle b, float pct)
         {
             int x = Lerp(a.X, b.X, pct);
