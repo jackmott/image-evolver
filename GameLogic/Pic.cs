@@ -552,7 +552,7 @@ namespace GameLogic
             Color[] colors = new Color[w * h];
             var cpuCount = Environment.ProcessorCount * 3;
             int chunk = (int)Math.Ceiling((float)h / (float)cpuCount);
-            Task[] tasks = new Task[cpuCount + 1];
+            Task[] tasks = new Task[cpuCount];
             var extRange = (0, chunk);
             for (int i = 0; i < tasks.Length; i++)
             {
@@ -567,11 +567,9 @@ namespace GameLogic
 
                 tasks[i].Start();
                 extRange.Item1 += chunk;
-                extRange.Item1 = Math.Min(h, extRange.Item1);
                 extRange.Item2 += chunk;
                 extRange.Item2 = Math.Min(h, extRange.Item2);
-                if (extRange.Item1 == extRange.Item2) break;
-            }
+              }
 
             Task.WaitAll(tasks);
         }
