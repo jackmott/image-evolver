@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 
@@ -8,27 +9,27 @@ namespace GameLogic
     {
         public static void Optimizing(GraphicsDevice g, GameWindow w)
         {
-            const int TEST_SIZE = 100;
+            const int TEST_SIZE = 10000;
             Random r = new Random();
 
             Console.WriteLine("start opt test");
             for (int i = 0; i < TEST_SIZE; i++)
             {
                 Console.WriteLine(i);
-                var tree = AptNode.GenerateTree(25, r, false);
+                var tree = AptNode.GenerateTree(r.Next(1,20), r, true);
                 var machine = new StackMachine(tree);
 
                 var optTree = AptNode.ConstantFolding(tree);
                 var optMachine = new StackMachine(optTree);
                 var stack = new float[machine.nodeCount];
                 var optStack = new float[optMachine.nodeCount];
-
+                
                 for (float y = -1.0f; y <= 1.0f; y += .01f)
                 {
                     for (float x = -1.0f; x <= 1.0f; x += .01f)
                     {
-                        float result = machine.Execute(x, y, stack);
-                        float optResult = optMachine.Execute(x, y, stack);
+                        float result=1.0f;// = machine.Execute(x, y, stack);
+                        float optResult=2.0f;// = optMachine.Execute(x, y, optStack);
 
                         if (Math.Abs(optResult - result) > .01f)
                         {
@@ -50,6 +51,112 @@ namespace GameLogic
 
 
 
+
+        }
+
+        public static void BreedingPairs(GraphicsDevice g, GameWindow w)
+        {
+            const int TEST_SIZE = 500;
+            Random r = new Random();
+            var results = new List<float>(1024);
+            Console.WriteLine("start opt test");
+            for (int i = 0; i < TEST_SIZE; i++)
+            {
+                Console.WriteLine(i);
+                var treeA = AptNode.GenerateTree(r.Next(1, 20), r, true);
+                
+
+                var treeB = AptNode.GenerateTree(r.Next(1, 20), r, true);
+                
+
+                var childTree = treeA.BreedWith(treeB, r, true);
+                var machine = new StackMachine(childTree);
+                var stack = new float[machine.nodeCount];
+                
+                for (float y = -1.0f; y <= 1.0f; y += .005f)
+                {
+                    for (float x = -1.0f; x <= 1.0f; x += .005f)
+                    {
+                       // results.Add(machine.Execute(x, y, stack));
+                    }
+                }
+                Console.WriteLine("result[2]"+ results[2]);
+                results.Clear();
+
+            }
+            Console.WriteLine("done breed test");
+
+        }
+
+        public static void BreedingSelf(GraphicsDevice g, GameWindow w)
+        {
+            const int TEST_SIZE = 500;
+            Random r = new Random();
+            var results = new List<float>(1024);
+            Console.WriteLine("start opt test");
+            for (int i = 0; i < TEST_SIZE; i++)
+            {
+                Console.WriteLine(i);
+                var treeA = AptNode.GenerateTree(r.Next(1, 20), r, true);
+              
+                var childTree = treeA.BreedWith(treeA, r, true);
+                var machine = new StackMachine(childTree);
+                var stack = new float[machine.nodeCount];
+
+                for (float y = -1.0f; y <= 1.0f; y += .005f)
+                {
+                    for (float x = -1.0f; x <= 1.0f; x += .005f)
+                    {
+                        //results.Add(machine.Execute(x, y, stack));
+                    }
+                }
+                Console.WriteLine("result[2]" + results[2]);
+                results.Clear();
+
+            }
+            Console.WriteLine("done breed test");
+
+        }
+
+        //stress test the whole system
+        public static void PicGenerate(GraphicsDevice g, GameWindow w)
+        {
+            const int TEST_SIZE = 5000;
+            Random r = new Random();
+          
+            
+            try
+            {
+                for (int i = 0; i < TEST_SIZE; i++)
+                {
+                    Pic A = new Pic((PicType)r.Next(0, 3), r, 1, 20, g, w, true);
+                    A.SetNewBounds(new Rectangle(0, 0, 320, 200));                    
+                    A.Dispose();
+                    Pic B = new Pic((PicType)r.Next(0, 3), r, 1, 20, g, w, true);
+                    B.SetNewBounds(new Rectangle(0, 0, 320, 200));                    
+                    B.Dispose();
+
+                    Pic Child = A.BreedWith(B, r);
+                    Child.SetNewBounds(new Rectangle(0, 0, 320, 200));                    
+                    Child.Dispose();
+
+                    Pic Child2 = Child.BreedWith(Child, r);
+                    Child2.SetNewBounds(new Rectangle(0, 0, 320, 200));                    
+                    Child2.Dispose();
+
+                    Child2.GenerateVideo(100, 100);
+                    foreach (var tex in Child2.videoFrames)
+                    {
+                        tex.Dispose();
+                    }
+
+                    Console.WriteLine(i + "/" + TEST_SIZE);
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.ReadLine();
+            }
 
         }
 

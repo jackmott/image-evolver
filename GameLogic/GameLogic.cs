@@ -12,13 +12,13 @@ using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using System;
 using System.Collections.Generic;
+using JM.LinqFaster;
 using System.Linq;
 using System.IO;
 using Microsoft.Xna.Framework.Content;
 using System.Runtime.Serialization;
 using System.Xml;
 using static GameLogic.GraphUtils;
-using static GameLogic.Tests;
 
 namespace GameLogic
 {
@@ -133,12 +133,16 @@ namespace GameLogic
                 }
             }
 
+            //Tests.BreedingPairs(g, window);
+            //Tests.BreedingSelf(g, window);
+            //Tests.PicGenerate(g, window);
+            //Console.ReadLine();
             //Parsing(g, window);
-           // Optimizing(g, window);
+            //Optimizing(g, window);
             //Console.ReadLine();
 
 
-            state.populationSize = Settings.POP_SIZE_COLUMNS * (Settings.POP_SIZE_COLUMNS - 1);            
+            state.populationSize = Settings.POP_SIZE_COLUMNS * (Math.Max(Settings.POP_SIZE_COLUMNS - 1,1));            
             Random r = state.r;
             state.pictures = GenPics(r);
             LayoutUI();
@@ -167,7 +171,7 @@ namespace GameLogic
             int vSpace = (int)(winH * Settings.VERTICAL_SPACING);
 
             int numPerRow = Settings.POP_SIZE_COLUMNS;
-            int numPerColumn = Settings.POP_SIZE_COLUMNS - 1;
+            int numPerColumn = Math.Max(1,Settings.POP_SIZE_COLUMNS - 1);
             int spaceRemaining = winW - hSpace * (numPerRow + 1);
             int picW = spaceRemaining / numPerRow;
 
@@ -176,7 +180,7 @@ namespace GameLogic
 
             var pos = new Vector2(0, 0);
             int index = 0;
-            for (int y = 0; y < Settings.POP_SIZE_COLUMNS - 1; y++)
+            for (int y = 0; y < numPerColumn; y++)
             {
                 pos.Y += vSpace;
                 for (int x = 0; x < Settings.POP_SIZE_COLUMNS; x++)
@@ -186,18 +190,18 @@ namespace GameLogic
                     {
                         var newBounds = new Rectangle((int)pos.X, (int)pos.Y, picW, picH);
 
-                        if (state.pictures[index].picButton.bounds != newBounds)
+                        if (state.pictures[index].bounds != newBounds)
                         {
                             state.pictures[index].SetNewBounds(newBounds);
-                            state.pictures[index].RegenTex(state.g, false);
+                            state.pictures[index].GenSmallImageTask();
                         }
                     }
                     else
                     {
                         var newBounds = new Rectangle(0, 0, state.g.Viewport.Width, state.g.Viewport.Height);
-                        if (state.zoomedPic.picButton.bounds != newBounds) {
+                        if (state.zoomedPic.bounds != newBounds) {
                             state.zoomedPic.SetNewBounds(newBounds);
-                            state.zoomedPic.RegenTex(state.g, true);
+                            state.zoomedPic.GenBigImageTasks();
                         }
                     }
                     index++;
@@ -249,14 +253,14 @@ namespace GameLogic
         public void EditDraw(SpriteBatch batch, GameTime gameTime)
         {            
             batch.Begin();
-            state.zoomedPic.EditDraw(batch, gameTime);
+            state.zoomedPic.EditDraw(batch,state.g,state.w,gameTime);
             batch.End();
         }
 
         public void ZoomDraw(SpriteBatch batch, GameTime gameTime)
         {            
             batch.Begin();
-            state.zoomedPic.ZoomDraw(batch, gameTime,state.inputState);
+            state.zoomedPic.ZoomDraw(batch,state.g,state.w, gameTime,state.inputState);
             batch.End();
         }
 
@@ -278,13 +282,13 @@ namespace GameLogic
             state.reRollButton.Draw(batch, gameTime);
             state.evolveButton.Draw(batch, gameTime);
             state.videoModeButton.Draw(batch, gameTime,state.videoMode);
-            
+            batch.End();
 
             foreach (var pic in state.pictures)
             {
-                pic.Draw(batch, gameTime,state.inputState);
+                pic.Draw(batch,state.g,state.w, gameTime,state.inputState);
             }
-            batch.End();
+            
 
         }
 
@@ -342,8 +346,8 @@ namespace GameLogic
             }
 
             if (state.evolveButton.WasLeftClicked(state.inputState))
-            {
-                if (!state.pictures.Exists(p => p.selected))
+            {                
+                if (!Array.Exists(state.pictures,p => p.selected))
                 {
                     //no pics selected
                     return state;
@@ -352,10 +356,11 @@ namespace GameLogic
                 // Build the next generation of pictures
                 ClearPics(state.prevPictures);
                 state.prevPictures = state.pictures; // save the current for undo
-                var nextGeneration = new List<Pic>(state.pictures.Count());
-                var breeders = state.pictures.Where(p => p.selected).ToArray();                    
+                var nextGeneration = new Pic[state.pictures.Length];
+                var breeders = state.pictures.WhereF(p => p.selected);
                 // Keep adding new pictures by breeding random combos of the selected ones
-                while (nextGeneration.Count() < state.pictures.Count())
+                int nextGenIndex = 0;
+                while (nextGenIndex < state.pictures.Length)
                 {
                     var first = breeders[state.r.Next(0, breeders.Length)];
                     var second = breeders[state.r.Next(0, breeders.Length)];
@@ -364,36 +369,34 @@ namespace GameLogic
                     child = child.Mutate(state.r);
                     child.Optimize();
                     child.textBox.SetText(child.ToLisp());
-                    nextGeneration.Add(child);
+                    nextGeneration[nextGenIndex] = child;
+                    nextGenIndex++;
 
                 }
                 state.pictures = nextGeneration;
                 LayoutUI();
 
             }
-            for (int i = 0; i < state.pictures.Count(); i++)
+            for (int i = 0; i < state.pictures.Length; i++)
             {
                 var pic = state.pictures[i];
 
-                if (pic.picButton.WasLeftClicked(state.inputState))
+                if (pic.WasLeftClicked(state.inputState))
                 {
                     pic.selected = !pic.selected;
                 }
 
                 if (pic.injectButton.WasLeftClicked(state.inputState))
-                {
-                    pic.picButton.tex.Dispose();
-                    state.pictures[i] = GenTree(r);
-                    state.pictures[i].SetNewBounds(pic.picButton.bounds);
-                    state.pictures[i].RegenTex(state.g, true);
+                {                    
+                    state.pictures[i] = GenTree(r);                                        
                 }
 
-                if (pic.picButton.WasRightClicked(state.inputState))
+                if (pic.WasRightClicked(state.inputState))
                 {
                     state.zoomedPic = pic;
                     pic.zoomed = true;
                     pic.SetNewBounds(new Rectangle(0, 0, state.g.Viewport.Width, state.g.Viewport.Height));
-                    pic.RegenTex(state.g, true);
+                    pic.GenBigImageTasks();
                     state.screen = Screen.ZOOM;
                 }
             }
@@ -426,8 +429,7 @@ namespace GameLogic
                     state.zoomedPic.type = p.type;
                     state.zoomedPic.hues = p.hues;
                     state.zoomedPic.pos = p.pos;
-                    state.zoomedPic.textBox.SetText(state.zoomedPic.ToLisp());
-                    state.zoomedPic.RegenTex(state.g,true);
+                    state.zoomedPic.textBox.SetText(state.zoomedPic.ToLisp());                    
                     state.screen = Screen.ZOOM;
                     state.zoomedPic.textBox.SetActive(false);
                 }
@@ -467,10 +469,10 @@ namespace GameLogic
             if (state.zoomedPic.playButton.WasLeftClicked(state.inputState))
             {
                 Transition.StartTransition(state, Screen.VIDEO_PLAYING);
-                state.zoomedPic.GenerateVideo(state.zoomedPic.picButton.bounds.Width,state.zoomedPic.picButton.bounds.Height);
+                state.zoomedPic.GenerateVideo(state.zoomedPic.bounds.Width,state.zoomedPic.bounds.Height);
             }
 
-            if (state.zoomedPic.picButton.WasRightClicked(state.inputState))
+            if (state.zoomedPic.WasRightClicked(state.inputState))
             {
                 state.screen = Screen.CHOOSE;
                 state.zoomedPic.zoomed = false;
@@ -497,7 +499,7 @@ namespace GameLogic
             while (root.AddLeaf(new AptNode { type = NodeType.CONSTANT, value = (float)r.NextDouble() * 2.0f - 1.0f })) { }
             //while (root.AddLeaf(new AptNode { type = NodeType.CONSTANT, value = 0.5f })) { }
 
-            int chooser = r.Next(0, 3);
+            int chooser = r.Next(0, 3);            
             Pic p;
            // chooser = 0;
             if (chooser == 0)
@@ -513,7 +515,7 @@ namespace GameLogic
                 p = new Pic(PicType.GRADIENT, r, Settings.MIN_GEN_SIZE, Settings.MAX_GEN_SIZE, state.g, state.w, state.videoMode);
             }
 
-            for (int i = 0; i < p.Trees.Count(); i++)
+            for (int i = 0; i < p.Trees.Length; i++)
             {
                 p.Trees[i] = root;
                 p.Machines[i] = new StackMachine(root);
@@ -528,32 +530,29 @@ namespace GameLogic
         public Pic GenTree(Random r)
         {
             int chooser = r.Next(0, 3);
+            chooser = 0;
             PicType type = (PicType)chooser;
           
             return new Pic(type, r, Settings.MIN_GEN_SIZE,Settings.MAX_GEN_SIZE,state.g, state.w, state.videoMode);
         }
 
-        public void ClearPics(List<Pic> pics)
+        public void ClearPics(Pic[] pics)
         {
             if (pics == null) return;
             foreach (var pic in pics)
             {
-                if (pic.picButton.tex != null)
-                {
-                    pic.picButton.tex.Dispose();
-                    pic.picButton.tex = null;
-                }                
+                pic.Dispose();
             }
-            pics.Clear();
+            
         }
 
-        public List<Pic> GenPics(Random r)
+        public Pic[] GenPics(Random r)
         {
 
-            List<Pic> pics = new List<Pic>(4);
+            Pic[] pics = new Pic[state.populationSize];
             for (int i = 0; i < state.populationSize; i++)
             {
-                pics.Add(GenTree(r));                
+                pics[i] = GenTree(r);  
             }
             return pics;
         }

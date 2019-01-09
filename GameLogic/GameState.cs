@@ -48,9 +48,9 @@ namespace GameLogic
         [DataMember]
         public int populationSize;
         [DataMember]
-        public List<Pic> prevPictures;
+        public Pic[] prevPictures;
         [DataMember]
-        public List<Pic> pictures;
+        public Pic[] pictures;
         [DataMember]
         public Pic zoomedPic;
         [DataMember]

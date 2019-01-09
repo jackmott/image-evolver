@@ -104,7 +104,7 @@ namespace GameLogic
 
         public void Draw(SpriteBatch batch, GameTime gameTime)
         {
-           
+            if (tex.IsDisposed) throw new Exception("disposed button");
             batch.Draw(tex, bounds, Color.White);
            
         }

@@ -14,15 +14,21 @@ namespace GameLogic
             Texture2D tex;
             if (simple_textures.TryGetValue(color, out tex))
             {
-                return tex;
+                if (tex.IsDisposed)
+                {
+                    simple_textures.Remove(color);
+                }
+                else
+                {
+                    return tex;
+                }
             }
-            else
-            {
-                tex = new Texture2D(g, 1, 1, false, SurfaceFormat.Color);
-                tex.SetData(new[] { color });
-                simple_textures[color] = tex;
-                return tex;
-            }            
+           
+            tex = new Texture2D(g, 1, 1, false, SurfaceFormat.Color);
+            tex.SetData(new[] { color });
+            simple_textures[color] = tex;
+            return tex;
+                       
         }
 
         public static Color RandomColor(Random r)

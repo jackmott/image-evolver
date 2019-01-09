@@ -353,7 +353,7 @@ namespace GameLogic
 
               
                 var newChildren = new AptNode[node.children.Length - 1];
-                var warp = new AptNode { type = NodeType.WARP1, children = new AptNode[5] };
+                var warp = MakeNode(NodeType.WARP1);
                 warp.children[0] = new AptNode { type = NodeType.X };
                 warp.children[0].parent = warp;
                 warp.children[1] = new AptNode { type = NodeType.Y };
@@ -597,6 +597,7 @@ namespace GameLogic
             var enum_size = Enum.GetNames(typeof(NodeType)).Length;
             //-1 because we don't include warp
             var typeNum = r.Next(AptNode.NUM_LEAF_TYPES, enum_size - 1);
+            if (typeNum > 26) typeNum = 26;
             var type = (NodeType)typeNum;
             return MakeNode(type);
 
@@ -664,8 +665,8 @@ namespace GameLogic
             {
                 //just keep adding leaves until we can't 
             };
-            first.InsertWarp(r, video);
-            first = ConstantFolding(first);
+            //first.InsertWarp(r, video);
+            //first = ConstantFolding(first);
             return first;
         }
 
