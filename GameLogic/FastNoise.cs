@@ -65,8 +65,8 @@ public class FastNoise
     private CellularDistanceFunction m_cellularDistanceFunction = CellularDistanceFunction.Euclidean;
     private CellularReturnType m_cellularReturnType = CellularReturnType.CellValue;
     private FastNoise m_cellularNoiseLookup = null;
-    private static int m_cellularDistanceIndex0 = 0;
-    private static int m_cellularDistanceIndex1 = 1;
+    private const int m_cellularDistanceIndex0 = 0;
+    private const int m_cellularDistanceIndex1 = 1;
     private float m_cellularJitter = 0.45f;
 
     private FN_DECIMAL m_gradientPerturbAmp = (FN_DECIMAL)1.0;
@@ -135,14 +135,16 @@ public class FastNoise
     // Default: 0, 1
     // Note: index0 should be lower than index1
     // Both indicies must be >= 0, index1 must be < 4
-    public void SetCellularDistance2Indicies(int cellularDistanceIndex0, int cellularDistanceIndex1)
-    {
-        m_cellularDistanceIndex0 = Math.Min(cellularDistanceIndex0, cellularDistanceIndex1);
-        m_cellularDistanceIndex1 = Math.Max(cellularDistanceIndex0, cellularDistanceIndex1);
 
-        m_cellularDistanceIndex0 = Math.Min(Math.Max(m_cellularDistanceIndex0, 0), FN_CELLULAR_INDEX_MAX);
-        m_cellularDistanceIndex1 = Math.Min(Math.Max(m_cellularDistanceIndex1, 0), FN_CELLULAR_INDEX_MAX);
-    }
+    /*
+public void SetCellularDistance2Indicies(int cellularDistanceIndex0, int cellularDistanceIndex1)
+{
+    m_cellularDistanceIndex0 = Math.Min(cellularDistanceIndex0, cellularDistanceIndex1);
+    m_cellularDistanceIndex1 = Math.Max(cellularDistanceIndex0, cellularDistanceIndex1);
+
+    m_cellularDistanceIndex0 = Math.Min(Math.Max(m_cellularDistanceIndex0, 0), FN_CELLULAR_INDEX_MAX);
+    m_cellularDistanceIndex1 = Math.Min(Math.Max(m_cellularDistanceIndex1, 0), FN_CELLULAR_INDEX_MAX);
+}*/
 
     // Sets the maximum distance a cellular point can move from it's grid position
     // Setting this high will make artifacts more common
@@ -262,7 +264,7 @@ public class FastNoise
         new Float3(0.2178065647f, -0.9698322841f, -0.1094789531f), new Float3(-0.1518031304f, -0.7788918132f, -0.6085091231f), new Float3(-0.2600384876f, -0.4755398075f, -0.8403819825f), new Float3(0.572313509f, -0.7474340931f, -0.3373418503f), new Float3(-0.7174141009f, 0.1699017182f, -0.6756111411f), new Float3(-0.684180784f, 0.02145707593f, -0.7289967412f), new Float3(-0.2007447902f, 0.06555605789f, -0.9774476623f), new Float3(-0.1148803697f, -0.8044887315f, 0.5827524187f),
         new Float3(-0.7870349638f, 0.03447489231f, 0.6159443543f), new Float3(-0.2015596421f, 0.6859872284f, 0.6991389226f), new Float3(-0.08581082512f, -0.10920836f, -0.9903080513f), new Float3(0.5532693395f, 0.7325250401f, -0.396610771f), new Float3(-0.1842489331f, -0.9777375055f, -0.1004076743f), new Float3(0.0775473789f, -0.9111505856f, 0.4047110257f), new Float3(0.1399838409f, 0.7601631212f, -0.6344734459f), new Float3(0.4484419361f, -0.845289248f, 0.2904925424f),
     };
-    
+
     [MethodImplAttribute(FN_INLINE)]
     private static int FastRound(FN_DECIMAL f) { return (f >= 0) ? (int)(f + (FN_DECIMAL)0.5) : (int)(f - (FN_DECIMAL)0.5); }
 
@@ -482,7 +484,7 @@ public class FastNoise
             case NoiseType.Cellular:
                 switch (m_cellularReturnType)
                 {
-                    case CellularReturnType.CellValue:                    
+                    case CellularReturnType.CellValue:
                     case CellularReturnType.Distance:
                         return SingleCellular(x, y, z);
                     default:
@@ -509,7 +511,7 @@ public class FastNoise
         }
     }
 
-  
+
     // White Noise
     [MethodImplAttribute(FN_INLINE)]
     private int FloatCast2Int(FN_DECIMAL f)
@@ -1213,49 +1215,49 @@ public class FastNoise
         return 32 * (n0 + n1 + n2 + n3);
     }
 
-  
 
-    public static FN_DECIMAL SingleSimplexFractalFBM(FN_DECIMAL x, FN_DECIMAL y, float freq, int seed,int octaves, float lacunarity, float gain)
-    {        
-        FN_DECIMAL sum = SingleSimplex(seed, x*freq, y*freq);
+
+    public static FN_DECIMAL SingleSimplexFractalFBM(FN_DECIMAL x, FN_DECIMAL y, float freq, int seed, int octaves, float lacunarity, float gain)
+    {
+        FN_DECIMAL sum = SingleSimplex(seed, x * freq, y * freq);
         FN_DECIMAL amp = 1;
 
         for (int i = 1; i < octaves; i++)
-        {            
+        {
             amp *= gain;
             freq *= lacunarity;
-            sum += SingleSimplex(++seed, x*freq, y*freq) * amp;
-            
+            sum += SingleSimplex(++seed, x * freq, y * freq) * amp;
+
         }
 
         return sum;
     }
 
     public static FN_DECIMAL SingleSimplexFractalBillow(FN_DECIMAL x, FN_DECIMAL y, float freq, int seed, int octaves, float lacunarity, float gain)
-    {        
-        FN_DECIMAL sum = Math.Abs(SingleSimplex(seed, x*freq, y*freq)) * 2 - 1;
+    {
+        FN_DECIMAL sum = Math.Abs(SingleSimplex(seed, x * freq, y * freq)) * 2 - 1;
         FN_DECIMAL amp = 1;
 
         for (int i = 1; i < octaves; i++)
         {
-            freq *= lacunarity;            
+            freq *= lacunarity;
             amp *= gain;
-            sum += (Math.Abs(SingleSimplex(++seed, x*freq, y*freq)) * 2 - 1) * amp;
+            sum += (Math.Abs(SingleSimplex(++seed, x * freq, y * freq)) * 2 - 1) * amp;
         }
 
         return sum;
     }
 
     public static FN_DECIMAL SingleSimplexFractalRigidMulti(FN_DECIMAL x, FN_DECIMAL y, float freq, int seed, int octaves, float lacunarity, float gain)
-    {        
-        FN_DECIMAL sum = 1 - Math.Abs(SingleSimplex(seed, x*freq, y*freq));
+    {
+        FN_DECIMAL sum = 1 - Math.Abs(SingleSimplex(seed, x * freq, y * freq));
         FN_DECIMAL amp = 1;
 
         for (int i = 1; i < octaves; i++)
         {
-            freq *= lacunarity;            
+            freq *= lacunarity;
             amp *= gain;
-            sum -= (1 - Math.Abs(SingleSimplex(++seed, x*freq, y*freq))) * amp;
+            sum -= (1 - Math.Abs(SingleSimplex(++seed, x * freq, y * freq))) * amp;
         }
 
         return sum;
@@ -1698,7 +1700,7 @@ public class FastNoise
 
         switch (m_cellularReturnType)
         {
-            case CellularReturnType.CellValue:            
+            case CellularReturnType.CellValue:
             case CellularReturnType.Distance:
                 return SingleCellular(x, y, z);
             default:
@@ -1800,7 +1802,7 @@ public class FastNoise
         switch (m_cellularReturnType)
         {
             case CellularReturnType.CellValue:
-                return ValCoord3D(m_seed, xc, yc, zc);            
+                return ValCoord3D(m_seed, xc, yc, zc);
             case CellularReturnType.Distance:
                 return distance;
             default:
@@ -1904,8 +1906,8 @@ public class FastNoise
                 return 0;
         }
     }
-   
-    public static FN_DECIMAL SingleCellular(FN_DECIMAL x, FN_DECIMAL y,float jitter,int seed, CellularDistanceFunction func,CellularReturnType returnType)
+
+    public static FN_DECIMAL SingleCellular(FN_DECIMAL x, FN_DECIMAL y, float jitter, int seed, CellularDistanceFunction func, CellularReturnType returnType)
     {
         int xr = FastRound(x);
         int yr = FastRound(y);
@@ -1984,7 +1986,7 @@ public class FastNoise
         switch (returnType)
         {
             case CellularReturnType.CellValue:
-                return ValCoord2D(seed, xc, yc);         
+                return ValCoord2D(seed, xc, yc);
             case CellularReturnType.Distance:
                 return distance;
             default:
@@ -1992,86 +1994,89 @@ public class FastNoise
         }
     }
 
-    public static FN_DECIMAL SingleCellular2Edge(FN_DECIMAL x, FN_DECIMAL y, float jitter, int seed, CellularDistanceFunction func, CellularReturnType returnType)
+    public static float SingleCellular2Edge(float x, float y, float jitter, int seed, CellularDistanceFunction func, CellularReturnType returnType)
     {
-        int xr = FastRound(x);
-        int yr = FastRound(y);
-
-        FN_DECIMAL[] distance = { 999999, 999999, 999999, 999999 };
-
-        switch (func)
+        unsafe
         {
-            default:
-            case CellularDistanceFunction.Euclidean:
-                for (int xi = xr - 1; xi <= xr + 1; xi++)
-                {
-                    for (int yi = yr - 1; yi <= yr + 1; yi++)
+            int xr = FastRound(x);
+            int yr = FastRound(y);
+
+            float* distance = stackalloc float[] { 999999f, 999999f, 999999f, 999999f };
+
+            switch (func)
+            {
+                default:
+                case CellularDistanceFunction.Euclidean:
+                    for (int xi = xr - 1; xi <= xr + 1; xi++)
                     {
-                        Float2 vec = CELL_2D[Hash2D(seed, xi, yi) & 255];
+                        for (int yi = yr - 1; yi <= yr + 1; yi++)
+                        {
+                            Float2 vec = CELL_2D[Hash2D(seed, xi, yi) & 255];
 
-                        FN_DECIMAL vecX = xi - x + vec.x * jitter;
-                        FN_DECIMAL vecY = yi - y + vec.y * jitter;
+                            float vecX = xi - x + vec.x * jitter;
+                            float vecY = yi - y + vec.y * jitter;
 
-                        FN_DECIMAL newDistance = vecX * vecX + vecY * vecY;
+                            float newDistance = vecX * vecX + vecY * vecY;
 
-                        for (int i = m_cellularDistanceIndex1; i > 0; i--)
-                            distance[i] = Math.Max(Math.Min(distance[i], newDistance), distance[i - 1]);
-                        distance[0] = Math.Min(distance[0], newDistance);
+                            for (int i = m_cellularDistanceIndex1; i > 0; i--)
+                                distance[i] = Math.Max(Math.Min(distance[i], newDistance), distance[i - 1]);
+                            distance[0] = Math.Min(distance[0], newDistance);
+                        }
                     }
-                }
-                break;
-            case CellularDistanceFunction.Manhattan:
-                for (int xi = xr - 1; xi <= xr + 1; xi++)
-                {
-                    for (int yi = yr - 1; yi <= yr + 1; yi++)
+                    break;
+                case CellularDistanceFunction.Manhattan:
+                    for (int xi = xr - 1; xi <= xr + 1; xi++)
                     {
-                        Float2 vec = CELL_2D[Hash2D(seed, xi, yi) & 255];
+                        for (int yi = yr - 1; yi <= yr + 1; yi++)
+                        {
+                            Float2 vec = CELL_2D[Hash2D(seed, xi, yi) & 255];
 
-                        FN_DECIMAL vecX = xi - x + vec.x * jitter;
-                        FN_DECIMAL vecY = yi - y + vec.y * jitter;
+                            float vecX = xi - x + vec.x * jitter;
+                            float vecY = yi - y + vec.y * jitter;
 
-                        FN_DECIMAL newDistance = Math.Abs(vecX) + Math.Abs(vecY);
+                            float newDistance = Math.Abs(vecX) + Math.Abs(vecY);
 
-                        for (int i = m_cellularDistanceIndex1; i > 0; i--)
-                            distance[i] = Math.Max(Math.Min(distance[i], newDistance), distance[i - 1]);
-                        distance[0] = Math.Min(distance[0], newDistance);
+                            for (int i = m_cellularDistanceIndex1; i > 0; i--)
+                                distance[i] = Math.Max(Math.Min(distance[i], newDistance), distance[i - 1]);
+                            distance[0] = Math.Min(distance[0], newDistance);
+                        }
                     }
-                }
-                break;
-            case CellularDistanceFunction.Natural:
-                for (int xi = xr - 1; xi <= xr + 1; xi++)
-                {
-                    for (int yi = yr - 1; yi <= yr + 1; yi++)
+                    break;
+                case CellularDistanceFunction.Natural:
+                    for (int xi = xr - 1; xi <= xr + 1; xi++)
                     {
-                        Float2 vec = CELL_2D[Hash2D(seed, xi, yi) & 255];
+                        for (int yi = yr - 1; yi <= yr + 1; yi++)
+                        {
+                            Float2 vec = CELL_2D[Hash2D(seed, xi, yi) & 255];
 
-                        FN_DECIMAL vecX = xi - x + vec.x * jitter;
-                        FN_DECIMAL vecY = yi - y + vec.y * jitter;
+                            float vecX = xi - x + vec.x * jitter;
+                            float vecY = yi - y + vec.y * jitter;
 
-                        FN_DECIMAL newDistance = (Math.Abs(vecX) + Math.Abs(vecY)) + (vecX * vecX + vecY * vecY);
+                            float newDistance = (Math.Abs(vecX) + Math.Abs(vecY)) + (vecX * vecX + vecY * vecY);
 
-                        for (int i = m_cellularDistanceIndex1; i > 0; i--)
-                            distance[i] = Math.Max(Math.Min(distance[i], newDistance), distance[i - 1]);
-                        distance[0] = Math.Min(distance[0], newDistance);
+                            for (int i = m_cellularDistanceIndex1; i > 0; i--)
+                                distance[i] = Math.Max(Math.Min(distance[i], newDistance), distance[i - 1]);
+                            distance[0] = Math.Min(distance[0], newDistance);
+                        }
                     }
-                }
-                break;
-        }
+                    break;
+            }
 
-        switch (returnType)
-        {
-            case CellularReturnType.Distance2:
-                return distance[m_cellularDistanceIndex1];
-            case CellularReturnType.Distance2Add:
-                return distance[m_cellularDistanceIndex1] + distance[m_cellularDistanceIndex0];
-            case CellularReturnType.Distance2Sub:
-                return distance[m_cellularDistanceIndex1] - distance[m_cellularDistanceIndex0];
-            case CellularReturnType.Distance2Mul:
-                return distance[m_cellularDistanceIndex1] * distance[m_cellularDistanceIndex0];
-            case CellularReturnType.Distance2Div:
-                return distance[m_cellularDistanceIndex0] / distance[m_cellularDistanceIndex1];
-            default:
-                return 0;
+            switch (returnType)
+            {
+                case CellularReturnType.Distance2:
+                    return distance[m_cellularDistanceIndex1];
+                case CellularReturnType.Distance2Add:
+                    return distance[m_cellularDistanceIndex1] + distance[m_cellularDistanceIndex0];
+                case CellularReturnType.Distance2Sub:
+                    return distance[m_cellularDistanceIndex1] - distance[m_cellularDistanceIndex0];
+                case CellularReturnType.Distance2Mul:
+                    return distance[m_cellularDistanceIndex1] * distance[m_cellularDistanceIndex0];
+                case CellularReturnType.Distance2Div:
+                    return distance[m_cellularDistanceIndex0] / distance[m_cellularDistanceIndex1];
+                default:
+                    return 0;
+            }
         }
     }
 
@@ -2167,22 +2172,22 @@ public class FastNoise
         z += Lerp(lz0y, Lerp(lz0x, lz1x, ys), zs) * perturbAmp;
     }
 
-   
-    public static (float, float) GradientPerturbFractal(FN_DECIMAL x,FN_DECIMAL y, float freq,float perturbAmp, int seed,int octaves, float lac, float gain, Interp interp)
+
+    public static (float, float) GradientPerturbFractal(FN_DECIMAL x, FN_DECIMAL y, float freq, float perturbAmp, int seed, int octaves, float lac, float gain, Interp interp)
     {
 
-        (x,y) = SingleGradientPerturb(x, y, freq, perturbAmp,seed, interp);
+        (x, y) = SingleGradientPerturb(x, y, freq, perturbAmp, seed, interp);
 
         for (int i = 1; i < octaves; i++)
         {
             freq *= lac;
             perturbAmp *= gain;
-            (x,y) = SingleGradientPerturb(x,y,freq,perturbAmp,seed,interp);
+            (x, y) = SingleGradientPerturb(x, y, freq, perturbAmp, seed, interp);
         }
         return (x, y);
     }
 
-    public static (float,float) SingleGradientPerturb(FN_DECIMAL x, FN_DECIMAL y, float freq, float perturbAmp, int seed, Interp interp)
+    public static (float, float) SingleGradientPerturb(FN_DECIMAL x, FN_DECIMAL y, float freq, float perturbAmp, int seed, Interp interp)
     {
         FN_DECIMAL xf = x * freq;
         FN_DECIMAL yf = y * freq;

@@ -135,7 +135,7 @@ namespace GameLogic
 
             //Tests.BreedingPairs(g, window);
             //Tests.BreedingSelf(g, window);
-            //Tests.PicGenerate(g, window);
+            //Tests.PicGenerate(g, window,state,this);
             //Console.ReadLine();
             //Parsing(g, window);
             //Optimizing(g, window);
@@ -334,7 +334,15 @@ namespace GameLogic
                 state.prevPictures = state.pictures;
                 state.pictures = null;
                 state.pictures = GenPics(r);
-                LayoutUI();
+                for (int i = 0; i < state.pictures.Length; i++)
+                {
+                    state.pictures[i].bounds = state.prevPictures[i].bounds;
+                }
+                ClearPics(state.prevPictures);
+                for (int i = 0; i < state.pictures.Length; i++){
+                    state.pictures[i].GenSmallImageTask();
+                }
+                //LayoutUI();
             }
             if (state.videoModeButton.WasLeftClicked(state.inputState))
             {
@@ -539,9 +547,13 @@ namespace GameLogic
         public void ClearPics(Pic[] pics)
         {
             if (pics == null) return;
-            foreach (var pic in pics)
+            for (int i = 0; i < pics.Length;i++)
             {
-                pic.Dispose();
+                if (pics[i] != null)
+                {
+                    pics[i].Dispose();
+                    pics[i] = null;
+                }
             }
             
         }

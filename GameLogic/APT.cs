@@ -596,11 +596,9 @@ namespace GameLogic
         {
             var enum_size = Enum.GetNames(typeof(NodeType)).Length;
             //-1 because we don't include warp
-            var typeNum = r.Next(AptNode.NUM_LEAF_TYPES, enum_size - 1);
-            if (typeNum > 26) typeNum = 26;
+            var typeNum = r.Next(AptNode.NUM_LEAF_TYPES, enum_size - 1);                        
             var type = (NodeType)typeNum;
             return MakeNode(type);
-
         }
 
         public static AptNode GetRandomLeaf(Random r, bool videoMode)
@@ -665,8 +663,8 @@ namespace GameLogic
             {
                 //just keep adding leaves until we can't 
             };
-            //first.InsertWarp(r, video);
-            //first = ConstantFolding(first);
+            first.InsertWarp(r, video);
+            first = ConstantFolding(first);
             return first;
         }
 
