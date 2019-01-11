@@ -1,8 +1,7 @@
 ﻿// todo - handle typing beyond edge of text box
 // todo - consider filter nodes attached to top level pic nodes (sepia, etc)
-// todo - video need to cancel
-// todo - video needs to remember it exists already
 // todo - does breed handle warp properly? I think not
+
 
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
@@ -24,15 +23,12 @@ namespace GameLogic
     {
         //1 to 100000                
         public static int progress;
-        public static int goal;
-        public static Screen currentScreen;
+        public static int goal;        
         public static Screen nextScreen;
 
 
-        public static void StartTransition(GameState state, Screen to, int thegoal)
-        {
-            currentScreen = state.screen;
-            state.screen = Screen.TRANSITION;
+        public static void StartTransition(Screen to, int thegoal)
+        {                        
             nextScreen = to;
             progress = 0;
             goal = thegoal;
@@ -181,7 +177,7 @@ namespace GameLogic
                         if (state.pictures[index].bounds != newBounds)
                         {
                             state.pictures[index].SetNewBounds(newBounds);
-                            state.pictures[index].GenSmallImage();
+                            _ = state.pictures[index].GenSmallImageAsync();
                         }
                     }
                     else
@@ -213,13 +209,12 @@ namespace GameLogic
         public void Draw(SpriteBatch batch, GameTime gameTime)
         {
             var screen = state.screen;
-            if (screen == Screen.TRANSITION)
-            {
+            if (screen == Screen.VIDEO_GENERATING)
+            {                
+                VideoGeneratingDraw(batch, gameTime);
                 Transition.Draw(batch, state.g, gameTime);
-                screen = Transition.currentScreen;
             }
-
-            if (state.screen == Screen.CHOOSE)
+            else if (state.screen == Screen.CHOOSE)
             {
                 ChooseDraw(batch, gameTime);
             }
@@ -253,6 +248,13 @@ namespace GameLogic
             batch.End();
         }
 
+        public void VideoGeneratingDraw(SpriteBatch batch, GameTime gameTime)
+        {
+            batch.Begin();
+            state.zoomedPic.VideoGeneratingDraw(batch, state.g, state.w, gameTime, state.inputState);
+            batch.End();
+        }
+
         public void VideoPlayingDraw(SpriteBatch batch, GameTime gameTime)
         {
             batch.Begin();
@@ -283,10 +285,10 @@ namespace GameLogic
 
         public GameState Update(GameTime gameTime)
         {
-            if (state.screen == Screen.TRANSITION)
+            if (state.screen == Screen.VIDEO_GENERATING)
             {
                 Transition.Update(state);
-                return state;
+                return VideoGeneratingUpdate(gameTime);                
             }
             else if (state.screen == Screen.CHOOSE)
             {
@@ -318,7 +320,7 @@ namespace GameLogic
                 }
             }
             if (state.reRollButton.WasLeftClicked(state.inputState))
-            {
+            {            
                 ClearPics(state.prevPictures);
                 state.prevPictures = state.pictures;
                 state.pictures = null;
@@ -421,6 +423,9 @@ namespace GameLogic
                     state.zoomedPic.textBox.SetText(state.zoomedPic.ToLisp());
                     state.screen = Screen.ZOOM;
                     state.zoomedPic.textBox.SetActive(false);
+                    state.zoomedPic.ClearVideo();
+                    _ = state.zoomedPic.GenSmallImageAsync();
+                    state.zoomedPic.GenBigImage();
                 }
                 catch (ParseException ex)
                 {
@@ -437,6 +442,17 @@ namespace GameLogic
             return state;
         }
 
+        public GameState VideoGeneratingUpdate(GameTime gameTime)
+        {
+            if (state.zoomedPic.cancelVideoGenButton.WasLeftClicked(state.inputState))
+            {
+                state.zoomedPic.imageCancellationSource.Cancel();
+                state.zoomedPic.ClearVideo();
+                state.zoomedPic.imageCancellationSource = new CancellationTokenSource();
+                state.screen = Screen.ZOOM;
+            }
+            return state;
+        }
         public GameState ZoomUpdate(GameTime gameTime)
         {
 
@@ -461,6 +477,8 @@ namespace GameLogic
 
             if (state.zoomedPic.WasRightClicked(state.inputState))
             {
+                state.zoomedPic.imageCancellationSource.Cancel();
+                state.zoomedPic.imageCancellationSource = new CancellationTokenSource();
                 state.screen = Screen.CHOOSE;
                 state.zoomedPic.zoomed = false;
                 state.zoomedPic = null;
@@ -529,6 +547,7 @@ namespace GameLogic
             {
                 if (pics[i] != null)
                 {
+                    pics[i].imageCancellationSource.Cancel();
                     pics[i].Dispose();
                     pics[i] = null;
                 }

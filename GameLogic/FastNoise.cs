@@ -38,6 +38,7 @@ using FN_DECIMAL = System.Single;
 using System;
 using System.Runtime.CompilerServices;
 using static GameLogic.MathUtils;
+using System.Runtime.InteropServices;
 
 public class FastNoise
 {
@@ -1993,6 +1994,7 @@ public void SetCellularDistance2Indicies(int cellularDistanceIndex0, int cellula
                 return 0;
         }
     }
+  
 
     public static float SingleCellular2Edge(float x, float y, float jitter, int seed, CellularDistanceFunction func, CellularReturnType returnType)
     {

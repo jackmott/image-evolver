@@ -7,6 +7,7 @@ using static GameLogic.ColorTools;
 using System.Threading.Tasks;
 using Microsoft.Xna.Framework.Input;
 using System.Diagnostics;
+using System.Threading;
 
 namespace GameLogic
 {
@@ -28,6 +29,8 @@ namespace GameLogic
         private Texture2D smallImage;        
         private Texture2D bigImage;
 
+
+        public CancellationTokenSource imageCancellationSource;
 
         [DataMember]
         bool video;
@@ -59,6 +62,8 @@ namespace GameLogic
         public Button saveEquationButton;
         [DataMember]
         public Button cancelEditButton;
+        [DataMember]
+        public Button cancelVideoGenButton;
         [DataMember]
         public SlidingPanel panel;
 
@@ -175,6 +180,7 @@ namespace GameLogic
             this.g = g;
             this.w = w;
             this.type = type;
+            imageCancellationSource = new CancellationTokenSource();
             smallImage = GraphUtils.GetTexture(g, Color.Black);
             bigImage = GraphUtils.GetTexture(g, Color.Black);
             InitButtons();
@@ -186,7 +192,8 @@ namespace GameLogic
         public void GenBigImage()
         {
             int chunkSize = Math.Min(64, bounds.Height);
-            int lineCount = 0;           
+            int lineCount = 0;                              
+            
             while (lineCount < bounds.Height)
             {
                 ImageGenAsync(bounds.Width, bounds.Height, lineCount, lineCount + chunkSize, -1.0f).ContinueWith(task =>
@@ -203,7 +210,7 @@ namespace GameLogic
                     var len = imageData.end - imageData.start;
                     bigImage.SetData(0, new Rectangle(0, imageData.start, bigImage.Width, len), imageData.colors, 0, imageData.colors.Length);
                                           
-                 });
+                }, TaskScheduler.FromCurrentSynchronizationContext());
                 lineCount += chunkSize;
                 chunkSize = (int)(chunkSize* 2);
                 chunkSize = Math.Min(chunkSize, bounds.Height - lineCount);
@@ -212,24 +219,24 @@ namespace GameLogic
         }
      
 
-        public void GenSmallImage()
+        public async Task GenSmallImageAsync()
         {
-            ImageGenAsync(bounds.Width, bounds.Height, 0, bounds.Height, -1.0f).ContinueWith(t =>
-             {
-                 smallImage.Dispose(); // dispose of the old texture
-                 smallImage = new Texture2D(g, bounds.Width, bounds.Height, false, SurfaceFormat.Color);
-                 var colors = t.Result.colors;
-                 Debug.Assert(colors.Length == smallImage.Width * smallImage.Height);
-                 smallImage.SetData(colors);                 
-             });
+            var result = await ImageGenAsync(bounds.Width, bounds.Height, 0, bounds.Height, -1.0f);
+                
+            smallImage.Dispose(); // dispose of the old texture
+            smallImage = new Texture2D(g, bounds.Width, bounds.Height, false, SurfaceFormat.Color);
+            var colors = result.colors;
+            //todo this assert fails sometimes when flipping between states quickly
+            Debug.Assert(colors.Length == smallImage.Width * smallImage.Height);
+            smallImage.SetData(colors);                 
+             
         }
         
         public void GenVideoRec(GameState state, int w, int h,int index, float t)
         {
             const int frameCount = Settings.FPS * Settings.VIDEO_LENGTH;
             if (index == frameCount) return;
-            var cpuCount = Environment.ProcessorCount;
-            if (index == 0) cpuCount = Math.Max(cpuCount / 2,1);
+            var cpuCount = Environment.ProcessorCount;                                    
             var taskCount = Math.Min(cpuCount, frameCount - index);
 
             var stepSize = 2.0f / frameCount;
@@ -240,7 +247,7 @@ namespace GameLogic
                 tasks[i] = ImageGenAsync(w, h, 0, h, t);
                 t += stepSize;                
             }
-            
+            //var ct = videoCancellationSource.Token;          
             Task.WhenAll(tasks).ContinueWith(task =>
             {
                 var frameDatas = task.Result;
@@ -251,24 +258,38 @@ namespace GameLogic
                     index++;
                     Transition.AddProgress(1);
                 }
+                //ct.ThrowIfCancellationRequested();
                 GenVideoRec(state, w, h, index, t);
 
-            });
+            }, TaskScheduler.FromCurrentSynchronizationContext());
         }
 
         public void GenVideo(GameState state, int w, int h)
         {
             const int frameCount = Settings.FPS * Settings.VIDEO_LENGTH;
-            Transition.StartTransition(state, Screen.VIDEO_PLAYING, frameCount);
-            //clear all old video textures
-            if (videoFrames != null)
-            {
-                foreach (var frame in videoFrames)
+            Transition.StartTransition(Screen.VIDEO_PLAYING, frameCount);
+            state.screen = Screen.VIDEO_GENERATING;
+                        
+            //Just play the video if its already there
+            if (videoFrames != null) {
+                var frame = videoFrames[0];
+                if (frame == null)
                 {
-                    frame.Dispose();
+                    ClearVideo();
                 }
-                videoFrames = null;
+                else if (frame.Width == w && frame.Height == h)
+                {
+                    Transition.AddProgress(frameCount);
+                    return;
+                }
+                else
+                {
+                    ClearVideo();
+                }
+                                                
             }
+            
+            
             videoFrames = new Texture2D[frameCount];
             for (int i = 0; i < videoFrames.Length; i++)
             {
@@ -312,6 +333,7 @@ namespace GameLogic
             saveEquationButton = new Button(Settings.saveEquationTexture, new Rectangle());
             previewButton = new Button(GraphUtils.GetTexture(g, Color.Blue), new Rectangle());
             playButton = new Button(GraphUtils.GetTexture(g, Color.Red), new Rectangle());
+            cancelVideoGenButton = new Button(GraphUtils.GetTexture(g, Color.Green), new Rectangle());
             cancelEditButton = new Button(Settings.cancelEditTexture, new Rectangle());
             panel = new SlidingPanel(Settings.panelTexture, new Rectangle(), new Rectangle(), 500.0);
         }
@@ -418,11 +440,20 @@ namespace GameLogic
 
 
 
-        public void PanelDraw(SpriteBatch batch, GameTime gameTime, InputState state)
+        public void PanelDraw(SpriteBatch batch, GameTime gameTime, InputState state, bool videoGenerating)
         {
             panel.Draw(batch, gameTime, state);
             var panelBounds = panel.GetBounds(state);
-            editEquationButton.bounds = FRect(panelBounds.X + panelBounds.Width * .1f, panelBounds.Y + panelBounds.Height * .25f, panelBounds.Width * .1f, panelBounds.Height * .5f);
+            var leftButtonBounds = FRect(panelBounds.X + panelBounds.Width * .1f, panelBounds.Y + panelBounds.Height * .25f, panelBounds.Width * .1f, panelBounds.Height * .5f);
+
+            if (videoGenerating)
+            {
+                cancelVideoGenButton.bounds = leftButtonBounds;
+                cancelVideoGenButton.Draw(batch, gameTime);
+                return;
+            }
+
+            editEquationButton.bounds = leftButtonBounds;
             editEquationButton.Draw(batch, gameTime);
 
             if (video)
@@ -447,14 +478,21 @@ namespace GameLogic
                 frameIndex = videoFrames.Length - backIndex - 1;
             }
             batch.Draw(videoFrames[frameIndex], bounds, Color.White);
-            PanelDraw(batch, gameTime, state);
+            PanelDraw(batch, gameTime, state, false);
         }
 
         public void ZoomDraw(SpriteBatch batch, GraphicsDevice g, GameWindow w, GameTime gameTime, InputState state)
         {
             batch.Draw(smallImage, bounds, Color.White);
             batch.Draw(bigImage, bounds, Color.White);
-            PanelDraw(batch, gameTime, state);
+            PanelDraw(batch, gameTime, state, false);
+        }
+
+        public void VideoGeneratingDraw(SpriteBatch batch, GraphicsDevice g, GameWindow w, GameTime gameTime, InputState state)
+        {
+            batch.Draw(smallImage, bounds, Color.White);
+            batch.Draw(bigImage, bounds, Color.White);
+            PanelDraw(batch, gameTime, state, true);
         }
 
 
@@ -466,9 +504,9 @@ namespace GameLogic
             textBox.SetNewBounds(textBounds);
             injectButton.bounds = FRect(bounds.X + bounds.Width * .025, bounds.Y + bounds.Height * .9, bounds.Width * .1, bounds.Height * .1);
             saveEquationButton.bounds = FRect(textBounds.X, bounds.Height * .9f, bounds.Width * .1f, bounds.Height * .05f);
-            previewButton.bounds = FRect(textBounds.X + textBounds.Width * 0.4f, bounds.Height * .9f, bounds.Width * .1f, bounds.Height * .05f);
-
+            previewButton.bounds = FRect(textBounds.X + textBounds.Width * 0.4f, bounds.Height * .9f, bounds.Width * .1f, bounds.Height * .05f);            
             cancelEditButton.bounds = FRect(textBounds.X + textBounds.Width - bounds.Width * .1f, bounds.Height * .9f, bounds.Width * .1f, bounds.Height * .05f);
+            
 
             panel.activeBounds = FRect(0, bounds.Height * .85f, bounds.Width, bounds.Height * .15f);
             panel.hiddenBounds = FRect(0, bounds.Height * 1.001, bounds.Width, bounds.Height * .15f);
@@ -566,30 +604,30 @@ namespace GameLogic
             int w, int h,
             int start, int end,
             float t)
-        {            
+        {
+            var ct = imageCancellationSource.Token;
             return  await Task.Run(() =>
             {
                 Color[] colors = new Color[(end-start) * w];
                 switch (type)
                 {
                     case PicType.RGB:
-                        RGBToTexture(w, h, start, end, t, colors);
+                        RGBToTexture(w, h, start, end, t, colors,ct);
                         break;
                     case PicType.HSV:
-                        HSVToTexture(w, h, start, end, t, colors);
+                        HSVToTexture(w, h, start, end, t, colors,ct);
                         break;
                     case PicType.GRADIENT: 
-                        GradientToTexture(w, h, start, end, t, colors);
+                        GradientToTexture(w, h, start, end, t, colors,ct);
                         break;
-                    default:
-                        Console.ReadLine();
+                    default:                        
                         throw new Exception("wat");
                 }
                 return new TextureData { colors = colors, start = start, end = end } ;
-            });
+            },ct);
         }
 
-        private void RGBToTexture(int w, int h, int start, int end, float t, Color[] colors)
+        private void RGBToTexture(int w, int h, int start, int end, float t, Color[] colors,CancellationToken ct)
         {
             unsafe
             {
@@ -601,6 +639,7 @@ namespace GameLogic
 
                 for (int y = start; y < end; y++)
                 {
+
                     float yf = ((float)y / (float)h) * 2.0f - 1.0f;
                     int yw = (y - start) * w;
                     for (int x = 0; x < w; x++)
@@ -611,12 +650,13 @@ namespace GameLogic
                         var bf = Wrap0To1(Machines[2].Execute(xf, yf, t, bStack) * scale + scale);
                         colors[yw + x] = new Color(rf, gf, bf);
                     }
+                    ct.ThrowIfCancellationRequested();
                 }
             }
         }
 
 
-        private void GradientToTexture(int w, int h, int start, int end, float t, Color[] colors)
+        private void GradientToTexture(int w, int h, int start, int end, float t, Color[] colors,CancellationToken ct)
         {
             unsafe
             {
@@ -660,11 +700,12 @@ namespace GameLogic
                         colors[yw + x] = Color.Lerp(c1, c2, pct);
 
                     }
+                    ct.ThrowIfCancellationRequested();
                 }
             }
         }
 
-        private void HSVToTexture(int width, int height, int start, int end, float t, Color[] colors)
+        private void HSVToTexture(int width, int height, int start, int end, float t, Color[] colors,CancellationToken ct)
         {
             unsafe
             {
@@ -687,6 +728,7 @@ namespace GameLogic
                         var (rf, gf, bf) = HSV2RGB(h, s, v);
                         colors[yw + x] = new Color(rf, gf, bf);
                     }
+                    ct.ThrowIfCancellationRequested();
 
                 }
             }
@@ -698,16 +740,8 @@ namespace GameLogic
             return v % 1.0001f;
         }
 
-        public void Dispose()
+        public void ClearVideo()
         {
-            if (bigImage != null && !bigImage.IsDisposed)
-            {
-                bigImage.Dispose();
-            }
-            if (smallImage != null && !smallImage.IsDisposed)
-            {
-                smallImage.Dispose();
-            }
             if (videoFrames != null)
             {
                 foreach (var frame in videoFrames)
@@ -718,6 +752,20 @@ namespace GameLogic
                     }
                 }
             }
+            videoFrames = null;
+        }
+        public void Dispose()
+        {
+            if (bigImage != null && !bigImage.IsDisposed)
+            {
+                bigImage.Dispose();
+            }
+            if (smallImage != null && !smallImage.IsDisposed)
+            {
+                smallImage.Dispose();
+            }
+            ClearVideo();
+            
         }
     }
 }
