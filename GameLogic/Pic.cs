@@ -6,9 +6,7 @@ using static GameLogic.GraphUtils;
 using static GameLogic.ColorTools;
 using System.Threading.Tasks;
 using Microsoft.Xna.Framework.Input;
-using System.Collections.Generic;
 using System.Diagnostics;
-using System.Threading;
 
 namespace GameLogic
 {
@@ -25,13 +23,9 @@ namespace GameLogic
     public class Pic : IDisposable
     {
 
-        public Rectangle bounds;
-
-        private Task<TextureData> videoFrameTasks;
-        public Texture2D[] videoFrames;
-        private Task<TextureData> smallImageTask;
-        private Texture2D smallImage;
-        private Queue<Task<TextureData>> bigImageTasks;
+        public Rectangle bounds;        
+        public Texture2D[] videoFrames;        
+        private Texture2D smallImage;        
         private Texture2D bigImage;
 
 
@@ -188,64 +182,105 @@ namespace GameLogic
             Machines = new StackMachine[3];
         }
 
-
-        public Texture2D GetSmallImage(GraphicsDevice g, GameWindow w)
-        {
-            if (smallImageTask != null && smallImageTask.IsCompleted)
-            {
-                smallImage.Dispose(); // dispose of the old texture
-                smallImage = new Texture2D(g, bounds.Width, bounds.Height,false,SurfaceFormat.Color);
-                var colors = smallImageTask.Result.colors;
-                Debug.Assert(colors.Length == smallImage.Width * smallImage.Height);
-                smallImage.SetData(colors);                  
-                smallImageTask = null;
-            }
-            return smallImage;
-        }
-
-        public void GenBigImageTasks()
+       
+        public void GenBigImage()
         {
             int chunkSize = Math.Min(64, bounds.Height);
-            int lineCount = 0;
-            bigImageTasks = new Queue<Task<TextureData>>(8);
-
+            int lineCount = 0;           
             while (lineCount < bounds.Height)
             {
-                bigImageTasks.Enqueue(ImageGenAsync(bounds.Width, bounds.Height, lineCount, lineCount + chunkSize,-1.0f));
+                ImageGenAsync(bounds.Width, bounds.Height, lineCount, lineCount + chunkSize, -1.0f).ContinueWith(task =>
+                 {
+                     if (bigImage.Width != bounds.Width || bigImage.Height != bounds.Height)
+                     {
+                         bigImage.Dispose();
+                         bigImage = new Texture2D(g, bounds.Width, bounds.Height, false, SurfaceFormat.Color);
+                         bigImage.SetData(new Color[bigImage.Width * bigImage.Height]); //will be transparent so smallImage will show beneath
+                     }
+                     
+                    var imageData = task.Result;
+                    var start = imageData.start;
+                    var len = imageData.end - imageData.start;
+                    bigImage.SetData(0, new Rectangle(0, imageData.start, bigImage.Width, len), imageData.colors, 0, imageData.colors.Length);
+                                          
+                 });
                 lineCount += chunkSize;
-                chunkSize = (int)(chunkSize* 1.5);
+                chunkSize = (int)(chunkSize* 2);
                 chunkSize = Math.Min(chunkSize, bounds.Height - lineCount);
             }
 
         }
+     
 
-        public Texture2D GetBigImage(GraphicsDevice g, GameWindow w)
+        public void GenSmallImage()
         {
-            if (bigImage.Width != bounds.Width || bigImage.Height != bounds.Height)
+            ImageGenAsync(bounds.Width, bounds.Height, 0, bounds.Height, -1.0f).ContinueWith(t =>
+             {
+                 smallImage.Dispose(); // dispose of the old texture
+                 smallImage = new Texture2D(g, bounds.Width, bounds.Height, false, SurfaceFormat.Color);
+                 var colors = t.Result.colors;
+                 Debug.Assert(colors.Length == smallImage.Width * smallImage.Height);
+                 smallImage.SetData(colors);                 
+             });
+        }
+        
+        public void GenVideoRec(GameState state, int w, int h,int index, float t)
+        {
+            const int frameCount = Settings.FPS * Settings.VIDEO_LENGTH;
+            if (index == frameCount) return;
+            var cpuCount = Environment.ProcessorCount;
+            if (index == 0) cpuCount = Math.Max(cpuCount / 2,1);
+            var taskCount = Math.Min(cpuCount, frameCount - index);
+
+            var stepSize = 2.0f / frameCount;
+            var tasks = new Task<TextureData>[taskCount];
+            
+            for (int i = 0; i < taskCount; i++)
             {
-                bigImage.Dispose();                
-                bigImage = new Texture2D(g, bounds.Width, bounds.Height,false,SurfaceFormat.Color);
-                bigImage.SetData(new Color[bigImage.Width*bigImage.Height]); //will be transparent so smallImage will show beneath
+                tasks[i] = ImageGenAsync(w, h, 0, h, t);
+                t += stepSize;                
             }
-            if (bigImageTasks != null && bigImageTasks.Count > 0)
+            
+            Task.WhenAll(tasks).ContinueWith(task =>
             {
-                if (bigImageTasks.Peek().IsCompleted)
-                {
-                    var imageData = bigImageTasks.Dequeue().Result;
-                    var start = imageData.start;
-                    var len = imageData.end - imageData.start;
-                    bigImage.SetData(0, new Rectangle(0, imageData.start, bigImage.Width, len), imageData.colors, 0, imageData.colors.Length);
+                var frameDatas = task.Result;
+                foreach (var frameData in frameDatas) {                    
+                    var start = frameData.start;
+                    var len = frameData.end - frameData.start;
+                    videoFrames[index].SetData(0, new Rectangle(0, frameData.start, w, len), frameData.colors, 0, frameData.colors.Length);
+                    index++;
+                    Transition.AddProgress(1);
                 }
-            }
-            return bigImage;
+                GenVideoRec(state, w, h, index, t);
+
+            });
         }
 
-        public void GenSmallImageTask()
+        public void GenVideo(GameState state, int w, int h)
         {
-            smallImageTask = ImageGenAsync(bounds.Width, bounds.Height, 0, bounds.Height,-1.0f);                                    
-        }
+            const int frameCount = Settings.FPS * Settings.VIDEO_LENGTH;
+            Transition.StartTransition(state, Screen.VIDEO_PLAYING, frameCount);
+            //clear all old video textures
+            if (videoFrames != null)
+            {
+                foreach (var frame in videoFrames)
+                {
+                    frame.Dispose();
+                }
+                videoFrames = null;
+            }
+            videoFrames = new Texture2D[frameCount];
+            for (int i = 0; i < videoFrames.Length; i++)
+            {
+                videoFrames[i] = new Texture2D(g, w, h, false, SurfaceFormat.Color);
+            }
+            
 
-             
+            float t = -1.0f;
+            GenVideoRec(state, w, h,0, t);
+                                     
+        }
+       
         public bool WasLeftClicked(InputState state)
         {
             if (state.prevMouseState.LeftButton == ButtonState.Pressed && state.mouseState.LeftButton == ButtonState.Released)
@@ -359,28 +394,23 @@ namespace GameLogic
 
         public void Draw(SpriteBatch batch, GraphicsDevice g, GameWindow w, GameTime gameTime, InputState state)
         {
-            // only draw if the tex is ready
-            batch.Begin();
+            // only draw if the tex is ready            
             if (selected)
             {
                 Rectangle rect = new Rectangle(bounds.X - 5, bounds.Y - 5, bounds.Width + 10, bounds.Height + 10);
                 batch.Draw(Settings.selectedTexture, rect, Color.White);
-            }
-            batch.End();
-            var tex = GetSmallImage(g, w);
-            batch.Begin();
-            batch.Draw(tex, bounds, Color.White);
+            }                                    
+            batch.Draw(smallImage, bounds, Color.White);
             if (bounds.Contains(state.mouseState.Position))
             {
                 injectButton.Draw(batch, gameTime);
-            }
-            batch.End();
+            }            
 
         }
 
         public void EditDraw(SpriteBatch batch, GraphicsDevice g, GameWindow w, GameTime gameTime)
         {
-            batch.Draw(GetBigImage(g, w), bounds, Color.White);
+            batch.Draw(bigImage, bounds, Color.White);
             textBox.Draw(batch, gameTime);
             saveEquationButton.Draw(batch, gameTime);
             cancelEditButton.Draw(batch, gameTime);
@@ -422,8 +452,8 @@ namespace GameLogic
 
         public void ZoomDraw(SpriteBatch batch, GraphicsDevice g, GameWindow w, GameTime gameTime, InputState state)
         {
-            batch.Draw(GetSmallImage(g, w), bounds, Color.White);
-            batch.Draw(GetBigImage(g, w), bounds, Color.White);
+            batch.Draw(smallImage, bounds, Color.White);
+            batch.Draw(bigImage, bounds, Color.White);
             PanelDraw(batch, gameTime, state);
         }
 
@@ -505,31 +535,7 @@ namespace GameLogic
             }
         }
 
-        public void GenerateVideo(int w, int h)
-        {
-            //clear all old video textures
-            if (videoFrames != null)
-            {
-                foreach (var frame in videoFrames)
-                {
-                    frame.Dispose();
-                }
-                videoFrames = null;
-            }
-            //5 seconds at 30fps
-            const int frameCount = Settings.FPS * Settings.VIDEO_LENGTH;
-            videoFrames = new Texture2D[frameCount];
-            var stepSize = 2.0f / frameCount;
-            float t = -1.0f;
-            for (int i = 0; i < videoFrames.Length; i++)
-            {
-                int index = i;
-                float time = t;
-               // var frameTask = GetTextureDataAsync(w, h, 0, h, time);
-                Transition.AddProgress(1.0f / frameCount);
-                t += stepSize;
-            }
-        }
+       
 
 
         public Pic Mutate(Random r)
@@ -585,22 +591,26 @@ namespace GameLogic
 
         private void RGBToTexture(int w, int h, int start, int end, float t, Color[] colors)
         {
-            const float scale = 0.5f;
-            var rStack = new float[Machines[0].nodeCount];            
-            var gStack = new float[Machines[1].nodeCount];
-            var bStack = new float[Machines[2].nodeCount];
-
-            for (int y = start; y < end; y++)
+            unsafe
             {
-                float yf = ((float)y / (float)h) * 2.0f - 1.0f;
-                int yw = (y-start)*w;
-                for (int x = 0; x < w; x++)
+                const float scale = 0.5f;
+                
+                var rStack = stackalloc float[Machines[0].nodeCount];
+                var gStack = stackalloc float[Machines[1].nodeCount];
+                var bStack = stackalloc float[Machines[2].nodeCount];
+
+                for (int y = start; y < end; y++)
                 {
-                    float xf = ((float)x / (float)w) * 2.0f - 1.0f;
-                    var rf = Wrap0To1(Machines[0].Execute(xf, yf, t, rStack) * scale + scale);
-                    var gf = Wrap0To1(Machines[1].Execute(xf, yf, t, gStack) * scale + scale);
-                    var bf = Wrap0To1(Machines[2].Execute(xf, yf, t, bStack) * scale + scale);
-                    colors[yw + x] = new Color(rf, gf, bf);
+                    float yf = ((float)y / (float)h) * 2.0f - 1.0f;
+                    int yw = (y - start) * w;
+                    for (int x = 0; x < w; x++)
+                    {
+                        float xf = ((float)x / (float)w) * 2.0f - 1.0f;
+                        var rf = Wrap0To1(Machines[0].Execute(xf, yf, t, rStack) * scale + scale);
+                        var gf = Wrap0To1(Machines[1].Execute(xf, yf, t, gStack) * scale + scale);
+                        var bf = Wrap0To1(Machines[2].Execute(xf, yf, t, bStack) * scale + scale);
+                        colors[yw + x] = new Color(rf, gf, bf);
+                    }
                 }
             }
         }
@@ -608,71 +618,77 @@ namespace GameLogic
 
         private void GradientToTexture(int w, int h, int start, int end, float t, Color[] colors)
         {
-            const float scale = 0.5f;
-            var hStack = new float[Machines[0].nodeCount];
-            var sStack = new float[Machines[1].nodeCount];
-            var vStack = new float[Machines[2].nodeCount];
-
-            for (int y = start; y < end; y++)
+            unsafe
             {
-                float yf = ((float)y / (float)h) * 2.0f - 1.0f;
-                int yw = (y-start) * w;
-                for (int x = 0; x < w; x++)
+                const float scale = 0.5f;
+                var hStack = stackalloc float[Machines[0].nodeCount];
+                var sStack = stackalloc float[Machines[1].nodeCount];
+                var vStack = stackalloc float[Machines[2].nodeCount];
+
+                for (int y = start; y < end; y++)
                 {
-                    float xf = ((float)x / (float)w) * 2.0f - 1.0f;
-                    var hueIndex = Machines[0].Execute(xf, yf, t, hStack);
-                    hueIndex = MathUtils.WrapMinMax(hueIndex, -1.0f, 1.0f);
-                    int i = 0;
-                    for (; i < pos.Length - 1; i++)
+                    float yf = ((float)y / (float)h) * 2.0f - 1.0f;
+                    int yw = (y - start) * w;
+                    for (int x = 0; x < w; x++)
                     {
-                        if (hueIndex >= pos[i] && hueIndex <= pos[i + 1])
+                        float xf = ((float)x / (float)w) * 2.0f - 1.0f;
+                        var hueIndex = Machines[0].Execute(xf, yf, t, hStack);
+                        hueIndex = MathUtils.WrapMinMax(hueIndex, -1.0f, 1.0f);
+                        int i = 0;
+                        for (; i < pos.Length - 1; i++)
                         {
-                            break;
+                            if (hueIndex >= pos[i] && hueIndex <= pos[i + 1])
+                            {
+                                break;
+                            }
                         }
+                        var s = Machines[1].Execute(xf, yf, t, sStack) * scale + scale;
+                        var v = Machines[2].Execute(xf, yf, t, vStack) * scale + scale;
+
+                        var f1 = hues[i];
+                        var f2 = hues[(i + 1) % hues.Length];
+
+                        float posDiff = hueIndex - pos[i];
+                        float totalDiff = pos[(i + 1) % hues.Length] - pos[i];
+                        float pct = posDiff / totalDiff;
+
+                        var (c1r, c1g, c1b) = HSV2RGB(f1, s, v);
+                        var (c2r, c2g, c2b) = HSV2RGB(f2, s, v);
+                        var c1 = new Color(c1r, c1g, c1b);
+                        var c2 = new Color(c2r, c2g, c2b);
+
+                        colors[yw + x] = Color.Lerp(c1, c2, pct);
+
                     }
-                    var s = Machines[1].Execute(xf, yf, t, sStack) * scale + scale;
-                    var v = Machines[2].Execute(xf, yf, t, vStack) * scale + scale;
-
-                    var f1 = hues[i];
-                    var f2 = hues[(i + 1) % hues.Length];
-
-                    float posDiff = hueIndex - pos[i];
-                    float totalDiff = pos[(i + 1) % hues.Length] - pos[i];
-                    float pct = posDiff / totalDiff;
-
-                    var (c1r, c1g, c1b) = HSV2RGB(f1, s, v);
-                    var (c2r, c2g, c2b) = HSV2RGB(f2, s, v);
-                    var c1 = new Color(c1r, c1g, c1b);
-                    var c2 = new Color(c2r, c2g, c2b);
-
-                    colors[yw + x] = Color.Lerp(c1, c2, pct);
-
                 }
             }
         }
 
         private void HSVToTexture(int width, int height, int start, int end, float t, Color[] colors)
         {
-            const float scale = 0.5f;
-
-            var hStack = new float[Machines[0].nodeCount];
-            var sStack = new float[Machines[1].nodeCount];
-            var vStack = new float[Machines[2].nodeCount];
-
-            for (int y = start; y < end; y++)
+            unsafe
             {
-                float yf = ((float)y / (float)height) * 2.0f - 1.0f;
-                int yw = (y-start) * width;
-                for (int x = 0; x < width; x++)
-                {
-                    float xf = ((float)x / (float)width) * 2.0f - 1.0f;
-                    var h = Wrap0To1(Machines[0].Execute(xf, yf, t, hStack) * scale + scale);
-                    var s = Wrap0To1(Machines[1].Execute(xf, yf, t, sStack) * scale + scale);
-                    var v = Wrap0To1(Machines[2].Execute(xf, yf, t, vStack) * scale + scale);
-                    var (rf, gf, bf) = HSV2RGB(h, s, v);
-                    colors[yw + x] = new Color(rf, gf, bf);
-                }
+                const float scale = 0.5f;
 
+                var hStack = stackalloc float[Machines[0].nodeCount];
+                var sStack = stackalloc float[Machines[1].nodeCount];
+                var vStack = stackalloc float[Machines[2].nodeCount];
+
+                for (int y = start; y < end; y++)
+                {
+                    float yf = ((float)y / (float)height) * 2.0f - 1.0f;
+                    int yw = (y - start) * width;
+                    for (int x = 0; x < width; x++)
+                    {
+                        float xf = ((float)x / (float)width) * 2.0f - 1.0f;
+                        var h = Wrap0To1(Machines[0].Execute(xf, yf, t, hStack) * scale + scale);
+                        var s = Wrap0To1(Machines[1].Execute(xf, yf, t, sStack) * scale + scale);
+                        var v = Wrap0To1(Machines[2].Execute(xf, yf, t, vStack) * scale + scale);
+                        var (rf, gf, bf) = HSV2RGB(h, s, v);
+                        colors[yw + x] = new Color(rf, gf, bf);
+                    }
+
+                }
             }
 
         }

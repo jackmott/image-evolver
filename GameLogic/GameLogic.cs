@@ -1,11 +1,7 @@
 ﻿// todo - handle typing beyond edge of text box
-// todo - transition / hourglass animation while processing videos
-// todo - System argument exception in monogame on right click to zoom
-// todo System aggregat exception on right click to zoom
 // todo - consider filter nodes attached to top level pic nodes (sepia, etc)
-// todo - inexplicable array index out of bounds exceptions in stackmachine execute
-// todo - investigate very and horiz lines popping up too much
-// todo - make some tests for the breeding process
+// todo - video need to cancel
+// todo - video needs to remember it exists already
 // todo - does breed handle warp properly? I think not
 
 using Microsoft.Xna.Framework;
@@ -19,58 +15,50 @@ using Microsoft.Xna.Framework.Content;
 using System.Runtime.Serialization;
 using System.Xml;
 using static GameLogic.GraphUtils;
+using System.Threading;
 
 namespace GameLogic
 {
     //Used when transitioning from one state to another that will take time
     public static class Transition
     {
-        public static object Lock = new object();
         //1 to 100000                
-        public static float progress;
+        public static int progress;
+        public static int goal;
         public static Screen currentScreen;
         public static Screen nextScreen;
 
-        public static void StartTransition(GameState state,Screen to)
+
+        public static void StartTransition(GameState state, Screen to, int thegoal)
         {
             currentScreen = state.screen;
-            state.screen = Screen.TRANSITION;            
+            state.screen = Screen.TRANSITION;
             nextScreen = to;
-            progress = 0.0f;
+            progress = 0;
+            goal = thegoal;
         }
 
-        public static void AddProgress(float amount)
+        public static void AddProgress(int amount)
         {
-            lock (Lock)
-            {
-                progress += amount;
-            }
-        }
-
-        public static void Complete()
-        {
-            lock (Lock)
-            {
-                progress = 1.0f;
-            }
+            Interlocked.Add(ref progress, amount);
         }
 
         public static void Update(GameState state)
         {
-           
-                if (progress >= 1.0f)
-                {
-                    state.screen = nextScreen;
-                }
-           
+            if (progress == goal)
+            {
+                state.screen = nextScreen;
+            }
         }
-        public static void Draw(SpriteBatch b,GraphicsDevice g, GameTime gametime)
+        public static void Draw(SpriteBatch b, GraphicsDevice g, GameTime gametime)
         {
             int winW = g.Viewport.Width;
             int winH = g.Viewport.Height;
+            float pct = (float)progress/(float)goal;
+            
             Rectangle rect = CenteredRect(new Rectangle(0, 0, winW, winH), winW / 4, winH / 20);
             b.Begin();            
-                ProgressBar.Draw(b, g, rect, Color.Cyan, Color.Blue,progress);            
+            ProgressBar.Draw(b, g, rect, Color.Cyan, Color.Blue, pct);
             b.End();
         }
     }
@@ -79,7 +67,7 @@ namespace GameLogic
     {
         public GameState state;
 
-        
+
         public GameState SetState(string xml)
         {
             using (XmlReader reader = XmlReader.Create(new StringReader(xml)))
@@ -142,7 +130,7 @@ namespace GameLogic
             //Console.ReadLine();
 
 
-            state.populationSize = Settings.POP_SIZE_COLUMNS * (Math.Max(Settings.POP_SIZE_COLUMNS - 1,1));            
+            state.populationSize = Settings.POP_SIZE_COLUMNS * (Math.Max(Settings.POP_SIZE_COLUMNS - 1, 1));
             Random r = state.r;
             state.pictures = GenPics(r);
             LayoutUI();
@@ -159,7 +147,7 @@ namespace GameLogic
 
 
             state.undoButton = new Button(GetTexture(g, Color.White), FRect(winW * .01f, winH * .91f, winW * .1f, winH * 0.05f));
-            state.reRollButton = new Button(GetTexture(g, Color.Blue), FRect(winW * .201f, winH * .91f, winW * .1f,winH * 0.05f));
+            state.reRollButton = new Button(GetTexture(g, Color.Blue), FRect(winW * .201f, winH * .91f, winW * .1f, winH * 0.05f));
             state.evolveButton = new Button(GetTexture(g, Color.Red), FRect(winW * .401f, winH * .91f, winW * .1f, winH * 0.05f));
             state.videoModeButton = new ToggleButton(GetTexture(g, Color.Green), GetTexture(g, Color.DarkGreen), FRect(winW * .601f, winH * .91f, winW * .1f, winH * 0.05f));
 
@@ -171,7 +159,7 @@ namespace GameLogic
             int vSpace = (int)(winH * Settings.VERTICAL_SPACING);
 
             int numPerRow = Settings.POP_SIZE_COLUMNS;
-            int numPerColumn = Math.Max(1,Settings.POP_SIZE_COLUMNS - 1);
+            int numPerColumn = Math.Max(1, Settings.POP_SIZE_COLUMNS - 1);
             int spaceRemaining = winW - hSpace * (numPerRow + 1);
             int picW = spaceRemaining / numPerRow;
 
@@ -193,15 +181,16 @@ namespace GameLogic
                         if (state.pictures[index].bounds != newBounds)
                         {
                             state.pictures[index].SetNewBounds(newBounds);
-                            state.pictures[index].GenSmallImageTask();
+                            state.pictures[index].GenSmallImage();
                         }
                     }
                     else
                     {
                         var newBounds = new Rectangle(0, 0, state.g.Viewport.Width, state.g.Viewport.Height);
-                        if (state.zoomedPic.bounds != newBounds) {
+                        if (state.zoomedPic.bounds != newBounds)
+                        {
                             state.zoomedPic.SetNewBounds(newBounds);
-                            state.zoomedPic.GenBigImageTasks();
+                            state.zoomedPic.GenBigImage();
                         }
                     }
                     index++;
@@ -251,16 +240,16 @@ namespace GameLogic
 
 
         public void EditDraw(SpriteBatch batch, GameTime gameTime)
-        {            
+        {
             batch.Begin();
-            state.zoomedPic.EditDraw(batch,state.g,state.w,gameTime);
+            state.zoomedPic.EditDraw(batch, state.g, state.w, gameTime);
             batch.End();
         }
 
         public void ZoomDraw(SpriteBatch batch, GameTime gameTime)
-        {            
+        {
             batch.Begin();
-            state.zoomedPic.ZoomDraw(batch,state.g,state.w, gameTime,state.inputState);
+            state.zoomedPic.ZoomDraw(batch, state.g, state.w, gameTime, state.inputState);
             batch.End();
         }
 
@@ -281,19 +270,19 @@ namespace GameLogic
             state.undoButton.Draw(batch, gameTime);
             state.reRollButton.Draw(batch, gameTime);
             state.evolveButton.Draw(batch, gameTime);
-            state.videoModeButton.Draw(batch, gameTime,state.videoMode);
-            batch.End();
+            state.videoModeButton.Draw(batch, gameTime, state.videoMode);
+
 
             foreach (var pic in state.pictures)
             {
-                pic.Draw(batch,state.g,state.w, gameTime,state.inputState);
+                pic.Draw(batch, state.g, state.w, gameTime, state.inputState);
             }
-            
+            batch.End();
 
         }
 
         public GameState Update(GameTime gameTime)
-        {            
+        {
             if (state.screen == Screen.TRANSITION)
             {
                 Transition.Update(state);
@@ -308,7 +297,7 @@ namespace GameLogic
                 return ZoomUpdate(gameTime);
             }
             else if (state.screen == Screen.EDIT)
-            {                
+            {
                 return EditUpdate(gameTime);
             }
 
@@ -334,15 +323,7 @@ namespace GameLogic
                 state.prevPictures = state.pictures;
                 state.pictures = null;
                 state.pictures = GenPics(r);
-                for (int i = 0; i < state.pictures.Length; i++)
-                {
-                    state.pictures[i].bounds = state.prevPictures[i].bounds;
-                }
-                ClearPics(state.prevPictures);
-                for (int i = 0; i < state.pictures.Length; i++){
-                    state.pictures[i].GenSmallImageTask();
-                }
-                //LayoutUI();
+                LayoutUI();
             }
             if (state.videoModeButton.WasLeftClicked(state.inputState))
             {
@@ -354,13 +335,13 @@ namespace GameLogic
             }
 
             if (state.evolveButton.WasLeftClicked(state.inputState))
-            {                
-                if (!Array.Exists(state.pictures,p => p.selected))
+            {
+                if (!Array.Exists(state.pictures, p => p.selected))
                 {
                     //no pics selected
                     return state;
                 }
-              
+
                 // Build the next generation of pictures
                 ClearPics(state.prevPictures);
                 state.prevPictures = state.pictures; // save the current for undo
@@ -395,8 +376,8 @@ namespace GameLogic
                 }
 
                 if (pic.injectButton.WasLeftClicked(state.inputState))
-                {                    
-                    state.pictures[i] = GenTree(r);                                        
+                {
+                    state.pictures[i] = GenTree(r);
                 }
 
                 if (pic.WasRightClicked(state.inputState))
@@ -404,7 +385,7 @@ namespace GameLogic
                     state.zoomedPic = pic;
                     pic.zoomed = true;
                     pic.SetNewBounds(new Rectangle(0, 0, state.g.Viewport.Width, state.g.Viewport.Height));
-                    pic.GenBigImageTasks();
+                    pic.GenBigImage();
                     state.screen = Screen.ZOOM;
                 }
             }
@@ -417,7 +398,7 @@ namespace GameLogic
             state.zoomedPic.textBox.Update(state.inputState, gameTime);
             if (state.zoomedPic.cancelEditButton.WasLeftClicked(state.inputState))
             {
-                
+
                 state.screen = Screen.ZOOM;
                 state.zoomedPic.textBox.SetActive(false);
                 state.zoomedPic.textBox.SetText(state.zoomedPic.ToLisp());
@@ -437,7 +418,7 @@ namespace GameLogic
                     state.zoomedPic.type = p.type;
                     state.zoomedPic.hues = p.hues;
                     state.zoomedPic.pos = p.pos;
-                    state.zoomedPic.textBox.SetText(state.zoomedPic.ToLisp());                    
+                    state.zoomedPic.textBox.SetText(state.zoomedPic.ToLisp());
                     state.screen = Screen.ZOOM;
                     state.zoomedPic.textBox.SetActive(false);
                 }
@@ -452,14 +433,14 @@ namespace GameLogic
 
                 state.zoomedPic.textBox.error = null;
             }
-           
+
             return state;
         }
 
         public GameState ZoomUpdate(GameTime gameTime)
         {
-            
-            
+
+
             if (state.zoomedPic.editEquationButton.WasLeftClicked(state.inputState))
             {
                 state.screen = Screen.EDIT;
@@ -469,15 +450,13 @@ namespace GameLogic
             }
 
             if (state.zoomedPic.previewButton.WasLeftClicked(state.inputState))
-            {
-                Transition.StartTransition(state, Screen.VIDEO_PLAYING);
-                state.zoomedPic.GenerateVideo(Settings.PREVIEW_VIDEO_WIDTH, Settings.PREVIEW_VIDEO_HEIGHT);
+            {                
+                state.zoomedPic.GenVideo(state,Settings.PREVIEW_VIDEO_WIDTH, Settings.PREVIEW_VIDEO_HEIGHT);
             }
 
             if (state.zoomedPic.playButton.WasLeftClicked(state.inputState))
-            {
-                Transition.StartTransition(state, Screen.VIDEO_PLAYING);
-                state.zoomedPic.GenerateVideo(state.zoomedPic.bounds.Width,state.zoomedPic.bounds.Height);
+            {                
+                state.zoomedPic.GenVideo(state, state.zoomedPic.bounds.Width, state.zoomedPic.bounds.Height);
             }
 
             if (state.zoomedPic.WasRightClicked(state.inputState))
@@ -488,8 +467,8 @@ namespace GameLogic
                 LayoutUI();
                 return state;
             }
-           
-            
+
+
 
             return state;
         }
@@ -507,12 +486,12 @@ namespace GameLogic
             while (root.AddLeaf(new AptNode { type = NodeType.CONSTANT, value = (float)r.NextDouble() * 2.0f - 1.0f })) { }
             //while (root.AddLeaf(new AptNode { type = NodeType.CONSTANT, value = 0.5f })) { }
 
-            int chooser = r.Next(0, 3);            
+            int chooser = r.Next(0, 3);
             Pic p;
-           // chooser = 0;
+            // chooser = 0;
             if (chooser == 0)
             {
-                p = new Pic(PicType.RGB, r, Settings.MIN_GEN_SIZE, Settings.MAX_GEN_SIZE, state.g, state.w,state.videoMode);
+                p = new Pic(PicType.RGB, r, Settings.MIN_GEN_SIZE, Settings.MAX_GEN_SIZE, state.g, state.w, state.videoMode);
             }
             else if (chooser == 1)
             {
@@ -537,17 +516,16 @@ namespace GameLogic
 
         public Pic GenTree(Random r)
         {
-            int chooser = r.Next(0, 3);
-            chooser = 0;
+            int chooser = r.Next(0, 3);            
             PicType type = (PicType)chooser;
-          
-            return new Pic(type, r, Settings.MIN_GEN_SIZE,Settings.MAX_GEN_SIZE,state.g, state.w, state.videoMode);
+
+            return new Pic(type, r, Settings.MIN_GEN_SIZE, Settings.MAX_GEN_SIZE, state.g, state.w, state.videoMode);
         }
 
         public void ClearPics(Pic[] pics)
         {
             if (pics == null) return;
-            for (int i = 0; i < pics.Length;i++)
+            for (int i = 0; i < pics.Length; i++)
             {
                 if (pics[i] != null)
                 {
@@ -555,7 +533,7 @@ namespace GameLogic
                     pics[i] = null;
                 }
             }
-            
+
         }
 
         public Pic[] GenPics(Random r)
@@ -564,12 +542,12 @@ namespace GameLogic
             Pic[] pics = new Pic[state.populationSize];
             for (int i = 0; i < state.populationSize; i++)
             {
-                pics[i] = GenTree(r);  
+                pics[i] = GenTree(r);
             }
             return pics;
         }
 
-      
+
     }
 }
 

@@ -140,11 +140,7 @@ namespace GameLogic
                     logic.LayoutUI();
                 }
 
-                foreach (var p in state.pictures)
-                {
-                    var tex = p.GetSmallImage(g, w);
-
-                }
+              
                 
                 //Thread.Sleep(500);
                 
