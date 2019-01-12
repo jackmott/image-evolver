@@ -1,7 +1,7 @@
 ﻿// todo - handle typing beyond edge of text box
 // todo - consider filter nodes attached to top level pic nodes (sepia, etc)
 // todo - does breed handle warp properly? I think not
-
+// todo - breeding kills the video state
 
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
