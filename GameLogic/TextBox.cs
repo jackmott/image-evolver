@@ -83,7 +83,9 @@ namespace GameLogic
             if (TextUtils.IsKey(Keys.Up, state) ||
                 TextUtils.IsKey(Keys.Down, state) ||
                 TextUtils.IsKey(Keys.Left, state) ||
-                TextUtils.IsKey(Keys.Right, state))
+                TextUtils.IsKey(Keys.Right, state) ||
+                TextUtils.IsKey(Keys.Home, state) ||
+              TextUtils.IsKey(Keys.End, state))
             {
 
 
@@ -109,7 +111,9 @@ namespace GameLogic
             if (TextUtils.IsKey(Keys.Up, state) ||
               TextUtils.IsKey(Keys.Down, state) ||
               TextUtils.IsKey(Keys.Left, state) ||
-              TextUtils.IsKey(Keys.Right, state))
+              TextUtils.IsKey(Keys.Right, state) ||
+              TextUtils.IsKey(Keys.Home, state) ||
+              TextUtils.IsKey(Keys.End, state))
             {
 
                 if (TextUtils.IsShift(state))
@@ -227,6 +231,11 @@ namespace GameLogic
             if (p.X < 0) p.X = 0;
             if (p.X > contents[p.Y].Length - 1) p.X = contents[p.Y].Length - 1;
             return p;
+        }
+
+        public int MaxLetters()
+        {
+            return (int)(bounds.Width / letterSize.X);
         }
 
         public void HandleMouse(InputState state)
@@ -393,6 +402,10 @@ namespace GameLogic
         }
 
 
+        private void addLetter(char c, int y)
+        {
+        }
+
         private void HandleInput(object sender, TextInputEventArgs e)
         {
             if (active)
@@ -414,7 +427,27 @@ namespace GameLogic
                         toInsert = e.Character.ToString();
                     }
 
-                    contents[cursorPos.Y] = contents[cursorPos.Y].Insert(cursorPos.X, toInsert);
+                    var maxLetters = MaxLetters();
+                    var curLine = contents[cursorPos.Y];
+                    curLine = curLine.Insert(cursorPos.X, toInsert).TrimEnd(' ');
+                    contents[cursorPos.Y] = curLine;
+
+                    int y = cursorPos.Y;
+                    while (curLine.Length > maxLetters)
+                    {
+                        int lastSpace = curLine.LastIndexOf(' ');
+
+                        var removed = curLine.Substring(lastSpace + 1);
+                        curLine = curLine.Remove(lastSpace + 1);
+                        contents[y] = curLine;
+                        y++;
+                        if (y >= contents.Count)
+                        {
+                            contents.Add("");
+                        }
+                        contents[y] = contents[y].Insert(0, removed);
+                        curLine = contents[y]; 
+                    }
 
 
                     cursorPos.X++;

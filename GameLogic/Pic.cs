@@ -235,7 +235,11 @@ namespace GameLogic
         public void GenVideoRec(GameState state, int w, int h,int index, float t)
         {
             const int frameCount = Settings.FPS * Settings.VIDEO_LENGTH;
+
+            //base case of the recursion, we done
             if (index == frameCount) return;
+
+            //logical core count
             var cpuCount = Environment.ProcessorCount;                                    
             var taskCount = Math.Min(cpuCount, frameCount - index);
 
@@ -247,7 +251,7 @@ namespace GameLogic
                 tasks[i] = ImageGenAsync(w, h, 0, h, t);
                 t += stepSize;                
             }
-            //var ct = videoCancellationSource.Token;          
+            // Wait until this batch is done before firing off more, so we get progress bar updates
             Task.WhenAll(tasks).ContinueWith(task =>
             {
                 var frameDatas = task.Result;
@@ -258,14 +262,16 @@ namespace GameLogic
                     index++;
                     Transition.AddProgress(1);
                 }
-                //ct.ThrowIfCancellationRequested();
                 GenVideoRec(state, w, h, index, t);
-
             }, TaskScheduler.FromCurrentSynchronizationContext());
         }
 
         public void GenVideo(GameState state, int w, int h)
         {
+            //limit to 1080p or its unbearably slow
+            if (h > 1080) h = 1080;
+            if (w > 1920) w = 1920;
+
             const int frameCount = Settings.FPS * Settings.VIDEO_LENGTH;
             Transition.StartTransition(Screen.VIDEO_PLAYING, frameCount);
             state.screen = Screen.VIDEO_GENERATING;
@@ -297,8 +303,7 @@ namespace GameLogic
             }
             
 
-            float t = -1.0f;
-            GenVideoRec(state, w, h,0, t);
+            GenVideoRec(state, w, h,0, -1.0f);
                                      
         }
        
