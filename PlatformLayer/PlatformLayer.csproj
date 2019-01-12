@@ -90,6 +90,9 @@
     <PackageReference Include="MonoGame.Framework.WindowsDX">
       <Version>3.7.1.189</Version>
     </PackageReference>
+    <PackageReference Include="SixLabors.ImageSharp">
+      <Version>1.0.0-beta0005</Version>
+    </PackageReference>
     <PackageReference Include="System.Memory">
       <Version>4.5.2</Version>
     </PackageReference>

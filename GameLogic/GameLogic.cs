@@ -455,8 +455,6 @@ namespace GameLogic
         }
         public GameState ZoomUpdate(GameTime gameTime)
         {
-
-
             if (state.zoomedPic.editEquationButton.WasLeftClicked(state.inputState))
             {
                 state.screen = Screen.EDIT;
@@ -473,6 +471,31 @@ namespace GameLogic
             if (state.zoomedPic.playButton.WasLeftClicked(state.inputState))
             {                
                 state.zoomedPic.GenVideo(state, state.zoomedPic.bounds.Width, state.zoomedPic.bounds.Height);
+            }
+
+            if (state.zoomedPic.exportGIFButton.WasLeftClicked(state.inputState))
+            {
+                var pic = state.zoomedPic;
+                var store = new FrameStore(pic.videoFrames.Length,pic.videoFrames[0].Width,pic.videoFrames[0].Height);
+                foreach (var frame in pic.videoFrames)
+                {
+                    store.PushFrame(frame);
+                }
+
+                float delay = 1.0f / Settings.FPS;
+                delay *= 100.0f;
+
+                Stream fs = new FileStream("vid.gif", FileMode.Create);
+                store.ExportGif(fs, (int)delay);
+
+            }
+            if (state.zoomedPic.exportPNGButton.WasLeftClicked(state.inputState))
+            {
+                var pic = state.zoomedPic;
+                var store = new FrameStore(1, pic.bigImage.Width, pic.bigImage.Height);
+                store.PushFrame(pic.bigImage);
+                Stream fs = new FileStream("pic.png", FileMode.Create);
+                store.ExportFrame(fs, 0);
             }
 
             if (state.zoomedPic.WasRightClicked(state.inputState))

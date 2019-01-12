@@ -25,9 +25,10 @@ namespace GameLogic
     {
 
         public Rectangle bounds;        
-        public Texture2D[] videoFrames;        
+        public Texture2D[] videoFrames;      
+ 
         private Texture2D smallImage;        
-        private Texture2D bigImage;
+        public Texture2D bigImage;
 
 
         public CancellationTokenSource imageCancellationSource;
@@ -58,6 +59,10 @@ namespace GameLogic
         public Button previewButton;
         [DataMember]
         public Button playButton;
+        [DataMember]
+        public Button exportGIFButton;
+        [DataMember]
+        public Button exportPNGButton;
         [DataMember]
         public Button saveEquationButton;
         [DataMember]
@@ -338,6 +343,8 @@ namespace GameLogic
             saveEquationButton = new Button(Settings.saveEquationTexture, new Rectangle());
             previewButton = new Button(GraphUtils.GetTexture(g, Color.Blue), new Rectangle());
             playButton = new Button(GraphUtils.GetTexture(g, Color.Red), new Rectangle());
+            exportGIFButton = new Button(GraphUtils.GetTexture(g, Color.Yellow), new Rectangle());
+            exportPNGButton = new Button(GraphUtils.GetTexture(g, Color.Yellow), new Rectangle());
             cancelVideoGenButton = new Button(GraphUtils.GetTexture(g, Color.Green), new Rectangle());
             cancelEditButton = new Button(Settings.cancelEditTexture, new Rectangle());
             panel = new SlidingPanel(Settings.panelTexture, new Rectangle(), new Rectangle(), 500.0);
@@ -445,7 +452,7 @@ namespace GameLogic
 
 
 
-        public void PanelDraw(SpriteBatch batch, GameTime gameTime, InputState state, bool videoGenerating)
+        public void PanelDraw(SpriteBatch batch, GameTime gameTime, InputState state, bool videoGenerating, bool videoPlaying)
         {
             panel.Draw(batch, gameTime, state);
             var panelBounds = panel.GetBounds(state);
@@ -470,6 +477,22 @@ namespace GameLogic
                 playButton.bounds = previewButton.bounds;
                 playButton.bounds.X += (int)(previewButton.bounds.Width * 1.1f);
                 playButton.Draw(batch, gameTime);
+
+                if (videoPlaying)
+                {
+                    exportGIFButton.bounds = playButton.bounds;
+                    exportGIFButton.bounds.X += (int)(playButton.bounds.Width * 1.1f);
+                    exportGIFButton.Draw(batch, gameTime);
+                }
+            }
+            else
+            {
+                if (bigImage != null && bigImage.Width == bounds.Width && bigImage.Height == bounds.Height)
+                {
+                    exportPNGButton.bounds = editEquationButton.bounds;
+                    exportPNGButton.bounds.X += (int)(editEquationButton.bounds.Width * 1.1f);
+                    exportPNGButton.Draw(batch, gameTime);
+                }
             }
         }
 
@@ -483,21 +506,21 @@ namespace GameLogic
                 frameIndex = videoFrames.Length - backIndex - 1;
             }
             batch.Draw(videoFrames[frameIndex], bounds, Color.White);
-            PanelDraw(batch, gameTime, state, false);
+            PanelDraw(batch, gameTime, state, false,true);
         }
 
         public void ZoomDraw(SpriteBatch batch, GraphicsDevice g, GameWindow w, GameTime gameTime, InputState state)
         {
             batch.Draw(smallImage, bounds, Color.White);
             batch.Draw(bigImage, bounds, Color.White);
-            PanelDraw(batch, gameTime, state, false);
+            PanelDraw(batch, gameTime, state, false,false);
         }
 
         public void VideoGeneratingDraw(SpriteBatch batch, GraphicsDevice g, GameWindow w, GameTime gameTime, InputState state)
         {
             batch.Draw(smallImage, bounds, Color.White);
             batch.Draw(bigImage, bounds, Color.White);
-            PanelDraw(batch, gameTime, state, true);
+            PanelDraw(batch, gameTime, state, true,false);
         }
 
 
