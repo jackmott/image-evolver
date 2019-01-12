@@ -27,13 +27,12 @@ namespace GameLogic
         public const int FPS = 30;
         public const int VIDEO_LENGTH = 5; //seconds
 
-        public static Texture2D injectTexture;
-        public static Texture2D equationTexture;
+       
         public static Texture2D selectedTexture;
-        public static Texture2D saveEquationTexture;
-        public static Texture2D cancelEditTexture;
+       
         public static Texture2D panelTexture;
 
         public static SpriteFont equationFont;
+        public static SpriteFont buttonFont;
     }
 }

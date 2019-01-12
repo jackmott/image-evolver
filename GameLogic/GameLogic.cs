@@ -83,14 +83,11 @@ namespace GameLogic
             state.r = new Random();
             state.g = g;
             state.w = window;
-            state.inputState = new InputState();
-            Settings.injectTexture = GraphUtils.GetTexture(g, Color.Blue);
-            Settings.selectedTexture = GraphUtils.GetTexture(g, Color.Yellow);
-            Settings.equationTexture = GraphUtils.GetTexture(g, Color.White);
-            Settings.saveEquationTexture = GraphUtils.GetTexture(g, Color.Green);
-            Settings.cancelEditTexture = GraphUtils.GetTexture(g, Color.Red);
+            state.inputState = new InputState();            
             Settings.equationFont = content.Load<SpriteFont>("equation-font");
-            Settings.panelTexture = GraphUtils.GetTexture(g, new Color(0.0f, 0.0f, 0.0f, 0.5f));
+            Settings.buttonFont = content.Load<SpriteFont>("button-font");
+            Settings.selectedTexture = GraphUtils.GetTexture(g, Color.Cyan);
+            Settings.panelTexture = GraphUtils.GetTexture(g, new Color(0.0f, 0.0f, 0.0f, 0.75f));
 
 
             DirectoryInfo d = new DirectoryInfo(AppDomain.CurrentDomain.BaseDirectory + @"\Assets");
@@ -142,9 +139,9 @@ namespace GameLogic
             int winH = g.Viewport.Height;
 
 
-            state.undoButton = new Button(GetTexture(g, Color.White), FRect(winW * .01f, winH * .91f, winW * .1f, winH * 0.05f));
-            state.reRollButton = new Button(GetTexture(g, Color.Blue), FRect(winW * .201f, winH * .91f, winW * .1f, winH * 0.05f));
-            state.evolveButton = new Button(GetTexture(g, Color.Red), FRect(winW * .401f, winH * .91f, winW * .1f, winH * 0.05f));
+            state.undoButton = new Button("Undo",Settings.buttonFont,FRect(winW * .01f, winH * .91f, winW * .1f, winH * 0.05f),Color.Cyan,Color.White);
+            state.reRollButton = new Button("New",Settings.buttonFont, FRect(winW * .201f, winH * .91f, winW * .1f, winH * 0.05f),Color.Cyan,Color.White);
+            state.evolveButton = new Button("Evolve",Settings.buttonFont,FRect(winW * .401f, winH * .91f, winW * .1f, winH * 0.05f),Color.Cyan,Color.White);
             state.videoModeButton = new ToggleButton(GetTexture(g, Color.Green), GetTexture(g, Color.DarkGreen), FRect(winW * .601f, winH * .91f, winW * .1f, winH * 0.05f));
 
 
@@ -258,7 +255,7 @@ namespace GameLogic
         public void VideoPlayingDraw(SpriteBatch batch, GameTime gameTime)
         {
             batch.Begin();
-            state.zoomedPic.VideoPlayingDraw(batch, gameTime, state.inputState);
+            state.zoomedPic.VideoPlayingDraw(batch,state.g, gameTime, state.inputState);
             batch.End();
         }
 
@@ -269,10 +266,10 @@ namespace GameLogic
 
             g.Clear(Color.Black);
             batch.Begin();
-            state.undoButton.Draw(batch, gameTime);
-            state.reRollButton.Draw(batch, gameTime);
-            state.evolveButton.Draw(batch, gameTime);
-            state.videoModeButton.Draw(batch, gameTime, state.videoMode);
+            state.undoButton.Draw(batch,state.g, gameTime);
+            state.reRollButton.Draw(batch,state.g, gameTime);
+            state.evolveButton.Draw(batch,state.g, gameTime);
+            state.videoModeButton.Draw(batch,gameTime, state.videoMode);
 
 
             foreach (var pic in state.pictures)

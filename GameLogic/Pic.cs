@@ -338,15 +338,15 @@ namespace GameLogic
 
         public void InitButtons()
         {
-            injectButton = new Button(Settings.injectTexture, new Rectangle());
-            editEquationButton = new Button(Settings.equationTexture, new Rectangle());
-            saveEquationButton = new Button(Settings.saveEquationTexture, new Rectangle());
-            previewButton = new Button(GraphUtils.GetTexture(g, Color.Blue), new Rectangle());
-            playButton = new Button(GraphUtils.GetTexture(g, Color.Red), new Rectangle());
-            exportGIFButton = new Button(GraphUtils.GetTexture(g, Color.Yellow), new Rectangle());
-            exportPNGButton = new Button(GraphUtils.GetTexture(g, Color.Yellow), new Rectangle());
-            cancelVideoGenButton = new Button(GraphUtils.GetTexture(g, Color.Green), new Rectangle());
-            cancelEditButton = new Button(Settings.cancelEditTexture, new Rectangle());
+            injectButton = new Button("New",Settings.buttonFont,new Rectangle(),Color.Cyan,Color.White);
+            editEquationButton = new Button("Edit",Settings.buttonFont,new Rectangle(),Color.Cyan,Color.White);
+            saveEquationButton = new Button("Save",Settings.buttonFont,new Rectangle(),Color.Cyan,Color.White);
+            previewButton = new Button("Preview",Settings.buttonFont, new Rectangle(),Color.Cyan,Color.White);
+            playButton = new Button("Play",Settings.buttonFont,new Rectangle(),Color.Cyan,Color.White);
+            exportGIFButton = new Button("Export",Settings.buttonFont,new Rectangle(),Color.Cyan,Color.White);
+            exportPNGButton = new Button("Export", Settings.buttonFont, new Rectangle(), Color.Cyan, Color.White);
+            cancelVideoGenButton = new Button("Cancel", Settings.buttonFont, new Rectangle(), Color.Cyan, Color.White);
+            cancelEditButton = new Button("Cancel", Settings.buttonFont, new Rectangle(), Color.Cyan, Color.White);
             panel = new SlidingPanel(Settings.panelTexture, new Rectangle(), new Rectangle(), 500.0);
         }
 
@@ -437,7 +437,7 @@ namespace GameLogic
             batch.Draw(smallImage, bounds, Color.White);
             if (bounds.Contains(state.mouseState.Position))
             {
-                injectButton.Draw(batch, gameTime);
+                injectButton.Draw(batch,g, gameTime);
             }            
 
         }
@@ -446,13 +446,13 @@ namespace GameLogic
         {
             batch.Draw(bigImage, bounds, Color.White);
             textBox.Draw(batch, gameTime);
-            saveEquationButton.Draw(batch, gameTime);
-            cancelEditButton.Draw(batch, gameTime);
+            saveEquationButton.Draw(batch,g, gameTime);
+            cancelEditButton.Draw(batch,g, gameTime);
         }
 
 
 
-        public void PanelDraw(SpriteBatch batch, GameTime gameTime, InputState state, bool videoGenerating, bool videoPlaying)
+        public void PanelDraw(SpriteBatch batch,GraphicsDevice g, GameTime gameTime, InputState state, bool videoGenerating, bool videoPlaying)
         {
             panel.Draw(batch, gameTime, state);
             var panelBounds = panel.GetBounds(state);
@@ -460,43 +460,45 @@ namespace GameLogic
 
             if (videoGenerating)
             {
-                cancelVideoGenButton.bounds = leftButtonBounds;
-                cancelVideoGenButton.Draw(batch, gameTime);
+                cancelVideoGenButton.SetBounds(leftButtonBounds);
+                cancelVideoGenButton.Draw(batch,g, gameTime);
                 return;
             }
 
-            editEquationButton.bounds = leftButtonBounds;
-            editEquationButton.Draw(batch, gameTime);
+            editEquationButton.SetBounds(leftButtonBounds);
+            editEquationButton.Draw(batch,g, gameTime);
 
             if (video)
             {
-                previewButton.bounds = editEquationButton.bounds;
-                previewButton.bounds.X += (int)(previewButton.bounds.Width * 1.1f);
-                previewButton.Draw(batch, gameTime);
-
-                playButton.bounds = previewButton.bounds;
-                playButton.bounds.X += (int)(previewButton.bounds.Width * 1.1f);
-                playButton.Draw(batch, gameTime);
+                var bounds = leftButtonBounds;
+                bounds.X += (int)(bounds.Width * 1.1f);
+                previewButton.SetBounds(bounds);
+                previewButton.Draw(batch,g, gameTime);
+                
+                bounds.X += (int)(bounds.Width * 1.1f);
+                playButton.SetBounds(bounds);
+                playButton.Draw(batch,g, gameTime);
 
                 if (videoPlaying)
-                {
-                    exportGIFButton.bounds = playButton.bounds;
-                    exportGIFButton.bounds.X += (int)(playButton.bounds.Width * 1.1f);
-                    exportGIFButton.Draw(batch, gameTime);
+                {                    
+                    bounds.X += (int)(bounds.Width * 1.1f);
+                    exportGIFButton.SetBounds(bounds);
+                    exportGIFButton.Draw(batch,g, gameTime);
                 }
             }
             else
             {
                 if (bigImage != null && bigImage.Width == bounds.Width && bigImage.Height == bounds.Height)
                 {
-                    exportPNGButton.bounds = editEquationButton.bounds;
-                    exportPNGButton.bounds.X += (int)(editEquationButton.bounds.Width * 1.1f);
-                    exportPNGButton.Draw(batch, gameTime);
+                    var bounds = leftButtonBounds;
+                    bounds.X += (int)(bounds.Width * 1.1f);
+                    exportPNGButton.SetBounds(bounds);
+                    exportPNGButton.Draw(batch,g, gameTime);
                 }
             }
         }
 
-        public void VideoPlayingDraw(SpriteBatch batch, GameTime gameTime, InputState state)
+        public void VideoPlayingDraw(SpriteBatch batch,GraphicsDevice g, GameTime gameTime, InputState state)
         {
             var seconds = gameTime.TotalGameTime.TotalSeconds % (Settings.VIDEO_LENGTH * 2.0f);
             var frameIndex = (int)(seconds * Settings.FPS);
@@ -506,21 +508,21 @@ namespace GameLogic
                 frameIndex = videoFrames.Length - backIndex - 1;
             }
             batch.Draw(videoFrames[frameIndex], bounds, Color.White);
-            PanelDraw(batch, gameTime, state, false,true);
+            PanelDraw(batch, g,gameTime, state, false,true);
         }
 
         public void ZoomDraw(SpriteBatch batch, GraphicsDevice g, GameWindow w, GameTime gameTime, InputState state)
         {
             batch.Draw(smallImage, bounds, Color.White);
             batch.Draw(bigImage, bounds, Color.White);
-            PanelDraw(batch, gameTime, state, false,false);
+            PanelDraw(batch,g, gameTime, state, false,false);
         }
 
         public void VideoGeneratingDraw(SpriteBatch batch, GraphicsDevice g, GameWindow w, GameTime gameTime, InputState state)
         {
             batch.Draw(smallImage, bounds, Color.White);
             batch.Draw(bigImage, bounds, Color.White);
-            PanelDraw(batch, gameTime, state, true,false);
+            PanelDraw(batch,g, gameTime, state, true,false);
         }
 
 
@@ -530,10 +532,10 @@ namespace GameLogic
 
             var textBounds = ScaleCentered(bounds, 0.75f);
             textBox.SetNewBounds(textBounds);
-            injectButton.bounds = FRect(bounds.X + bounds.Width * .025, bounds.Y + bounds.Height * .9, bounds.Width * .1, bounds.Height * .1);
-            saveEquationButton.bounds = FRect(textBounds.X, bounds.Height * .9f, bounds.Width * .1f, bounds.Height * .05f);
-            previewButton.bounds = FRect(textBounds.X + textBounds.Width * 0.4f, bounds.Height * .9f, bounds.Width * .1f, bounds.Height * .05f);            
-            cancelEditButton.bounds = FRect(textBounds.X + textBounds.Width - bounds.Width * .1f, bounds.Height * .9f, bounds.Width * .1f, bounds.Height * .05f);
+            injectButton.SetBounds(FRect(bounds.X + bounds.Width * .025, bounds.Y + bounds.Height * .9, bounds.Width * .1, bounds.Height * .1));
+            saveEquationButton.SetBounds(FRect(textBounds.X, bounds.Height * .9f, bounds.Width * .1f, bounds.Height * .05f));
+            previewButton.SetBounds(FRect(textBounds.X + textBounds.Width * 0.4f, bounds.Height * .9f, bounds.Width * .1f, bounds.Height * .05f));
+            cancelEditButton.SetBounds(FRect(textBounds.X + textBounds.Width - bounds.Width * .1f, bounds.Height * .9f, bounds.Width * .1f, bounds.Height * .05f));
             
 
             panel.activeBounds = FRect(0, bounds.Height * .85f, bounds.Width, bounds.Height * .15f);

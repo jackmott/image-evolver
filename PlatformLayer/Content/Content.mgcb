@@ -13,6 +13,13 @@
 
 #---------------------------------- Content ---------------------------------#
 
+#begin button-font.spritefont
+/importer:FontDescriptionImporter
+/processor:FontDescriptionProcessor
+/processorParam:PremultiplyAlpha=True
+/processorParam:TextureFormat=Compressed
+/build:button-font.spritefont
+
 #begin equation-font.spritefont
 /importer:FontDescriptionImporter
 /processor:FontDescriptionProcessor

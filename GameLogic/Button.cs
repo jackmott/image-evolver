@@ -92,23 +92,58 @@ namespace GameLogic
     [DataContract]
     public class Button
     {
-        public Texture2D tex;
-        [DataMember]
-        public Rectangle bounds;
+        public SpriteFont font;
+        public string text;
+        public Color borderColor;
+        public Color textColor;
+        private Rectangle bounds;
+        private float fontScale;
 
         public Button() { }
 
-        public Button(Texture2D tex, Rectangle bounds)
+        public Button(string text, SpriteFont font, Rectangle bounds, Color borderColor, Color textColor)
         {
-            this.tex = tex;
-            this.bounds = bounds;
+            this.text = text;
+            this.font = font;
+            this.borderColor = borderColor;
+            this.textColor = textColor;
+            SetBounds(bounds);
+        }
+        
+        public void SetBounds(Rectangle bounds) {
+            if (this.bounds != bounds)
+            {
+                this.bounds = bounds;
+                var fontSize = font.MeasureString(text);
+
+                var fontScaleW = (float)bounds.Width / (float)fontSize.X;
+                var fontScaleH = (float)bounds.Height / (float)fontSize.Y;
+
+                fontScale = Math.Min(fontScaleH, fontScaleW);
+
+            }
         }
 
-        public void Draw(SpriteBatch batch, GameTime gameTime)
+        public void Draw(SpriteBatch batch,GraphicsDevice g, GameTime gameTime)
         {
-            if (tex.IsDisposed) throw new Exception("disposed button");
-            batch.Draw(tex, bounds, Color.White);
-           
+
+
+            var tex = GraphUtils.GetTexture(g, borderColor);
+            var Rect = bounds;
+            var Thickness = 2;
+            batch.Draw(tex, new Rectangle(Rect.X, Rect.Y, Rect.Width, Thickness), borderColor);
+            batch.Draw(tex, new Rectangle(Rect.X, Rect.Y, Thickness, Rect.Height), borderColor);
+            batch.Draw(tex, new Rectangle((Rect.X + Rect.Width - Thickness),
+                                            Rect.Y,
+                                            Thickness,
+                                            Rect.Height), borderColor);
+            batch.Draw(tex, new Rectangle(Rect.X,
+                                            Rect.Y + Rect.Height - Thickness,
+                                            Rect.Width,
+                                            Thickness), borderColor);
+
+            batch.DrawString(font, text, new Vector2(bounds.X, bounds.Y), textColor,0,Vector2.Zero,fontScale,SpriteEffects.None,0);
+
         }
 
         public bool WasLeftClicked(InputState state)
