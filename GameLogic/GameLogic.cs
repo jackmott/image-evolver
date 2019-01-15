@@ -1,7 +1,6 @@
-﻿// todo - handle typing beyond edge of text box
-// todo - consider filter nodes attached to top level pic nodes (sepia, etc)
+﻿// todo - consider filter nodes attached to top level pic nodes (sepia, etc)
 // todo - does breed handle warp properly? I think not
-// todo - breeding kills the video state
+
 
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
@@ -15,49 +14,12 @@ using System.Runtime.Serialization;
 using System.Xml;
 using static GameLogic.GraphUtils;
 using System.Threading;
+using System.Windows.Forms;
+
 
 namespace GameLogic
 {
-    //Used when transitioning from one state to another that will take time
-    public static class Transition
-    {
-        //1 to 100000                
-        public static int progress;
-        public static int goal;        
-        public static Screen nextScreen;
-
-
-        public static void StartTransition(Screen to, int thegoal)
-        {                        
-            nextScreen = to;
-            progress = 0;
-            goal = thegoal;
-        }
-
-        public static void AddProgress(int amount)
-        {
-            Interlocked.Add(ref progress, amount);
-        }
-
-        public static void Update(GameState state)
-        {
-            if (progress == goal)
-            {
-                state.screen = nextScreen;
-            }
-        }
-        public static void Draw(SpriteBatch b, GraphicsDevice g, GameTime gametime)
-        {
-            int winW = g.Viewport.Width;
-            int winH = g.Viewport.Height;
-            float pct = (float)progress/(float)goal;
-            
-            Rectangle rect = CenteredRect(new Rectangle(0, 0, winW, winH), winW / 4, winH / 20);
-            b.Begin();            
-            ProgressBar.Draw(b, g, rect, Color.Cyan, Color.Blue, pct);
-            b.End();
-        }
-    }
+ 
 
     public class GameLogic
     {
@@ -207,8 +169,13 @@ namespace GameLogic
         {
             var screen = state.screen;
             if (screen == Screen.VIDEO_GENERATING)
-            {                
+            {
                 VideoGeneratingDraw(batch, gameTime);
+                Transition.Draw(batch, state.g, gameTime);
+            }
+            else if (screen == Screen.GIF_EXPORTING)
+            {
+                state.zoomedPic.GifGeneratingDraw(batch,state.g,state.w, gameTime);
                 Transition.Draw(batch, state.g, gameTime);
             }
             else if (state.screen == Screen.CHOOSE)
@@ -285,7 +252,12 @@ namespace GameLogic
             if (state.screen == Screen.VIDEO_GENERATING)
             {
                 Transition.Update(state);
-                return VideoGeneratingUpdate(gameTime);                
+                return VideoGeneratingUpdate(gameTime);
+            }
+            else if (state.screen == Screen.GIF_EXPORTING)
+            {
+                Transition.Update(state);
+                return state;
             }
             else if (state.screen == Screen.CHOOSE)
             {
@@ -377,6 +349,7 @@ namespace GameLogic
                 if (pic.injectButton.WasLeftClicked(state.inputState))
                 {
                     state.pictures[i] = GenTree(r);
+                    LayoutUI();                    
                 }
 
                 if (pic.WasRightClicked(state.inputState))
@@ -415,13 +388,14 @@ namespace GameLogic
                     state.zoomedPic.Trees = p.Trees;
                     state.zoomedPic.Machines = p.Machines;
                     state.zoomedPic.type = p.type;
-                    state.zoomedPic.hues = p.hues;
+                    state.zoomedPic.colors = p.colors;
+                    state.zoomedPic.colors = p.colors;
                     state.zoomedPic.pos = p.pos;
                     state.zoomedPic.textBox.SetText(state.zoomedPic.ToLisp());
                     state.screen = Screen.ZOOM;
                     state.zoomedPic.textBox.SetActive(false);
                     state.zoomedPic.ClearVideo();
-                    _ = state.zoomedPic.GenSmallImageAsync();
+                    _ = state.zoomedPic.GenSmallImageAsync();                                        
                     state.zoomedPic.GenBigImage();
                 }
                 catch (ParseException ex)
@@ -460,39 +434,39 @@ namespace GameLogic
                 return state;
             }
 
-            if (state.zoomedPic.previewButton.WasLeftClicked(state.inputState))
-            {                
-                state.zoomedPic.GenVideo(state,Settings.PREVIEW_VIDEO_WIDTH, Settings.PREVIEW_VIDEO_HEIGHT);
-            }
-
+          
             if (state.zoomedPic.playButton.WasLeftClicked(state.inputState))
             {                
-                state.zoomedPic.GenVideo(state, state.zoomedPic.bounds.Width, state.zoomedPic.bounds.Height);
+                state.zoomedPic.GenVideo(state);
             }
 
             if (state.zoomedPic.exportGIFButton.WasLeftClicked(state.inputState))
             {
-                var pic = state.zoomedPic;
-                var store = new FrameStore(pic.videoFrames.Length,pic.videoFrames[0].Width,pic.videoFrames[0].Height);
-                foreach (var frame in pic.videoFrames)
-                {
-                    store.PushFrame(frame);
-                }
-
-                float delay = 1.0f / Settings.FPS;
-                delay *= 100.0f;
-
-                Stream fs = new FileStream("vid.gif", FileMode.Create);
-                store.ExportGif(fs, (int)delay);
-
+                _ = state.zoomedPic.exportGIF(state);                
             }
             if (state.zoomedPic.exportPNGButton.WasLeftClicked(state.inputState))
             {
                 var pic = state.zoomedPic;
                 var store = new FrameStore(1, pic.bigImage.Width, pic.bigImage.Height);
                 store.PushFrame(pic.bigImage);
-                Stream fs = new FileStream("pic.png", FileMode.Create);
-                store.ExportFrame(fs, 0);
+               
+               
+
+                Stream myStream;
+                SaveFileDialog saveFileDialog1 = new SaveFileDialog();
+
+                saveFileDialog1.Filter = "png images (*.png)|*.png";
+                saveFileDialog1.FilterIndex = 0;
+                saveFileDialog1.RestoreDirectory = false;
+
+                if (saveFileDialog1.ShowDialog() == DialogResult.OK)
+                {
+                    if ((myStream = saveFileDialog1.OpenFile()) != null)
+                    {
+                        store.ExportFrame(myStream, 0);
+                        myStream.Close();
+                    }
+                }
             }
 
             if (state.zoomedPic.WasRightClicked(state.inputState))
@@ -510,53 +484,11 @@ namespace GameLogic
 
             return state;
         }
-
-
-        // for testing
-        public Pic GenTree(NodeType type, Random r)
-        {
-            AptNode root = AptNode.MakeNode(type);
-            if (root.children.Length >= 2)
-            {
-                root.AddLeaf(new AptNode { type = NodeType.X });
-                root.AddLeaf(new AptNode { type = NodeType.Y });
-            }
-            while (root.AddLeaf(new AptNode { type = NodeType.CONSTANT, value = (float)r.NextDouble() * 2.0f - 1.0f })) { }
-            //while (root.AddLeaf(new AptNode { type = NodeType.CONSTANT, value = 0.5f })) { }
-
-            int chooser = r.Next(0, 3);
-            Pic p;
-            // chooser = 0;
-            if (chooser == 0)
-            {
-                p = new Pic(PicType.RGB, r, Settings.MIN_GEN_SIZE, Settings.MAX_GEN_SIZE, state.g, state.w, state.videoMode);
-            }
-            else if (chooser == 1)
-            {
-                p = new Pic(PicType.HSV, r, Settings.MIN_GEN_SIZE, Settings.MAX_GEN_SIZE, state.g, state.w, state.videoMode);
-            }
-            else
-            {
-                p = new Pic(PicType.GRADIENT, r, Settings.MIN_GEN_SIZE, Settings.MAX_GEN_SIZE, state.g, state.w, state.videoMode);
-            }
-
-            for (int i = 0; i < p.Trees.Length; i++)
-            {
-                p.Trees[i] = root;
-                p.Machines[i] = new StackMachine(root);
-            }
-            p.SetupTextbox();
-
-            return p;
-
-
-        }
-
+        
         public Pic GenTree(Random r)
         {
             int chooser = r.Next(0, 3);            
-            PicType type = (PicType)chooser;
-
+            PicType type = (PicType)chooser;            
             return new Pic(type, r, Settings.MIN_GEN_SIZE, Settings.MAX_GEN_SIZE, state.g, state.w, state.videoMode);
         }
 

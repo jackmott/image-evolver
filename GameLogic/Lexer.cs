@@ -93,7 +93,7 @@ namespace GameLogic
 
         }
 
-        public Token ParseExpect()
+        public Token GetNextToken()
         {
             try
             {
@@ -101,32 +101,24 @@ namespace GameLogic
             }
             catch (InvalidOperationException)
             {
-                throw new Exception("Expected token but reached EOF");
+                throw new ParseException("Expected token but reached EOF", new Token { });
             }
         }
+
         public Token ParseExpect(TokenType type)
         {
-            try
+            var t = GetNextToken();
+            if (t.type != type)
             {
-                var t = tokens.Dequeue();
-                if (t.type != type)
-                {
-                    throw new ParseException("Expected tokentype " + type + " but got " + t.type, t);
-                }
-                return t;
+                throw new ParseException("Expected tokentype " + type + " but got " + t.type, t);
             }
-            catch (InvalidOperationException)
-            {
-                throw new ParseException("Expected tokentype " + type + " but reached EOF", new Token { });
-            }
-
-
+            return t;
         }
 
         public Token ParseExpect(TokenType[] validTokens)
         {
 
-            var t = ParseExpect();
+            var t = GetNextToken();
             foreach (var valid in validTokens)
             {
                 if (valid == t.type)
@@ -135,8 +127,6 @@ namespace GameLogic
                 }
             }
             throw new ParseException("Invalid token", t);
-
-
         }
 
         public Pic ParsePic(GraphicsDevice g, GameWindow w)
@@ -151,20 +141,27 @@ namespace GameLogic
                 ParseExpect(TokenType.OPEN_PAREN);
                 t = ParseExpect(TokenType.OP);
                 s = input.Slice(t.start, t.len).ToString().ToLower();
-                if (s != "hues")
+                if (s != "colors")
                 {
-                    throw new ParseException("hues array expected after gradient",t);
+                    throw new ParseException("hues array expected after gradient", t);
                 }
 
-                var tempHues = new List<float>();
-                while(true)
+                var tempColors = new List<Color>();
+                while (ParseExpect(new[] { TokenType.OPEN_PAREN, TokenType.CLOSE_PAREN }).type != TokenType.CLOSE_PAREN)
                 {
-                    t = ParseExpect(new[] { TokenType.CONSTANT, TokenType.CLOSE_PAREN });
-                    if (t.type == TokenType.CLOSE_PAREN) break;
+                    t = ParseExpect(TokenType.CONSTANT);
                     string numStr = input.Slice(t.start, t.len).ToString();
-                    tempHues.Add(float.Parse(numStr));
-                } 
-                p.hues = tempHues.ToArray();
+                    var red = float.Parse(numStr);
+                    t = ParseExpect(TokenType.CONSTANT);
+                    numStr = input.Slice(t.start, t.len).ToString();
+                    var green = float.Parse(numStr);
+                    t = ParseExpect(TokenType.CONSTANT);
+                    numStr = input.Slice(t.start, t.len).ToString();
+                    var blue = float.Parse(numStr);
+                    ParseExpect(TokenType.CLOSE_PAREN);
+                    tempColors.Add(new Color(red, green, blue));
+                }
+                p.colors = tempColors.ToArray();
                 ParseExpect(TokenType.OPEN_PAREN);
                 t = ParseExpect(TokenType.OP);
                 s = input.Slice(t.start, t.len).ToString().ToLower();
@@ -187,11 +184,7 @@ namespace GameLogic
                 p.Trees[0] = ParseNodes();
                 p.Machines[0] = new StackMachine(p.Trees[0]);
 
-                p.Trees[1] = ParseNodes();
-                p.Machines[1] = new StackMachine(p.Trees[1]);
 
-                p.Trees[2] = ParseNodes();
-                p.Machines[2] = new StackMachine(p.Trees[2]);
             }
             else if (s == "rgb")
             {
@@ -259,7 +252,7 @@ namespace GameLogic
                 for (int i = 0; i < result.children.Length; i++)
                 {
                     result.children[i - warpCount] = ParseNodes();
-                    result.children[i - warpCount].parent = result;                    
+                    result.children[i - warpCount].parent = result;
                     // warp returns two values, so it is a special case
                     if (result.children[i - warpCount].type == NodeType.WARP1)
                     {
@@ -326,7 +319,7 @@ namespace GameLogic
                 {
                     return State.EOF;
                 }
-                else if (c == 'x' || c == 'y' || c == 't' || c == 'X' || c == 'Y' || c== 'T')
+                else if (c == 'x' || c == 'y' || c == 't' || c == 'X' || c == 'Y' || c == 'T')
                 {
                     emit(TokenType.VARIABLE);
                     ignore();

@@ -1,4 +1,5 @@
 ﻿using System;
+using JM.LinqFaster;
 using System.Runtime.Serialization;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
@@ -8,6 +9,8 @@ using System.Threading.Tasks;
 using Microsoft.Xna.Framework.Input;
 using System.Diagnostics;
 using System.Threading;
+using System.IO;
+
 
 namespace GameLogic
 {
@@ -24,10 +27,10 @@ namespace GameLogic
     public class Pic : IDisposable
     {
 
-        public Rectangle bounds;        
-        public Texture2D[] videoFrames;      
- 
-        private Texture2D smallImage;        
+        public Rectangle bounds;
+        public Texture2D[] videoFrames;
+
+        private Texture2D smallImage;
         public Texture2D bigImage;
 
 
@@ -47,16 +50,14 @@ namespace GameLogic
         //or if one of the nullable colors is null
         // a hard stop
         [DataMember]
-        public float[] hues;
+        public Color[] colors;
         [DataMember]
         public float[] pos;
 
         [DataMember]
         public Button injectButton;
         [DataMember]
-        public Button editEquationButton;
-        [DataMember]
-        public Button previewButton;
+        public Button editEquationButton;        
         [DataMember]
         public Button playButton;
         [DataMember]
@@ -95,18 +96,20 @@ namespace GameLogic
         {
             this.video = video;
             SharedConstructor(type, g, w);
-            for (int i = 0; i < 3; i++)
+
+            for (int i = 0; i < Trees.Length; i++)
             {
                 Trees[i] = AptNode.GenerateTree(rand.Next(min, max), rand, video);
                 Machines[i] = new StackMachine(Trees[i]);
             }
 
+
             if (type == PicType.GRADIENT)
             {
 
                 var enum_size = Enum.GetNames(typeof(GradientType)).Length;
-                var gradType = (GradientType)rand.Next(0, enum_size);
-                gradType = GradientType.TRIADIC;
+                var gradType = (GradientType)rand.Next(0, enum_size);                
+                float[] hues;
                 switch (gradType)
                 {
                     case GradientType.ANALOGOUS:
@@ -167,12 +170,32 @@ namespace GameLogic
                             (hues[0], hues[1]) = GetComplementaryHues((float)rand.NextDouble());
                             break;
                         }
+                    default:
+                        throw new Exception("hues broke");
                 }
 
-                pos = new float[hues.Length];
-                for (int i = 0; i < hues.Length; i++)
+                colors = hues.SelectF(h =>
                 {
-                    pos[i] = (float)(rand.NextDouble() * 2.0 - 1.0);
+                    float s = (float)rand.NextDouble();
+                    float v = (float)rand.NextDouble();
+                    var (red, green, blue) = HSV2RGB(h, s, v);
+                    return new Color(red, green, blue);
+                });
+
+                pos = new float[colors.Length];
+                int chance = Settings.STOP_GRADIENT_CHANCE * pos.Length;
+                for (int i = 0; i < colors.Length; i++)
+                {
+
+                    if (i > 0 && rand.Next(0, chance) == 0)
+                    {
+                        pos[i] = pos[i - 1];
+                    }
+                    else
+                    {
+                        pos[i] = (float)(rand.NextDouble() * 2.0 - 1.0);
+                    }
+
                 }
                 Array.Sort(pos);
 
@@ -181,7 +204,7 @@ namespace GameLogic
         }
 
         private void SharedConstructor(PicType type, GraphicsDevice g, GameWindow w)
-        {            
+        {
             this.g = g;
             this.w = w;
             this.type = type;
@@ -189,16 +212,24 @@ namespace GameLogic
             smallImage = GraphUtils.GetTexture(g, Color.Black);
             bigImage = GraphUtils.GetTexture(g, Color.Black);
             InitButtons();
-            Trees = new AptNode[3];
-            Machines = new StackMachine[3];
+            if (type != PicType.GRADIENT)
+            {
+                Trees = new AptNode[3];
+                Machines = new StackMachine[3];
+            }
+            else
+            {
+                Trees = new AptNode[1];
+                Machines = new StackMachine[1];
+            }
         }
 
-       
+
         public void GenBigImage()
         {
-            int chunkSize = Math.Min(64, bounds.Height);
-            int lineCount = 0;                              
-            
+            int chunkSize =  Math.Min(64, bounds.Height);
+            int lineCount = 0;
+
             while (lineCount < bounds.Height)
             {
                 ImageGenAsync(bounds.Width, bounds.Height, lineCount, lineCount + chunkSize, -1.0f).ContinueWith(task =>
@@ -209,35 +240,35 @@ namespace GameLogic
                          bigImage = new Texture2D(g, bounds.Width, bounds.Height, false, SurfaceFormat.Color);
                          bigImage.SetData(new Color[bigImage.Width * bigImage.Height]); //will be transparent so smallImage will show beneath
                      }
-                     
-                    var imageData = task.Result;
-                    var start = imageData.start;
-                    var len = imageData.end - imageData.start;
-                    bigImage.SetData(0, new Rectangle(0, imageData.start, bigImage.Width, len), imageData.colors, 0, imageData.colors.Length);
-                                          
-                }, TaskScheduler.FromCurrentSynchronizationContext());
+
+                     var imageData = task.Result;
+                     var start = imageData.start;
+                     var len = imageData.end - imageData.start;
+                     bigImage.SetData(0, new Rectangle(0, imageData.start, bigImage.Width, len), imageData.colors, 0, imageData.colors.Length);
+
+                 }, TaskScheduler.FromCurrentSynchronizationContext());
                 lineCount += chunkSize;
-                chunkSize = (int)(chunkSize* 2);
+                chunkSize = (int)(chunkSize * 2);
                 chunkSize = Math.Min(chunkSize, bounds.Height - lineCount);
             }
 
         }
-     
+
 
         public async Task GenSmallImageAsync()
         {
             var result = await ImageGenAsync(bounds.Width, bounds.Height, 0, bounds.Height, -1.0f);
-                
+
             smallImage.Dispose(); // dispose of the old texture
             smallImage = new Texture2D(g, bounds.Width, bounds.Height, false, SurfaceFormat.Color);
             var colors = result.colors;
             //todo this assert fails sometimes when flipping between states quickly
             Debug.Assert(colors.Length == smallImage.Width * smallImage.Height);
-            smallImage.SetData(colors);                 
-             
+            smallImage.SetData(colors);
+
         }
-        
-        public void GenVideoRec(GameState state, int w, int h,int index, float t)
+
+        public void GenVideoRec(GameState state, int w, int h, int index, float t)
         {
             const int frameCount = Settings.FPS * Settings.VIDEO_LENGTH;
 
@@ -245,22 +276,23 @@ namespace GameLogic
             if (index == frameCount) return;
 
             //logical core count
-            var cpuCount = Environment.ProcessorCount;                                    
+            var cpuCount = Environment.ProcessorCount;
             var taskCount = Math.Min(cpuCount, frameCount - index);
 
             var stepSize = 2.0f / frameCount;
             var tasks = new Task<TextureData>[taskCount];
-            
+
             for (int i = 0; i < taskCount; i++)
             {
                 tasks[i] = ImageGenAsync(w, h, 0, h, t);
-                t += stepSize;                
+                t += stepSize;
             }
             // Wait until this batch is done before firing off more, so we get progress bar updates
             Task.WhenAll(tasks).ContinueWith(task =>
             {
                 var frameDatas = task.Result;
-                foreach (var frameData in frameDatas) {                    
+                foreach (var frameData in frameDatas)
+                {
                     var start = frameData.start;
                     var len = frameData.end - frameData.start;
                     videoFrames[index].SetData(0, new Rectangle(0, frameData.start, w, len), frameData.colors, 0, frameData.colors.Length);
@@ -271,18 +303,61 @@ namespace GameLogic
             }, TaskScheduler.FromCurrentSynchronizationContext());
         }
 
-        public void GenVideo(GameState state, int w, int h)
+        public async Task exportGIF(GameState state)
         {
-            //limit to 1080p or its unbearably slow
-            if (h > 1080) h = 1080;
-            if (w > 1920) w = 1920;
+            //start generating the gif while they file dialog is open
+            Transition.StartTransition(state.screen, videoFrames.Length, "Saving Gif");
+            var task = Task.Run(genGIF);
+            System.Windows.Forms.SaveFileDialog saveFileDialog = new System.Windows.Forms.SaveFileDialog();
+            saveFileDialog.Filter = "gifs (*.gif)|*.gif";
+            saveFileDialog.FilterIndex = 0;
+            saveFileDialog.RestoreDirectory = false;
+            Stream fileStream;
+            if (saveFileDialog.ShowDialog() == System.Windows.Forms.DialogResult.OK)
+            {
+                if ((fileStream = saveFileDialog.OpenFile()) != null)
+                {
+                    state.screen = Screen.GIF_EXPORTING;
+                    var gifStream = await task;
+                    Transition.SetProgress(videoFrames.Length / 2);
+                    gifStream.Position = 0;
+                    gifStream.CopyTo(fileStream);
+                    fileStream.Close();
+                    gifStream.Close();
+                    Transition.SetProgress(videoFrames.Length);
+                }
+            }
+        }
+
+        public Stream genGIF()
+        {
+            var store = new FrameStore(videoFrames.Length, videoFrames[0].Width, videoFrames[0].Height);
+            foreach (var frame in videoFrames)
+            {
+                store.PushFrame(frame);
+            }
+
+            float delay = 1.0f / Settings.FPS;
+            delay *= 100.0f;
+
+            Stream myStream = new MemoryStream(1024);
+            store.ExportGif(myStream, (int)delay);
+            return myStream;
+        }
+
+        public void GenVideo(GameState state)
+        {
+
+            const int w = Settings.VIDEO_WIDTH;
+            const int h = Settings.VIDEO_HEIGHT;
 
             const int frameCount = Settings.FPS * Settings.VIDEO_LENGTH;
-            Transition.StartTransition(Screen.VIDEO_PLAYING, frameCount);
+            Transition.StartTransition(Screen.VIDEO_PLAYING, frameCount, "Generating...");
             state.screen = Screen.VIDEO_GENERATING;
-                        
+
             //Just play the video if its already there
-            if (videoFrames != null) {
+            if (videoFrames != null)
+            {
                 var frame = videoFrames[0];
                 if (frame == null)
                 {
@@ -297,21 +372,21 @@ namespace GameLogic
                 {
                     ClearVideo();
                 }
-                                                
+
             }
-            
-            
+
+
             videoFrames = new Texture2D[frameCount];
             for (int i = 0; i < videoFrames.Length; i++)
             {
                 videoFrames[i] = new Texture2D(g, w, h, false, SurfaceFormat.Color);
             }
-            
 
-            GenVideoRec(state, w, h,0, -1.0f);
-                                     
+
+            GenVideoRec(state, w, h, 0, -1.0f);
+
         }
-       
+
         public bool WasLeftClicked(InputState state)
         {
             if (state.prevMouseState.LeftButton == ButtonState.Pressed && state.mouseState.LeftButton == ButtonState.Released)
@@ -338,12 +413,11 @@ namespace GameLogic
 
         public void InitButtons()
         {
-            injectButton = new Button("New",Settings.buttonFont,new Rectangle(),Color.Cyan,Color.White);
-            editEquationButton = new Button("Edit",Settings.buttonFont,new Rectangle(),Color.Cyan,Color.White);
-            saveEquationButton = new Button("Save",Settings.buttonFont,new Rectangle(),Color.Cyan,Color.White);
-            previewButton = new Button("Preview",Settings.buttonFont, new Rectangle(),Color.Cyan,Color.White);
-            playButton = new Button("Play",Settings.buttonFont,new Rectangle(),Color.Cyan,Color.White);
-            exportGIFButton = new Button("Export",Settings.buttonFont,new Rectangle(),Color.Cyan,Color.White);
+            injectButton = new Button("New", Settings.buttonFont, new Rectangle(), Color.Cyan, Color.White);
+            editEquationButton = new Button("Edit", Settings.buttonFont, new Rectangle(), Color.Cyan, Color.White);
+            saveEquationButton = new Button("Save", Settings.buttonFont, new Rectangle(), Color.Cyan, Color.White);           
+            playButton = new Button("Play", Settings.buttonFont, new Rectangle(), Color.Cyan, Color.White);
+            exportGIFButton = new Button("Export", Settings.buttonFont, new Rectangle(), Color.Cyan, Color.White);
             exportPNGButton = new Button("Export", Settings.buttonFont, new Rectangle(), Color.Cyan, Color.White);
             cancelVideoGenButton = new Button("Cancel", Settings.buttonFont, new Rectangle(), Color.Cyan, Color.White);
             cancelEditButton = new Button("Cancel", Settings.buttonFont, new Rectangle(), Color.Cyan, Color.White);
@@ -363,10 +437,13 @@ namespace GameLogic
                 case PicType.GRADIENT:
                     {
                         string result = "( Gradient \n";
-                        result += "( Hues";
-                        foreach (var hue in hues)
+                        result += "( Colors";
+                        foreach (var c in colors)
                         {
-                            result += " " + hue.ToString("0.000");
+                            float r = (float)c.R / 255.0f;
+                            float g = (float)c.G / 255.0f;
+                            float b = (float)c.B / 255.0f;
+                            result += " (  " + r.ToString("0.000") + " " + g.ToString("0.000") + " " + b.ToString("0.000") + " ) ";
                         }
                         result += " )\n";
                         result += "( Positions";
@@ -375,9 +452,7 @@ namespace GameLogic
                             result += " " + p.ToString("0.000");
                         }
                         result += " )\n";
-                        result += Trees[0].ToLisp() + "\n";
-                        result += Trees[1].ToLisp() + "\n";
-                        result += Trees[2].ToLisp() + " )";
+                        result += Trees[0].ToLisp() + " )";
                         return result;
                     }
                 case PicType.RGB:
@@ -404,17 +479,18 @@ namespace GameLogic
         public Pic Clone()
         {
             Pic pic = new Pic(type, g, w);
-            if (hues != null)
+            pic.video = video;
+            if (colors != null)
             {
-                var newHues = new float[hues.Length];
+                var newColors = new Color[colors.Length];
                 var newPos = new float[pos.Length];
 
-                for (int i = 0; i < hues.Length; i++)
+                for (int i = 0; i < colors.Length; i++)
                 {
-                    newHues[i] = hues[i];
+                    newColors[i] = colors[i];
                     newPos[i] = pos[i];
                 }
-                pic.hues = newHues;
+                pic.colors = newColors;
                 pic.pos = newPos;
             }
             for (int i = 0; i < Trees.Length; i++)
@@ -433,12 +509,12 @@ namespace GameLogic
             {
                 Rectangle rect = new Rectangle(bounds.X - 5, bounds.Y - 5, bounds.Width + 10, bounds.Height + 10);
                 batch.Draw(Settings.selectedTexture, rect, Color.White);
-            }                                    
+            }
             batch.Draw(smallImage, bounds, Color.White);
             if (bounds.Contains(state.mouseState.Position))
             {
-                injectButton.Draw(batch,g, gameTime);
-            }            
+                injectButton.Draw(batch, g, gameTime);
+            }
 
         }
 
@@ -446,13 +522,13 @@ namespace GameLogic
         {
             batch.Draw(bigImage, bounds, Color.White);
             textBox.Draw(batch, gameTime);
-            saveEquationButton.Draw(batch,g, gameTime);
-            cancelEditButton.Draw(batch,g, gameTime);
+            saveEquationButton.Draw(batch, g, gameTime);
+            cancelEditButton.Draw(batch, g, gameTime);
         }
 
 
 
-        public void PanelDraw(SpriteBatch batch,GraphicsDevice g, GameTime gameTime, InputState state, bool videoGenerating, bool videoPlaying)
+        public void PanelDraw(SpriteBatch batch, GraphicsDevice g, GameTime gameTime, InputState state, bool videoGenerating, bool videoPlaying)
         {
             panel.Draw(batch, gameTime, state);
             var panelBounds = panel.GetBounds(state);
@@ -461,29 +537,26 @@ namespace GameLogic
             if (videoGenerating)
             {
                 cancelVideoGenButton.SetBounds(leftButtonBounds);
-                cancelVideoGenButton.Draw(batch,g, gameTime);
+                cancelVideoGenButton.Draw(batch, g, gameTime);
                 return;
             }
 
             editEquationButton.SetBounds(leftButtonBounds);
-            editEquationButton.Draw(batch,g, gameTime);
+            editEquationButton.Draw(batch, g, gameTime);
 
             if (video)
             {
                 var bounds = leftButtonBounds;
-                bounds.X += (int)(bounds.Width * 1.1f);
-                previewButton.SetBounds(bounds);
-                previewButton.Draw(batch,g, gameTime);
-                
+              
                 bounds.X += (int)(bounds.Width * 1.1f);
                 playButton.SetBounds(bounds);
-                playButton.Draw(batch,g, gameTime);
+                playButton.Draw(batch, g, gameTime);
 
                 if (videoPlaying)
-                {                    
+                {
                     bounds.X += (int)(bounds.Width * 1.1f);
                     exportGIFButton.SetBounds(bounds);
-                    exportGIFButton.Draw(batch,g, gameTime);
+                    exportGIFButton.Draw(batch, g, gameTime);
                 }
             }
             else
@@ -493,12 +566,12 @@ namespace GameLogic
                     var bounds = leftButtonBounds;
                     bounds.X += (int)(bounds.Width * 1.1f);
                     exportPNGButton.SetBounds(bounds);
-                    exportPNGButton.Draw(batch,g, gameTime);
+                    exportPNGButton.Draw(batch, g, gameTime);
                 }
             }
         }
 
-        public void VideoPlayingDraw(SpriteBatch batch,GraphicsDevice g, GameTime gameTime, InputState state)
+        public void VideoPlayingDraw(SpriteBatch batch, GraphicsDevice g, GameTime gameTime, InputState state)
         {
             var seconds = gameTime.TotalGameTime.TotalSeconds % (Settings.VIDEO_LENGTH * 2.0f);
             var frameIndex = (int)(seconds * Settings.FPS);
@@ -508,21 +581,29 @@ namespace GameLogic
                 frameIndex = videoFrames.Length - backIndex - 1;
             }
             batch.Draw(videoFrames[frameIndex], bounds, Color.White);
-            PanelDraw(batch, g,gameTime, state, false,true);
+            PanelDraw(batch, g, gameTime, state, false, true);
+        }
+
+        public void GifGeneratingDraw(SpriteBatch batch, GraphicsDevice g, GameWindow w, GameTime gameTime)
+        {
+            batch.Begin();
+            batch.Draw(smallImage, bounds, Color.White);
+            batch.Draw(bigImage, bounds, Color.White);
+            batch.End();
         }
 
         public void ZoomDraw(SpriteBatch batch, GraphicsDevice g, GameWindow w, GameTime gameTime, InputState state)
         {
             batch.Draw(smallImage, bounds, Color.White);
             batch.Draw(bigImage, bounds, Color.White);
-            PanelDraw(batch,g, gameTime, state, false,false);
+            PanelDraw(batch, g, gameTime, state, false, false);
         }
 
         public void VideoGeneratingDraw(SpriteBatch batch, GraphicsDevice g, GameWindow w, GameTime gameTime, InputState state)
         {
             batch.Draw(smallImage, bounds, Color.White);
             batch.Draw(bigImage, bounds, Color.White);
-            PanelDraw(batch,g, gameTime, state, true,false);
+            PanelDraw(batch, g, gameTime, state, true, false);
         }
 
 
@@ -533,10 +614,9 @@ namespace GameLogic
             var textBounds = ScaleCentered(bounds, 0.75f);
             textBox.SetNewBounds(textBounds);
             injectButton.SetBounds(FRect(bounds.X + bounds.Width * .025, bounds.Y + bounds.Height * .9, bounds.Width * .1, bounds.Height * .1));
-            saveEquationButton.SetBounds(FRect(textBounds.X, bounds.Height * .9f, bounds.Width * .1f, bounds.Height * .05f));
-            previewButton.SetBounds(FRect(textBounds.X + textBounds.Width * 0.4f, bounds.Height * .9f, bounds.Width * .1f, bounds.Height * .05f));
+            saveEquationButton.SetBounds(FRect(textBounds.X, bounds.Height * .9f, bounds.Width * .1f, bounds.Height * .05f));            
             cancelEditButton.SetBounds(FRect(textBounds.X + textBounds.Width - bounds.Width * .1f, bounds.Height * .9f, bounds.Width * .1f, bounds.Height * .05f));
-            
+
 
             panel.activeBounds = FRect(0, bounds.Height * .85f, bounds.Width, bounds.Height * .15f);
             panel.hiddenBounds = FRect(0, bounds.Height * 1.001, bounds.Width, bounds.Height * .15f);
@@ -550,19 +630,43 @@ namespace GameLogic
 
             if (result.type != partner.type && r.Next(0, Settings.CROSSOVER_ROOT_CHANCE) == 0)
             {
-                //Copy the gradient data if we are changing type TO gradient
+                //Not gradient -> gradient
                 if (partner.type == PicType.GRADIENT)
                 {
                     result.pos = new float[partner.pos.Length];
                     Array.Copy(partner.pos, result.pos, partner.pos.Length);
-                    result.hues = new float[partner.hues.Length];
-                    Array.Copy(partner.hues, result.hues, partner.hues.Length);
+                    result.colors = new Color[partner.colors.Length];
+                    Array.Copy(partner.colors, result.colors, partner.colors.Length);
+                    var newMachines = new StackMachine[1];
+                    var newTrees = new AptNode[1];                    
+                    var (tree, machine) = result.GetRandomTree(r);
+                    newTrees[0] = tree.Clone();
+                    newMachines[0] = new StackMachine(newTrees[0]);
+                    result.Machines = newMachines;
+                    result.Trees = newTrees;
+
                 }
-                // clear gradient data if we are changing type FROM gradient
+                //Gradient -> not gradient
                 else if (result.type == PicType.GRADIENT)
                 {
                     result.pos = null;
-                    result.hues = null;
+                    result.colors = null;
+                    var newMachines = new StackMachine[3];
+                    var newTrees = new AptNode[3];
+                    var i = r.Next(0, newTrees.Length);                    
+                    newTrees[i] = result.Trees[0].Clone();
+                    newMachines[i] = new StackMachine(newTrees[i]);
+                    for (i = 0; i < newTrees.Length; i++)
+                    {
+                        if (newTrees[i] == null)
+                        {
+                            newTrees[i] = AptNode.GetRandomLeaf(r, video);
+                            newMachines[i] = new StackMachine(newTrees[i]);
+                        }
+                    }
+                    
+                    result.Trees = newTrees;
+                    result.Machines = newMachines;
                 }
                 result.type = partner.type;
 
@@ -603,7 +707,7 @@ namespace GameLogic
             }
         }
 
-       
+
 
 
         public Pic Mutate(Random r)
@@ -616,53 +720,56 @@ namespace GameLogic
                 if (rootMutated != null)
                 {
                     //t = rootMutated;
-                    for (int i = 0; i < Trees.Length; i++)
+                    for (int i = 0; i < result.Trees.Length; i++)
                     {
-                        if (Trees[i] == t)
+                        if (result.Trees[i] == t)
                         {
-                            Trees[i] = rootMutated;
+                            result.Trees[i] = rootMutated;
                         }
                         t = rootMutated;
                     }
                 }
-                s = new StackMachine(t);
+                for (int i = 0; i < result.Machines.Length; i++)
+                {
+                    result.Machines[i] = new StackMachine(result.Trees[i]);
+                }
             }
             return result;
         }
-          
+
         private async Task<TextureData> ImageGenAsync(
             int w, int h,
             int start, int end,
             float t)
         {
             var ct = imageCancellationSource.Token;
-            return  await Task.Run(() =>
-            {
-                Color[] colors = new Color[(end-start) * w];
-                switch (type)
-                {
-                    case PicType.RGB:
-                        RGBToTexture(w, h, start, end, t, colors,ct);
-                        break;
-                    case PicType.HSV:
-                        HSVToTexture(w, h, start, end, t, colors,ct);
-                        break;
-                    case PicType.GRADIENT: 
-                        GradientToTexture(w, h, start, end, t, colors,ct);
-                        break;
-                    default:                        
-                        throw new Exception("wat");
-                }
-                return new TextureData { colors = colors, start = start, end = end } ;
-            },ct);
+            return await Task.Run(() =>
+           {
+               Color[] colors = new Color[(end - start) * w];
+               switch (type)
+               {
+                   case PicType.RGB:
+                       RGBToTexture(w, h, start, end, t, colors, ct);
+                       break;
+                   case PicType.HSV:
+                       HSVToTexture(w, h, start, end, t, colors, ct);
+                       break;
+                   case PicType.GRADIENT:
+                       GradientToTexture(w, h, start, end, t, colors, ct);
+                       break;
+                   default:
+                       throw new Exception("wat");
+               }
+               return new TextureData { colors = colors, start = start, end = end };
+           }, ct);
         }
 
-        private void RGBToTexture(int w, int h, int start, int end, float t, Color[] colors,CancellationToken ct)
+        private void RGBToTexture(int w, int h, int start, int end, float t, Color[] colors, CancellationToken ct)
         {
             unsafe
             {
                 const float scale = 0.5f;
-                
+
                 var rStack = stackalloc float[Machines[0].nodeCount];
                 var gStack = stackalloc float[Machines[1].nodeCount];
                 var bStack = stackalloc float[Machines[2].nodeCount];
@@ -686,14 +793,12 @@ namespace GameLogic
         }
 
 
-        private void GradientToTexture(int w, int h, int start, int end, float t, Color[] colors,CancellationToken ct)
+        private void GradientToTexture(int w, int h, int start, int end, float t, Color[] c, CancellationToken ct)
         {
             unsafe
             {
                 const float scale = 0.5f;
-                var hStack = stackalloc float[Machines[0].nodeCount];
-                var sStack = stackalloc float[Machines[1].nodeCount];
-                var vStack = stackalloc float[Machines[2].nodeCount];
+                var stack = stackalloc float[Machines[0].nodeCount];
 
                 for (int y = start; y < end; y++)
                 {
@@ -702,32 +807,43 @@ namespace GameLogic
                     for (int x = 0; x < w; x++)
                     {
                         float xf = ((float)x / (float)w) * 2.0f - 1.0f;
-                        var hueIndex = Machines[0].Execute(xf, yf, t, hStack);
-                        hueIndex = MathUtils.WrapMinMax(hueIndex, -1.0f, 1.0f);
-                        int i = 0;
-                        for (; i < pos.Length - 1; i++)
+                        var colorIndex = Machines[0].Execute(xf, yf, t, stack);
+                        colorIndex = MathUtils.WrapMinMax(colorIndex, -1.0f, 1.0f);
+                        Color c1 = new Color { };
+                        Color c2 = new Color { };
+                        float pct = 0.0f;
+                        //[-.9 0.2  .8]
+                        if (colorIndex < pos[0] || colorIndex > pos[pos.Length - 1])
                         {
-                            if (hueIndex >= pos[i] && hueIndex <= pos[i + 1])
+                            c1 = colors[colors.Length - 1];
+                            c2 = colors[0];
+                            float distToEnd = (1.0f - pos[pos.Length - 1]);
+                            float distToStart = Math.Abs(-1.0f - pos[0]);
+                            if (colorIndex < pos[0])
                             {
-                                break;
+                                pct = (distToEnd + (colorIndex - -1.0f )) / (distToEnd + distToStart);
+                            }
+                            else
+                            {
+                                pct = (colorIndex - pos[pos.Length - 1]) / (distToEnd + distToStart);
                             }
                         }
-                        var s = Machines[1].Execute(xf, yf, t, sStack) * scale + scale;
-                        var v = Machines[2].Execute(xf, yf, t, vStack) * scale + scale;
-
-                        var f1 = hues[i];
-                        var f2 = hues[(i + 1) % hues.Length];
-
-                        float posDiff = hueIndex - pos[i];
-                        float totalDiff = pos[(i + 1) % hues.Length] - pos[i];
-                        float pct = posDiff / totalDiff;
-
-                        var (c1r, c1g, c1b) = HSV2RGB(f1, s, v);
-                        var (c2r, c2g, c2b) = HSV2RGB(f2, s, v);
-                        var c1 = new Color(c1r, c1g, c1b);
-                        var c2 = new Color(c2r, c2g, c2b);
-
-                        colors[yw + x] = Color.Lerp(c1, c2, pct);
+                        else 
+                        {
+                            for (int i = 0; i < pos.Length-1; i++)
+                            {
+                                if (colorIndex > pos[i] && colorIndex < pos[i+1])
+                                {
+                                    c1 = colors[i];
+                                    c2 = colors[i + 1];
+                                    float dist = pos[i + 1] - pos[i];
+                                    pct = (colorIndex - pos[i]) / dist;
+                                    break;
+                                }
+                            }
+                        }
+                        
+                        c[yw + x] = Color.Lerp(c1, c2, pct);
 
                     }
                     ct.ThrowIfCancellationRequested();
@@ -735,7 +851,7 @@ namespace GameLogic
             }
         }
 
-        private void HSVToTexture(int width, int height, int start, int end, float t, Color[] colors,CancellationToken ct)
+        private void HSVToTexture(int width, int height, int start, int end, float t, Color[] colors, CancellationToken ct)
         {
             unsafe
             {
@@ -795,7 +911,7 @@ namespace GameLogic
                 smallImage.Dispose();
             }
             ClearVideo();
-            
+
         }
     }
 }

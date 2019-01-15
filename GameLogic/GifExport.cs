@@ -167,11 +167,12 @@ namespace GameLogic
                     ConvertColorData(Frames[frameIndex], _rgbaBuffer);
                     var frame = frames.AddFrame(_rgbaBuffer);
                     frame.MetaData.FrameDelay = frameDelay;
+                    Transition.SetProgress(i/4);
                 }
 
                 // remove the frame created with image creation
                 frames.RemoveFrame(0);
-                var encoder = new GifEncoder();
+                var encoder = new GifEncoder();                
                 image.SaveAsGif(output, encoder);
             }
         }

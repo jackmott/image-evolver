@@ -21,7 +21,7 @@ namespace GameLogic
         public int h;
     }
 
-    public enum Screen { CHOOSE, ZOOM, EDIT,VIDEO_PLAYING,VIDEO_GENERATING };
+    public enum Screen { CHOOSE, ZOOM, EDIT,VIDEO_PLAYING,VIDEO_GENERATING,GIF_EXPORTING};
     [DataContract]
     public class GameState
     {

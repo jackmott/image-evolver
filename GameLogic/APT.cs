@@ -634,16 +634,23 @@ namespace GameLogic
                         {
                             return c;
                         }
+                        // In video mode we will go with fewer constants and more Time
                         else
                         {
-                            int half = r.Next(0, 2);
+                            int half = r.Next(0, 4);
                             if (half == 0)
                             {
                                 return c;
                             }
                             else
                             {
-                                return new AptNode { type = NodeType.T };
+                                int chooser = r.Next(0, 3);
+                                if (chooser == 0)
+                                    return new AptNode { type = NodeType.T };
+                                else if (chooser ==1)
+                                    return new AptNode { type = NodeType.X };
+                                else
+                                    return new AptNode { type = NodeType.Y };
                             }
                         }
                     }

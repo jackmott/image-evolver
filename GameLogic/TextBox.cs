@@ -427,31 +427,16 @@ namespace GameLogic
                         toInsert = e.Character.ToString();
                     }
 
-                    var maxLetters = MaxLetters();
-                    var curLine = contents[cursorPos.Y];
-                    curLine = curLine.Insert(cursorPos.X, toInsert).TrimEnd(' ');
-                    contents[cursorPos.Y] = curLine;
-
-                    int y = cursorPos.Y;
-                    while (curLine.Length > maxLetters)
+                    if (cursorPos.Y == contents.Count)
                     {
-                        int lastSpace = curLine.LastIndexOf(' ');
-
-                        var removed = curLine.Substring(lastSpace + 1);
-                        curLine = curLine.Remove(lastSpace + 1);
-                        contents[y] = curLine;
-                        y++;
-                        if (y >= contents.Count)
-                        {
-                            contents.Add("");
-                        }
-                        contents[y] = contents[y].Insert(0, removed);
-                        curLine = contents[y]; 
+                        contents.Add(string.Empty);
                     }
-
-
-                    cursorPos.X++;
-                    UpdateRawText();
+                    var curLine = contents[cursorPos.Y];
+                    curLine = curLine.Insert(cursorPos.X, toInsert);
+                    contents[cursorPos.Y] = curLine;
+                    UpdateRawText();                   
+                    cursorPos.X++;                    
+                    
                 }
 
             }
@@ -521,7 +506,8 @@ namespace GameLogic
             if (cursorOn)
             {
                 // var letterSize = font.MeasureString("" + contents[cursorPos.Y][cursorPos.X]);
-                batch.Draw(pixelTex, FRect(cursorPos.X * letterSize.X + bounds.X, cursorPos.Y * letterSize.Y + bounds.Y, letterSize.X, letterSize.Y), Color.White);
+                if (cursorPos.X < MaxLetters())
+                    batch.Draw(pixelTex, FRect(cursorPos.X * letterSize.X + bounds.X, cursorPos.Y * letterSize.Y + bounds.Y, letterSize.X, letterSize.Y), Color.White);
             }
 
             if (error != null)
@@ -529,10 +515,11 @@ namespace GameLogic
                 batch.DrawString(font, error.Message, new Vector2(bounds.X + bounds.Width * .01f, bounds.Y + bounds.Height - letterSize.Y), Color.Red);
             }
 
-
+            var maxLetters = MaxLetters();
             for (int i = 0; i < contents.Count; i++)
             {
-                batch.DrawString(font, contents[i], new Vector2(bounds.X, bounds.Y + letterSize.Y * i), c);
+                var text = contents[i].Substring(0, Math.Min(contents[i].Length,maxLetters));
+                batch.DrawString(font, text, new Vector2(bounds.X, bounds.Y + letterSize.Y * i), c);                
             }
             border.Draw(batch, c);
 
