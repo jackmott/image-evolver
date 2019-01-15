@@ -1,5 +1,8 @@
 ﻿// todo - wconsider filter nodes attached to top level pic nodes (sepia, etc)
 // todo - does breed handle warp properly? I think not
+// todo - make the mouse not work when the window isn't active
+// todo - toggle button
+// todo - fix panel rendering on resize
 
 
 using Microsoft.Xna.Framework;
