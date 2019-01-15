@@ -19,7 +19,7 @@ using Svg;
 
 namespace GameLogic
 {
- 
+
 
     public class GameLogic
     {
@@ -42,14 +42,14 @@ namespace GameLogic
         public void LoadButtons()
         {
             DirectoryInfo d = new DirectoryInfo(AppDomain.CurrentDomain.BaseDirectory + @"\Content");
-            state.svgs = d.GetFiles("*.svg").SelectF(file => (file.Name.Replace(".svg",string.Empty), SvgDocument.Open(file.FullName)));
+            state.svgs = d.GetFiles("*.svg").SelectF(file => (file.Name.Replace(".svg", string.Empty), SvgDocument.Open(file.FullName)));
             ResizeButtons();
         }
 
         public void ResizeButtons()
         {
             if (state.buttons != null)
-            {                
+            {
                 foreach (var tex in state.buttons.Values)
                 {
                     tex.Dispose();
@@ -63,7 +63,19 @@ namespace GameLogic
                 svgimg.Save(stream, System.Drawing.Imaging.ImageFormat.Png);
                 state.buttons.Add(name, Texture2D.FromStream(state.g, stream));
                 stream.Close();
-            }            
+            }
+        }
+
+        public void PickFonts(ContentManager content, GraphicsDevice g)
+        {
+            if (g.Viewport.Height <= 1440)
+            {
+                Settings.font = state.lowFont;
+            }
+            else
+            {
+                Settings.font = state.hiFont;
+            }
         }
 
         public GameState Init(GraphicsDevice g, GameWindow window, ContentManager content)
@@ -72,14 +84,19 @@ namespace GameLogic
             state.r = new Random();
             state.g = g;
             state.w = window;
-            state.inputState = new InputState();            
-            Settings.equationFont = content.Load<SpriteFont>("equation-font");
-            Settings.buttonFont = content.Load<SpriteFont>("button-font");
+            state.inputState = new InputState();
+            
+            
             Settings.selectedTexture = GraphUtils.GetTexture(g, Color.Cyan);
             Settings.panelTexture = GraphUtils.GetTexture(g, new Color(0.0f, 0.0f, 0.0f, 0.75f));
 
-            LoadButtons();
             
+            state.lowFont = content.Load<SpriteFont>("equation-font");            
+            state.hiFont = content.Load<SpriteFont>("equation-font-hi");
+            
+            PickFonts(content,g);
+            LoadButtons();
+
             DirectoryInfo d = new DirectoryInfo(AppDomain.CurrentDomain.BaseDirectory + @"\Assets");
             var files = d.GetFiles("*.jpg").AsEnumerable().Concat(d.GetFiles("*.png"));
             GameState.externalImages = new List<ExternalImage>();
@@ -129,10 +146,10 @@ namespace GameLogic
             int winH = g.Viewport.Height;
 
 
-            state.undoButton = new Button("Undo",Settings.buttonFont,FRect(winW * .01f, winH * .91f, winW * .1f, winH * 0.05f),Color.Cyan,Color.White);
-            state.reRollButton = new Button("New",Settings.buttonFont, FRect(winW * .201f, winH * .91f, winW * .1f, winH * 0.05f),Color.Cyan,Color.White);
-            state.evolveButton = new Button("Evolve",Settings.buttonFont,FRect(winW * .401f, winH * .91f, winW * .1f, winH * 0.05f),Color.Cyan,Color.White);
-            state.imageAddButton = new Button("Add Img", Settings.buttonFont, FRect(winW * .601f, winH * .91f, winW * .1f, winH * 0.05f), Color.Cyan, Color.White);
+            state.undoButton = new Button("Undo", Settings.font, FRect(winW * .01f, winH * .91f, winW * .1f, winH * 0.05f), Color.Cyan, Color.White);
+            state.reRollButton = new Button("New", Settings.font, FRect(winW * .201f, winH * .91f, winW * .1f, winH * 0.05f), Color.Cyan, Color.White);
+            state.evolveButton = new Button("Evolve", Settings.font, FRect(winW * .401f, winH * .91f, winW * .1f, winH * 0.05f), Color.Cyan, Color.White);
+            state.imageAddButton = new Button("Add Img", Settings.font, FRect(winW * .601f, winH * .91f, winW * .1f, winH * 0.05f), Color.Cyan, Color.White);
             state.videoModeButton = new ToggleButton(GetTexture(g, Color.Green), GetTexture(g, Color.DarkGreen), FRect(winW * .801f, winH * .91f, winW * .1f, winH * 0.05f));
 
 
@@ -194,13 +211,18 @@ namespace GameLogic
             foreach (var pic in state.pictures)
             {
                 pic.imageCancellationSource.Cancel();
-            }
+                pic.imageCancellationSource = new CancellationTokenSource();
+            }            
             ResizeButtons();
+            PickFonts(state.content,state.g);
             LayoutUI();
+            
         }
 
         public void Draw(SpriteBatch batch, GameTime gameTime)
         {
+            state.g.Clear(Color.Black);
+            batch.Begin();
             var screen = state.screen;
             if (screen == Screen.VIDEO_GENERATING)
             {
@@ -209,10 +231,8 @@ namespace GameLogic
             }
             else if (screen == Screen.IMAGE_ADDING)
             {
-                batch.Begin();
                 ChooseDraw(batch, gameTime);
-                ImageAdder.Draw(batch, state.g, state, gameTime);                
-                batch.End();
+                ImageAdder.Draw(batch, state.g, state, gameTime);
             }
             else if (screen == Screen.GIF_EXPORTING)
             {
@@ -221,9 +241,7 @@ namespace GameLogic
             }
             else if (state.screen == Screen.CHOOSE)
             {
-                batch.Begin();
                 ChooseDraw(batch, gameTime);
-                batch.End();
             }
             else if (state.screen == Screen.ZOOM)
             {
@@ -237,54 +255,46 @@ namespace GameLogic
             {
                 EditDraw(batch, gameTime);
             }
-
+            batch.End();
         }
 
 
         public void EditDraw(SpriteBatch batch, GameTime gameTime)
         {
-            batch.Begin();
             state.zoomedPic.EditDraw(batch, state.g, state.w, gameTime);
-            batch.End();
         }
 
         public void ZoomDraw(SpriteBatch batch, GameTime gameTime)
         {
-            batch.Begin();
             state.zoomedPic.ZoomDraw(batch, state.g, state.w, gameTime, state.inputState);
-            batch.End();
         }
 
         public void VideoGeneratingDraw(SpriteBatch batch, GameTime gameTime)
         {
-            batch.Begin();
             state.zoomedPic.VideoGeneratingDraw(batch, state.g, state.w, gameTime, state.inputState);
-            batch.End();
         }
 
         public void VideoPlayingDraw(SpriteBatch batch, GameTime gameTime)
         {
-            batch.Begin();
-            state.zoomedPic.VideoPlayingDraw(batch,state.g, gameTime, state.inputState);
-            batch.End();
+            state.zoomedPic.VideoPlayingDraw(batch, state.g, gameTime, state.inputState);
         }
 
 
         public void ChooseDraw(SpriteBatch batch, GameTime gameTime)
         {
-            var g = state.g;                        
-            state.undoButton.Draw(batch,state.g, gameTime);
-            state.reRollButton.Draw(batch,state.g, gameTime);
-            state.evolveButton.Draw(batch,state.g, gameTime);
+            var g = state.g;
+            state.undoButton.Draw(batch, state.g, gameTime);
+            state.reRollButton.Draw(batch, state.g, gameTime);
+            state.evolveButton.Draw(batch, state.g, gameTime);
             state.imageAddButton.Draw(batch, state.g, gameTime);
-            state.videoModeButton.Draw(batch,gameTime, state.videoMode);
+            state.videoModeButton.Draw(batch, gameTime, state.videoMode);
 
 
             foreach (var pic in state.pictures)
             {
                 pic.Draw(batch, state.g, state.w, gameTime, state.inputState);
             }
-            
+
 
         }
 
@@ -334,7 +344,7 @@ namespace GameLogic
                 state.screen = Screen.IMAGE_ADDING;
             }
             if (state.reRollButton.WasLeftClicked(state.inputState))
-            {            
+            {
                 ClearPics(state.prevPictures);
                 state.prevPictures = state.pictures;
                 state.pictures = null;
@@ -394,7 +404,7 @@ namespace GameLogic
                 if (pic.injectButton.WasLeftClicked(state.inputState))
                 {
                     state.pictures[i] = GenTree(r);
-                    LayoutUI();                    
+                    LayoutUI();
                 }
 
                 if (pic.WasRightClicked(state.inputState))
@@ -440,7 +450,7 @@ namespace GameLogic
                     state.screen = Screen.ZOOM;
                     state.zoomedPic.textBox.SetActive(false);
                     state.zoomedPic.ClearVideo();
-                    _ = state.zoomedPic.GenSmallImageAsync();                                        
+                    _ = state.zoomedPic.GenSmallImageAsync();
                     state.zoomedPic.GenBigImage();
                 }
                 catch (ParseException ex)
@@ -479,23 +489,23 @@ namespace GameLogic
                 return state;
             }
 
-          
+
             if (state.zoomedPic.playButton.WasLeftClicked(state.inputState))
-            {                
+            {
                 state.zoomedPic.GenVideo(state);
             }
 
             if (state.zoomedPic.exportGIFButton.WasLeftClicked(state.inputState))
             {
-                _ = state.zoomedPic.exportGIF(state);                
+                _ = state.zoomedPic.exportGIF(state);
             }
             if (state.zoomedPic.exportPNGButton.WasLeftClicked(state.inputState))
             {
                 var pic = state.zoomedPic;
                 var store = new FrameStore(1, pic.bigImage.Width, pic.bigImage.Height);
                 store.PushFrame(pic.bigImage);
-               
-               
+
+
 
                 Stream myStream;
                 SaveFileDialog saveFileDialog1 = new SaveFileDialog();
@@ -529,11 +539,11 @@ namespace GameLogic
 
             return state;
         }
-        
+
         public Pic GenTree(Random r)
         {
-            int chooser = r.Next(0, 3);            
-            PicType type = (PicType)chooser;            
+            int chooser = r.Next(0, 3);
+            PicType type = (PicType)chooser;
             return new Pic(type, r, Settings.MIN_GEN_SIZE, Settings.MAX_GEN_SIZE, state.g, state.w, state.videoMode);
         }
 

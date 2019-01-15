@@ -51,14 +51,13 @@ namespace GameLogic
             int winH = g.Viewport.Height;
             float pct = (float)progress / (float)goal;
 
-            Rectangle Rect = CenteredRect(new Rectangle(0, 0, winW, winH), winW / 4, winH / 20);
-            batch.Begin();
+            Rectangle Rect = CenteredRect(new Rectangle(0, 0, winW, winH), winW / 4, winH / 20);           
             var tex = GraphUtils.GetTexture(g, Color.Blue);
             var background = GraphUtils.GetTexture(g, new Color(0.0f, 0.0f, 0.0f, 0.5f));
             var progRect = new Rectangle(Rect.X, Rect.Y, (int)(Rect.Width * ((float)progress/(float)goal)), Rect.Height);
             batch.Draw(background, progRect, Color.White);
             batch.Draw(tex, progRect, Color.White);
-            batch.DrawString(Settings.equationFont, message, new Vector2(progRect.X + 10.0f, progRect.Y + 10.0f), Color.White);
+            batch.DrawString(Settings.font, message, new Vector2(progRect.X + 10.0f, progRect.Y + 10.0f), Color.White);
             var Thickness = 2;
             tex = GraphUtils.GetTexture(g, Color.Cyan);
             // Draw top line
@@ -71,8 +70,7 @@ namespace GameLogic
             batch.Draw(tex, new Rectangle(Rect.X,
                                             Rect.Y + Rect.Height - Thickness,
                                             Rect.Width,
-                                            Thickness), Color.White);
-            batch.End();
+                                            Thickness), Color.White);            
         }
     }
 

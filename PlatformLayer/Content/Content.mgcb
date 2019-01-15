@@ -16,13 +16,6 @@
 #begin back-btn.svg
 /copy:back-btn.svg
 
-#begin button-font.spritefont
-/importer:FontDescriptionImporter
-/processor:FontDescriptionProcessor
-/processorParam:PremultiplyAlpha=True
-/processorParam:TextureFormat=Compressed
-/build:button-font.spritefont
-
 #begin cancel-btn.svg
 /copy:cancel-btn.svg
 
@@ -41,6 +34,13 @@
 /processorParam:PremultiplyAlpha=True
 /processorParam:TextureFormat=Compressed
 /build:equation-font.spritefont
+
+#begin equation-font-hi.spritefont
+/importer:FontDescriptionImporter
+/processor:FontDescriptionProcessor
+/processorParam:PremultiplyAlpha=True
+/processorParam:TextureFormat=Compressed
+/build:equation-font-hi.spritefont
 
 #begin image-btn.svg
 /copy:image-btn.svg

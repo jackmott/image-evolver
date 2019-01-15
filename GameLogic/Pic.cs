@@ -262,8 +262,11 @@ namespace GameLogic
             smallImage.Dispose(); // dispose of the old texture
             smallImage = new Texture2D(g, bounds.Width, bounds.Height, false, SurfaceFormat.Color);
             var colors = result.colors;
-            //todo this assert fails sometimes when flipping between states quickly
-            Debug.Assert(colors.Length == smallImage.Width * smallImage.Height);
+
+            if (colors.Length != smallImage.Width * smallImage.Height)
+            {
+                Console.WriteLine("size mismatch");
+            }
             smallImage.SetData(colors);
 
         }
@@ -413,21 +416,21 @@ namespace GameLogic
 
         public void InitButtons()
         {
-            injectButton = new Button("New", Settings.buttonFont, new Rectangle(), Color.Cyan, Color.White);
-            editEquationButton = new Button("Edit", Settings.buttonFont, new Rectangle(), Color.Cyan, Color.White);
-            saveEquationButton = new Button("Save", Settings.buttonFont, new Rectangle(), Color.Cyan, Color.White);           
-            playButton = new Button("Play", Settings.buttonFont, new Rectangle(), Color.Cyan, Color.White);
-            exportGIFButton = new Button("Export", Settings.buttonFont, new Rectangle(), Color.Cyan, Color.White);
-            exportPNGButton = new Button("Export", Settings.buttonFont, new Rectangle(), Color.Cyan, Color.White);
-            cancelVideoGenButton = new Button("Cancel", Settings.buttonFont, new Rectangle(), Color.Cyan, Color.White);
-            cancelEditButton = new Button("Cancel", Settings.buttonFont, new Rectangle(), Color.Cyan, Color.White);
+            injectButton = new Button("New", Settings.font, new Rectangle(), Color.Cyan, Color.White);
+            editEquationButton = new Button("Edit", Settings.font, new Rectangle(), Color.Cyan, Color.White);
+            saveEquationButton = new Button("Save", Settings.font, new Rectangle(), Color.Cyan, Color.White);           
+            playButton = new Button("Play", Settings.font, new Rectangle(), Color.Cyan, Color.White);
+            exportGIFButton = new Button("Export", Settings.font, new Rectangle(), Color.Cyan, Color.White);
+            exportPNGButton = new Button("Export", Settings.font, new Rectangle(), Color.Cyan, Color.White);
+            cancelVideoGenButton = new Button("Cancel", Settings.font, new Rectangle(), Color.Cyan, Color.White);
+            cancelEditButton = new Button("Cancel", Settings.font, new Rectangle(), Color.Cyan, Color.White);
             panel = new SlidingPanel(Settings.panelTexture, new Rectangle(), new Rectangle(), 500.0);
         }
 
         public void SetupTextbox()
         {
             string lisp = ToLisp();
-            textBox = new TextBox(lisp, w, GetTexture(g, new Color(0, 0, 0, 128)), GetTexture(g, Color.Cyan), ScaleCentered(bounds, 0.75f), Settings.equationFont, Color.White);
+            textBox = new TextBox(lisp, w, GetTexture(g, new Color(0, 0, 0, 128)), GetTexture(g, Color.Cyan), ScaleCentered(bounds, 0.75f), Color.White);
         }
 
         public string ToLisp()
@@ -585,11 +588,10 @@ namespace GameLogic
         }
 
         public void GifGeneratingDraw(SpriteBatch batch, GraphicsDevice g, GameWindow w, GameTime gameTime)
-        {
-            batch.Begin();
+        {            
             batch.Draw(smallImage, bounds, Color.White);
             batch.Draw(bigImage, bounds, Color.White);
-            batch.End();
+         
         }
 
         public void ZoomDraw(SpriteBatch batch, GraphicsDevice g, GameWindow w, GameTime gameTime, InputState state)

@@ -28,6 +28,8 @@ namespace GameLogic
     {
         public (string name, SvgDocument)[] svgs;
         public Dictionary<string, Texture2D> buttons;
+        public SpriteFont lowFont;
+        public SpriteFont hiFont;
 
         public GraphicsDevice g;        
         public GameWindow w;

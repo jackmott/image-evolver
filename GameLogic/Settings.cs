@@ -33,7 +33,6 @@ namespace GameLogic
        
         public static Texture2D panelTexture;
 
-        public static SpriteFont equationFont;
-        public static SpriteFont buttonFont;
+        public static SpriteFont font;        
     }
 }

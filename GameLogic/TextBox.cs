@@ -21,15 +21,12 @@ namespace GameLogic
         [DataMember]
         public Border border;
         [DataMember]
-        public Point cursorPos;
-        public SpriteFont font;
+        public Point cursorPos;        
         [DataMember]
         private bool active;
         [DataMember]
         public Rectangle bounds;
-        public GameWindow window;
-        [DataMember]
-        public Vector2 letterSize;
+        public GameWindow window;        
         [DataMember]
         public Texture2D pixelTex;
         [DataMember]
@@ -41,17 +38,15 @@ namespace GameLogic
 
         public ParseException error;
 
-        public TextBox(string contents, GameWindow window, Texture2D background, Texture2D pixelTex, Rectangle bounds, SpriteFont font, Color color)
+        public TextBox(string contents, GameWindow window, Texture2D background, Texture2D pixelTex, Rectangle bounds, Color color)
         {
             active = false;
             this.window = window;
             this.bounds = bounds;
-            this.color = color;
-            this.font = font;
-            SetText(contents);
-            letterSize = font.MeasureString("A");
+            this.color = color;            
+            SetText(contents);            
             this.pixelTex = pixelTex;
-            border = new Border(pixelTex, bounds, 4);
+            border = new Border(pixelTex, bounds, 1);
             cursorPos = new Point(0, 0);
 
         }
@@ -220,7 +215,7 @@ namespace GameLogic
             return text;
         }
 
-        public Point TextPosFromScreenPos(Point p)
+        public Point TextPosFromScreenPos(Point p, Vector2 letterSize)
         {
             p.X -= bounds.X;
             p.Y -= bounds.Y;
@@ -233,19 +228,20 @@ namespace GameLogic
             return p;
         }
 
-        public int MaxLetters()
+        public int MaxLetters(Vector2 letterSize)
         {
             return (int)(bounds.Width / letterSize.X);
         }
 
         public void HandleMouse(InputState state)
         {
+            var letterSize = Settings.font.MeasureString("A");
             // Set the cursor position on press then release
             if (state.prevMouseState.LeftButton == ButtonState.Pressed && state.mouseState.LeftButton == ButtonState.Released)
             {
                 if (bounds.Contains(state.prevMouseState.Position) && bounds.Contains(state.mouseState.Position))
                 {
-                    cursorPos = TextPosFromScreenPos(state.mouseState.Position);
+                    cursorPos = TextPosFromScreenPos(state.mouseState.Position,letterSize);
                 }
             }
 
@@ -259,8 +255,8 @@ namespace GameLogic
             // Change the highlighted range on click->drag
             if (state.prevMouseState.LeftButton == ButtonState.Pressed && state.mouseState.LeftButton == ButtonState.Pressed)
             {
-                Point pre = TextPosFromScreenPos(state.prevMouseState.Position);
-                Point cur = TextPosFromScreenPos(state.mouseState.Position);
+                Point pre = TextPosFromScreenPos(state.prevMouseState.Position,letterSize);
+                Point cur = TextPosFromScreenPos(state.mouseState.Position,letterSize);
                 if (pre != cur)
                 {
                     if (highlightStart == highlightEnd)
@@ -473,6 +469,7 @@ namespace GameLogic
 
         public void Draw(SpriteBatch batch, GameTime gameTime)
         {
+            var letterSize = Settings.font.MeasureString("A");
             Color c = color;
 
             batch.Draw(pixelTex, bounds, new Color(0.0f, 0.0f, 0.0f, 0.75f));
@@ -506,20 +503,20 @@ namespace GameLogic
             if (cursorOn)
             {
                 // var letterSize = font.MeasureString("" + contents[cursorPos.Y][cursorPos.X]);
-                if (cursorPos.X < MaxLetters())
+                if (cursorPos.X < MaxLetters(letterSize))
                     batch.Draw(pixelTex, FRect(cursorPos.X * letterSize.X + bounds.X, cursorPos.Y * letterSize.Y + bounds.Y, letterSize.X, letterSize.Y), Color.White);
             }
 
             if (error != null)
             {
-                batch.DrawString(font, error.Message, new Vector2(bounds.X + bounds.Width * .01f, bounds.Y + bounds.Height - letterSize.Y), Color.Red);
+                batch.DrawString(Settings.font, error.Message, new Vector2(bounds.X + bounds.Width * .01f, bounds.Y + bounds.Height - letterSize.Y), Color.Red);
             }
 
-            var maxLetters = MaxLetters();
+            var maxLetters = MaxLetters(letterSize);
             for (int i = 0; i < contents.Count; i++)
             {
                 var text = contents[i].Substring(0, Math.Min(contents[i].Length,maxLetters));
-                batch.DrawString(font, text, new Vector2(bounds.X, bounds.Y + letterSize.Y * i), c);                
+                batch.DrawString(Settings.font, text, new Vector2(bounds.X, bounds.Y + letterSize.Y * i), c);                
             }
             border.Draw(batch, c);
 
