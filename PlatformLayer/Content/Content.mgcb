@@ -13,6 +13,9 @@
 
 #---------------------------------- Content ---------------------------------#
 
+#begin back-btn.svg
+/copy:back-btn.svg
+
 #begin button-font.spritefont
 /importer:FontDescriptionImporter
 /processor:FontDescriptionProcessor
@@ -20,10 +23,37 @@
 /processorParam:TextureFormat=Compressed
 /build:button-font.spritefont
 
+#begin cancel-btn.svg
+/copy:cancel-btn.svg
+
+#begin dna-btn.svg
+/copy:dna-btn.svg
+
+#begin download-btn.svg
+/copy:download-btn.svg
+
+#begin edit-btn.svg
+/copy:edit-btn.svg
+
 #begin equation-font.spritefont
 /importer:FontDescriptionImporter
 /processor:FontDescriptionProcessor
 /processorParam:PremultiplyAlpha=True
 /processorParam:TextureFormat=Compressed
 /build:equation-font.spritefont
+
+#begin image-btn.svg
+/copy:image-btn.svg
+
+#begin movie-btn.svg
+/copy:movie-btn.svg
+
+#begin reload-btn.svg
+/copy:reload-btn.svg
+
+#begin yes-btn.svg
+/copy:yes-btn.svg
+
+#begin zoom-btn.svg
+/copy:zoom-btn.svg
 

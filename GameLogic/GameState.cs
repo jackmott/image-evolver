@@ -5,6 +5,7 @@ using Microsoft.Xna.Framework.Content;
 using System;
 using System.Collections.Generic;
 using System.Runtime.Serialization;
+using Svg;
 
 namespace GameLogic
 {
@@ -21,11 +22,13 @@ namespace GameLogic
         public int h;
     }
 
-    public enum Screen { CHOOSE, ZOOM, EDIT,VIDEO_PLAYING,VIDEO_GENERATING,GIF_EXPORTING};
+    public enum Screen { CHOOSE, ZOOM, EDIT,VIDEO_PLAYING,VIDEO_GENERATING,GIF_EXPORTING,IMAGE_ADDING};
     [DataContract]
     public class GameState
     {
-        
+        public (string name, SvgDocument)[] svgs;
+        public Dictionary<string, Texture2D> buttons;
+
         public GraphicsDevice g;        
         public GameWindow w;
         [DataMember]
@@ -39,6 +42,8 @@ namespace GameLogic
         public Button reRollButton;
         [DataMember]
         public Button undoButton;
+        [DataMember]
+        public Button imageAddButton;
         [DataMember]
         public ToggleButton videoModeButton;
         [DataMember]

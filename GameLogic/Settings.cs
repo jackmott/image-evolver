@@ -13,8 +13,8 @@ namespace GameLogic
         public const int MUTATE_LEAF_CHANCE = 5; // 1 in X
         //Chance of breeding swapping pic types
         public const int CROSSOVER_ROOT_CHANCE = 4; // 1 in X
-                
 
+                        
         public const int VIDEO_WIDTH = 480;
         public const int VIDEO_HEIGHT = 270;
 

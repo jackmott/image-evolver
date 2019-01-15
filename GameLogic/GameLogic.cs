@@ -1,4 +1,4 @@
-﻿// todo - consider filter nodes attached to top level pic nodes (sepia, etc)
+﻿// todo - wconsider filter nodes attached to top level pic nodes (sepia, etc)
 // todo - does breed handle warp properly? I think not
 
 
@@ -15,7 +15,7 @@ using System.Xml;
 using static GameLogic.GraphUtils;
 using System.Threading;
 using System.Windows.Forms;
-
+using Svg;
 
 namespace GameLogic
 {
@@ -39,6 +39,33 @@ namespace GameLogic
 
         }
 
+        public void LoadButtons()
+        {
+            DirectoryInfo d = new DirectoryInfo(AppDomain.CurrentDomain.BaseDirectory + @"\Content");
+            state.svgs = d.GetFiles("*.svg").SelectF(file => (file.Name.Replace(".svg",string.Empty), SvgDocument.Open(file.FullName)));
+            ResizeButtons();
+        }
+
+        public void ResizeButtons()
+        {
+            if (state.buttons != null)
+            {                
+                foreach (var tex in state.buttons.Values)
+                {
+                    tex.Dispose();
+                }
+            }
+            state.buttons = new Dictionary<string, Texture2D>();
+            foreach (var (name, svg) in state.svgs)
+            {
+                var svgimg = svg.Draw((int)(state.g.Viewport.Width * 0.08f), (int)(state.g.Viewport.Width * 0.08f));
+                Stream stream = new MemoryStream();
+                svgimg.Save(stream, System.Drawing.Imaging.ImageFormat.Png);
+                state.buttons.Add(name, Texture2D.FromStream(state.g, stream));
+                stream.Close();
+            }            
+        }
+
         public GameState Init(GraphicsDevice g, GameWindow window, ContentManager content)
         {
             state = new GameState();
@@ -51,7 +78,8 @@ namespace GameLogic
             Settings.selectedTexture = GraphUtils.GetTexture(g, Color.Cyan);
             Settings.panelTexture = GraphUtils.GetTexture(g, new Color(0.0f, 0.0f, 0.0f, 0.75f));
 
-
+            LoadButtons();
+            
             DirectoryInfo d = new DirectoryInfo(AppDomain.CurrentDomain.BaseDirectory + @"\Assets");
             var files = d.GetFiles("*.jpg").AsEnumerable().Concat(d.GetFiles("*.png"));
             GameState.externalImages = new List<ExternalImage>();
@@ -104,7 +132,8 @@ namespace GameLogic
             state.undoButton = new Button("Undo",Settings.buttonFont,FRect(winW * .01f, winH * .91f, winW * .1f, winH * 0.05f),Color.Cyan,Color.White);
             state.reRollButton = new Button("New",Settings.buttonFont, FRect(winW * .201f, winH * .91f, winW * .1f, winH * 0.05f),Color.Cyan,Color.White);
             state.evolveButton = new Button("Evolve",Settings.buttonFont,FRect(winW * .401f, winH * .91f, winW * .1f, winH * 0.05f),Color.Cyan,Color.White);
-            state.videoModeButton = new ToggleButton(GetTexture(g, Color.Green), GetTexture(g, Color.DarkGreen), FRect(winW * .601f, winH * .91f, winW * .1f, winH * 0.05f));
+            state.imageAddButton = new Button("Add Img", Settings.buttonFont, FRect(winW * .601f, winH * .91f, winW * .1f, winH * 0.05f), Color.Cyan, Color.White);
+            state.videoModeButton = new ToggleButton(GetTexture(g, Color.Green), GetTexture(g, Color.DarkGreen), FRect(winW * .801f, winH * .91f, winW * .1f, winH * 0.05f));
 
 
             int UISpace = (int)(winH * 0.1f);
@@ -162,6 +191,11 @@ namespace GameLogic
         public void OnResize()
         {
             Console.WriteLine("resize");
+            foreach (var pic in state.pictures)
+            {
+                pic.imageCancellationSource.Cancel();
+            }
+            ResizeButtons();
             LayoutUI();
         }
 
@@ -173,14 +207,23 @@ namespace GameLogic
                 VideoGeneratingDraw(batch, gameTime);
                 Transition.Draw(batch, state.g, gameTime);
             }
+            else if (screen == Screen.IMAGE_ADDING)
+            {
+                batch.Begin();
+                ChooseDraw(batch, gameTime);
+                ImageAdder.Draw(batch, state.g, state, gameTime);                
+                batch.End();
+            }
             else if (screen == Screen.GIF_EXPORTING)
             {
-                state.zoomedPic.GifGeneratingDraw(batch,state.g,state.w, gameTime);
+                state.zoomedPic.GifGeneratingDraw(batch, state.g, state.w, gameTime);
                 Transition.Draw(batch, state.g, gameTime);
             }
             else if (state.screen == Screen.CHOOSE)
             {
+                batch.Begin();
                 ChooseDraw(batch, gameTime);
+                batch.End();
             }
             else if (state.screen == Screen.ZOOM)
             {
@@ -229,13 +272,11 @@ namespace GameLogic
 
         public void ChooseDraw(SpriteBatch batch, GameTime gameTime)
         {
-            var g = state.g;
-
-            g.Clear(Color.Black);
-            batch.Begin();
+            var g = state.g;                        
             state.undoButton.Draw(batch,state.g, gameTime);
             state.reRollButton.Draw(batch,state.g, gameTime);
             state.evolveButton.Draw(batch,state.g, gameTime);
+            state.imageAddButton.Draw(batch, state.g, gameTime);
             state.videoModeButton.Draw(batch,gameTime, state.videoMode);
 
 
@@ -243,7 +284,7 @@ namespace GameLogic
             {
                 pic.Draw(batch, state.g, state.w, gameTime, state.inputState);
             }
-            batch.End();
+            
 
         }
 
@@ -287,6 +328,10 @@ namespace GameLogic
                     state.pictures = state.prevPictures;
                     state.prevPictures = temp;
                 }
+            }
+            if (state.imageAddButton.WasLeftClicked(state.inputState))
+            {
+                state.screen = Screen.IMAGE_ADDING;
             }
             if (state.reRollButton.WasLeftClicked(state.inputState))
             {            
