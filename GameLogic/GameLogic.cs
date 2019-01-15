@@ -145,11 +145,11 @@ namespace GameLogic
             int winW = g.Viewport.Width;
             int winH = g.Viewport.Height;
 
-
-            state.undoButton = new Button("Undo", Settings.font, FRect(winW * .01f, winH * .91f, winW * .1f, winH * 0.05f), Color.Cyan, Color.White);
-            state.reRollButton = new Button("New", Settings.font, FRect(winW * .201f, winH * .91f, winW * .1f, winH * 0.05f), Color.Cyan, Color.White);
-            state.evolveButton = new Button("Evolve", Settings.font, FRect(winW * .401f, winH * .91f, winW * .1f, winH * 0.05f), Color.Cyan, Color.White);
-            state.imageAddButton = new Button("Add Img", Settings.font, FRect(winW * .601f, winH * .91f, winW * .1f, winH * 0.05f), Color.Cyan, Color.White);
+            var btnPct = 0.05f;
+            state.undoButton = new Button(state.buttons["back-btn"], FRect(winW * .01f, winH * .91f, winW * btnPct, winW * btnPct));
+            state.reRollButton = new Button(state.buttons["reload-btn"], FRect(winW * .201f, winH * .91f, winW * btnPct, winW * btnPct));
+            state.evolveButton = new Button(state.buttons["dna-btn"], FRect(winW * .401f, winH * .91f, winW * btnPct, winW * btnPct));            
+            state.imageAddButton = new Button(state.buttons["image-btn"], FRect(winW * .601f, winH * .91f, winW * btnPct, winW * btnPct));
             state.videoModeButton = new ToggleButton(GetTexture(g, Color.Green), GetTexture(g, Color.DarkGreen), FRect(winW * .801f, winH * .91f, winW * .1f, winH * 0.05f));
 
 
@@ -380,8 +380,8 @@ namespace GameLogic
                     var first = breeders[state.r.Next(0, breeders.Length)];
                     var second = breeders[state.r.Next(0, breeders.Length)];
 
-                    var child = first.BreedWith(second, state.r);
-                    child = child.Mutate(state.r);
+                    var child = first.BreedWith(second, state.r,state);
+                    child = child.Mutate(state.r,state);
                     child.Optimize();
                     child.textBox.SetText(child.ToLisp());
                     nextGeneration[nextGenIndex] = child;
@@ -439,7 +439,7 @@ namespace GameLogic
                 try
                 {
                     lexer.BeginLexing();
-                    var p = lexer.ParsePic(state.g, state.w);
+                    var p = lexer.ParsePic(state.g, state.w,state);
                     state.zoomedPic.Trees = p.Trees;
                     state.zoomedPic.Machines = p.Machines;
                     state.zoomedPic.type = p.type;
@@ -544,7 +544,7 @@ namespace GameLogic
         {
             int chooser = r.Next(0, 3);
             PicType type = (PicType)chooser;
-            return new Pic(type, r, Settings.MIN_GEN_SIZE, Settings.MAX_GEN_SIZE, state.g, state.w, state.videoMode);
+            return new Pic(type, r, Settings.MIN_GEN_SIZE, Settings.MAX_GEN_SIZE, state.g, state.w, state.videoMode,state);
         }
 
         public void ClearPics(Pic[] pics)

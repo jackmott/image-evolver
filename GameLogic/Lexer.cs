@@ -129,7 +129,7 @@ namespace GameLogic
             throw new ParseException("Invalid token", t);
         }
 
-        public Pic ParsePic(GraphicsDevice g, GameWindow w)
+        public Pic ParsePic(GraphicsDevice g, GameWindow w, GameState state)
         {
             ParseExpect(TokenType.OPEN_PAREN);
             var t = ParseExpect(TokenType.OP);
@@ -137,7 +137,7 @@ namespace GameLogic
             Pic p;
             if (s == "gradient")
             {
-                p = new Pic(PicType.GRADIENT, g, w);
+                p = new Pic(PicType.GRADIENT, g, w,state);
                 ParseExpect(TokenType.OPEN_PAREN);
                 t = ParseExpect(TokenType.OP);
                 s = input.Slice(t.start, t.len).ToString().ToLower();
@@ -188,7 +188,7 @@ namespace GameLogic
             }
             else if (s == "rgb")
             {
-                p = new Pic(PicType.RGB, g, w);
+                p = new Pic(PicType.RGB, g, w,state);
                 p.Trees[0] = ParseNodes();
                 p.Machines[0] = new StackMachine(p.Trees[0]);
 
@@ -200,7 +200,7 @@ namespace GameLogic
             }
             else if (s == "hsv")
             {
-                p = new Pic(PicType.HSV, g, w);
+                p = new Pic(PicType.HSV, g, w,state);
                 p.Trees[0] = ParseNodes();
                 p.Machines[0] = new StackMachine(p.Trees[0]);
 

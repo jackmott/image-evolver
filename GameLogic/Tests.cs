@@ -119,84 +119,8 @@ namespace GameLogic
 
         }
 
-        //stress test the whole system
-        public static void PicGenerate(GraphicsDevice g, GameWindow w, GameState state, GameLogic logic)
-        {
-            const int TEST_SIZE = 5000;
-            
-            Random r = new Random();
-
-            state.pictures = new Pic[state.populationSize];
-
-            for (int i = 0; i < TEST_SIZE; i++)
-            {
-                for (int j = 0; j < state.populationSize; j++)
-                {
-                    int chooser = r.Next(0, 3);
-                    PicType type = (PicType)chooser;
-                    var p = new Pic(type, r, 1, 20, g, w, false);
-                    p.SetNewBounds(new Rectangle(0, 0, 200, 200));
-                    state.pictures[j] = p;
-                    logic.LayoutUI();
-                }
-
-              
-                
-                //Thread.Sleep(500);
-                
-
-                for (int j = 0; j < state.pictures.Length; j++)
-                {
-                    state.pictures[j].Dispose();
-                    state.pictures[j] = null;
-                }
-
-
-                Console.WriteLine(i + "/" + TEST_SIZE);
-            }
-        }
-
+          
 
     
-
-    public static void Parsing(GraphicsDevice g, GameWindow w)
-    {
-        const int TEST_SIZE = 1000;
-        Random r = new Random();
-
-        for (int i = 0; i < TEST_SIZE; i++)
-        {
-            int chooser = r.Next(0, 3);
-            PicType type = (PicType)chooser;
-
-            var p = new Pic(type, r, 1, 200, g, w, false);
-
-            var s = p.ToLisp();
-
-            try
-            {
-                var lexer = new Lexer(s);
-                lexer.BeginLexing();
-                var newP = lexer.ParsePic(g, w);
-                var newS = newP.ToLisp();
-
-                if (!newS.Equals(s))
-                {
-                    throw new Exception(newS);
-                }
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine(ex);
-                Console.WriteLine(s);
-                Console.WriteLine("-----------------");
-                throw ex;
-            }
-
-        }
-
-
-
-    }
 }
 }

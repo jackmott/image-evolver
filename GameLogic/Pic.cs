@@ -87,15 +87,15 @@ namespace GameLogic
         GameWindow w;
 
 
-        public Pic(PicType type, GraphicsDevice g, GameWindow w)
+        public Pic(PicType type, GraphicsDevice g, GameWindow w, GameState state)
         {
-            SharedConstructor(type, g, w);
+            SharedConstructor(type, g, w,state);
         }
 
-        public Pic(PicType type, Random rand, int min, int max, GraphicsDevice g, GameWindow w, bool video)
+        public Pic(PicType type, Random rand, int min, int max, GraphicsDevice g, GameWindow w, bool video,GameState state)
         {
             this.video = video;
-            SharedConstructor(type, g, w);
+            SharedConstructor(type, g, w,state);
 
             for (int i = 0; i < Trees.Length; i++)
             {
@@ -203,7 +203,7 @@ namespace GameLogic
             SetupTextbox();
         }
 
-        private void SharedConstructor(PicType type, GraphicsDevice g, GameWindow w)
+        private void SharedConstructor(PicType type, GraphicsDevice g, GameWindow w,GameState state)
         {
             this.g = g;
             this.w = w;
@@ -211,7 +211,7 @@ namespace GameLogic
             imageCancellationSource = new CancellationTokenSource();
             smallImage = GraphUtils.GetTexture(g, Color.Black);
             bigImage = GraphUtils.GetTexture(g, Color.Black);
-            InitButtons();
+            InitButtons(state);
             if (type != PicType.GRADIENT)
             {
                 Trees = new AptNode[3];
@@ -414,16 +414,16 @@ namespace GameLogic
             return false;
         }
 
-        public void InitButtons()
+        public void InitButtons(GameState state)
         {
-            injectButton = new Button("New", Settings.font, new Rectangle(), Color.Cyan, Color.White);
-            editEquationButton = new Button("Edit", Settings.font, new Rectangle(), Color.Cyan, Color.White);
-            saveEquationButton = new Button("Save", Settings.font, new Rectangle(), Color.Cyan, Color.White);           
-            playButton = new Button("Play", Settings.font, new Rectangle(), Color.Cyan, Color.White);
-            exportGIFButton = new Button("Export", Settings.font, new Rectangle(), Color.Cyan, Color.White);
-            exportPNGButton = new Button("Export", Settings.font, new Rectangle(), Color.Cyan, Color.White);
-            cancelVideoGenButton = new Button("Cancel", Settings.font, new Rectangle(), Color.Cyan, Color.White);
-            cancelEditButton = new Button("Cancel", Settings.font, new Rectangle(), Color.Cyan, Color.White);
+            injectButton = new Button(state.buttons["reload-btn"], new Rectangle());
+            editEquationButton = new Button(state.buttons["edit-btn"], new Rectangle());
+            saveEquationButton = new Button(state.buttons["yes-btn"], new Rectangle());
+            playButton = new Button(state.buttons["movie-btn"], new Rectangle());
+            exportGIFButton = new Button(state.buttons["download-btn"], new Rectangle());
+            exportPNGButton = new Button(state.buttons["download-btn"], new Rectangle());
+            cancelVideoGenButton = new Button(state.buttons["cancel-btn"], new Rectangle());
+            cancelEditButton = new Button(state.buttons["cancel-btn"], new Rectangle());
             panel = new SlidingPanel(Settings.panelTexture, new Rectangle(), new Rectangle(), 500.0);
         }
 
@@ -479,9 +479,9 @@ namespace GameLogic
             }
         }
 
-        public Pic Clone()
+        public Pic Clone(GameState state)
         {
-            Pic pic = new Pic(type, g, w);
+            Pic pic = new Pic(type, g, w,state);
             pic.video = video;
             if (colors != null)
             {
@@ -624,11 +624,11 @@ namespace GameLogic
             panel.hiddenBounds = FRect(0, bounds.Height * 1.001, bounds.Width, bounds.Height * .15f);
         }
 
-        public Pic BreedWith(Pic partner, Random r)
+        public Pic BreedWith(Pic partner, Random r, GameState state)
         {
 
-            var result = Clone();
-            var partnerClone = partner.Clone();
+            var result = Clone(state);
+            var partnerClone = partner.Clone(state);
 
             if (result.type != partner.type && r.Next(0, Settings.CROSSOVER_ROOT_CHANCE) == 0)
             {
@@ -712,9 +712,9 @@ namespace GameLogic
 
 
 
-        public Pic Mutate(Random r)
+        public Pic Mutate(Random r, GameState state)
         {
-            var result = Clone();
+            var result = Clone(state);
             if (r.Next(0, Settings.MUTATE_CHANCE) == 0)
             {
                 var (t, s) = result.GetRandomTree(r);
@@ -798,8 +798,7 @@ namespace GameLogic
         private void GradientToTexture(int w, int h, int start, int end, float t, Color[] c, CancellationToken ct)
         {
             unsafe
-            {
-                const float scale = 0.5f;
+            {                
                 var stack = stackalloc float[Machines[0].nodeCount];
 
                 for (int y = start; y < end; y++)
