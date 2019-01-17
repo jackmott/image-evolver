@@ -1,8 +1,6 @@
 ﻿// todo - wconsider filter nodes attached to top level pic nodes (sepia, etc)
 // todo - does breed handle warp properly? I think not
-// todo - make the mouse not work when the window isn't active
 // todo - toggle button
-// todo - fix panel rendering on resize
 
 
 using Microsoft.Xna.Framework;
@@ -57,11 +55,17 @@ namespace GameLogic
                 {
                     tex.Dispose();
                 }
+                state.buttons.Clear();
             }
-            state.buttons = new Dictionary<string, Texture2D>();
+            else
+            {
+                state.buttons = new Dictionary<string, Texture2D>();
+            }
+            
             foreach (var (name, svg) in state.svgs)
             {
-                var svgimg = svg.Draw((int)(state.g.Viewport.Width * 0.08f), (int)(state.g.Viewport.Width * 0.08f));
+                var size = (int)(Math.Min(state.g.Viewport.Width, state.g.Viewport.Width) * 0.1f);
+                var svgimg = svg.Draw(size,size);
                 Stream stream = new MemoryStream();
                 svgimg.Save(stream, System.Drawing.Imaging.ImageFormat.Png);
                 state.buttons.Add(name, Texture2D.FromStream(state.g, stream));
@@ -145,15 +149,16 @@ namespace GameLogic
         {
             Console.WriteLine("layout ui");
             var g = state.g;
+
             int winW = g.Viewport.Width;
             int winH = g.Viewport.Height;
 
-            var btnPct = 0.05f;
-            state.undoButton = new Button(state.buttons["back-btn"], FRect(winW * .01f, winH * .91f, winW * btnPct, winW * btnPct));
-            state.reRollButton = new Button(state.buttons["reload-btn"], FRect(winW * .201f, winH * .91f, winW * btnPct, winW * btnPct));
-            state.evolveButton = new Button(state.buttons["dna-btn"], FRect(winW * .401f, winH * .91f, winW * btnPct, winW * btnPct));            
-            state.imageAddButton = new Button(state.buttons["image-btn"], FRect(winW * .601f, winH * .91f, winW * btnPct, winW * btnPct));
-            state.videoModeButton = new ToggleButton(GetTexture(g, Color.Green), GetTexture(g, Color.DarkGreen), FRect(winW * .801f, winH * .91f, winW * .1f, winH * 0.05f));
+            var btnSize = (int)(0.05f * Math.Min(winW,winH));
+            state.undoButton = new Button("back-btn", FRect(winW * .01f, winH * .91f, btnSize, btnSize), state.buttons);
+            state.reRollButton = new Button("reload-btn", FRect(winW * .201f, winH * .91f, btnSize, btnSize), state.buttons);
+            state.evolveButton = new Button("dna-btn", FRect(winW * .401f, winH * .91f, btnSize, btnSize), state.buttons);            
+            state.imageAddButton = new Button("image-btn", FRect(winW * .601f, winH * .91f, btnSize, btnSize), state.buttons);
+            state.videoModeButton = new ToggleButton("movie-btn",state.buttons, FRect(winW * .801f, winH * .91f,btnSize,btnSize),Color.Gray,Color.White);
 
 
             int UISpace = (int)(winH * 0.1f);
@@ -495,7 +500,12 @@ namespace GameLogic
 
             if (state.zoomedPic.playButton.WasLeftClicked(state.inputState))
             {
-                state.zoomedPic.GenVideo(state);
+                state.zoomedPic.GenVideo(state,Settings.VIDEO_WIDTH_LOW,Settings.VIDEO_HEIGHT_LOW);
+            }
+
+            if (state.zoomedPic.playHDButton.WasLeftClicked(state.inputState))
+            {
+                state.zoomedPic.GenVideo(state, Settings.VIDEO_WIDTH_HI, Settings.VIDEO_HEIGHT_HI);
             }
 
             if (state.zoomedPic.exportGIFButton.WasLeftClicked(state.inputState))

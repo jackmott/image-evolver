@@ -89,7 +89,7 @@ namespace ImageEvolver
 #if DEBUG
             hotloader.CheckShaders();
 #endif
-            if (hotloader.state != null)
+            if (hotloader.state != null && IsActive)
             {
                 hotloader.state.inputState.keyboardState = Keyboard.GetState();
                 hotloader.state.inputState.mouseState = Mouse.GetState();

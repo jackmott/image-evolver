@@ -5,6 +5,8 @@ using System.Diagnostics;
 using System.Runtime.Serialization;
 using System;
 using static GameLogic.GraphUtils;
+using System.Collections.Generic;
+
 namespace GameLogic
 {
    
@@ -63,24 +65,35 @@ namespace GameLogic
     [DataContract]
     public class Button
     {
-        public Texture2D tex;        
-        private Rectangle bounds;        
-
+        public string tex;        
+        public Rectangle bounds;
+        Dictionary<string, Texture2D> buttons;
+        Color color;
         public Button() { }
 
-        public Button(Texture2D tex,Rectangle bounds)
-        {
+        public Button(string tex,Rectangle bounds, Dictionary<string,Texture2D> buttons,Color color)
+        {            
             this.tex = tex;
+            this.buttons = buttons;
+            this.color = color;
             SetBounds(bounds);
         }
-        
+
+        public Button(string tex, Rectangle bounds, Dictionary<string, Texture2D> buttons)
+        {
+            this.tex = tex;
+            this.buttons = buttons;
+            color = Color.White;
+            SetBounds(bounds);
+        }
+
         public void SetBounds(Rectangle bounds) {
             this.bounds = bounds;
         }
 
         public void Draw(SpriteBatch batch,GraphicsDevice g, GameTime gameTime)
         {
-            batch.Draw(tex, bounds, Color.White);                        
+            batch.Draw(buttons[tex], bounds,color);                        
         }
 
         public bool WasLeftClicked(InputState state)
@@ -108,38 +121,35 @@ namespace GameLogic
             }
             return false;
         }
-
-
-
     }
 
     [DataContract]
     public class ToggleButton
     {
-        public Texture2D onTex;
-        public Texture2D offTex;
-        [DataMember]
+        public string tex;
+        Dictionary<string, Texture2D> buttons;        
         public Rectangle bounds;
+        public Color onColor;
+        public Color offColor;
 
         public ToggleButton() { }
 
-        public ToggleButton(Texture2D onTex, Texture2D offTex, Rectangle bounds)
+        public ToggleButton(string tex, Dictionary<string, Texture2D> buttons,Rectangle bounds, Color offColor, Color onColor)
         {
-            this.onTex = onTex;
-            this.offTex = offTex;
+            this.tex = tex;
+            this.offColor = offColor;
+            this.onColor = onColor;
             this.bounds = bounds;
+            this.buttons = buttons;
         }
 
         public void Draw(SpriteBatch batch, GameTime gameTime, bool on)
         {
-            if (on)
-            {
-                batch.Draw(onTex, bounds, Color.White);
-            }
-            else
-            {
-                batch.Draw(offTex, bounds, Color.White);
-            }
+            var c = offColor;
+            if (on) c = onColor;
+            
+            batch.Draw(buttons[tex], bounds, c);
+            
         }
 
 

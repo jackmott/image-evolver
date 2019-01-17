@@ -7,7 +7,6 @@ using static GameLogic.GraphUtils;
 using static GameLogic.ColorTools;
 using System.Threading.Tasks;
 using Microsoft.Xna.Framework.Input;
-using System.Diagnostics;
 using System.Threading;
 using System.IO;
 
@@ -60,6 +59,7 @@ namespace GameLogic
         public Button editEquationButton;        
         [DataMember]
         public Button playButton;
+        public Button playHDButton;
         [DataMember]
         public Button exportGIFButton;
         [DataMember]
@@ -348,11 +348,8 @@ namespace GameLogic
             return myStream;
         }
 
-        public void GenVideo(GameState state)
+        public void GenVideo(GameState state, int w, int h)
         {
-
-            const int w = Settings.VIDEO_WIDTH;
-            const int h = Settings.VIDEO_HEIGHT;
 
             const int frameCount = Settings.FPS * Settings.VIDEO_LENGTH;
             Transition.StartTransition(Screen.VIDEO_PLAYING, frameCount, "Generating...");
@@ -416,14 +413,15 @@ namespace GameLogic
 
         public void InitButtons(GameState state)
         {
-            injectButton = new Button(state.buttons["reload-btn"], new Rectangle());
-            editEquationButton = new Button(state.buttons["edit-btn"], new Rectangle());
-            saveEquationButton = new Button(state.buttons["yes-btn"], new Rectangle());
-            playButton = new Button(state.buttons["movie-btn"], new Rectangle());
-            exportGIFButton = new Button(state.buttons["download-btn"], new Rectangle());
-            exportPNGButton = new Button(state.buttons["download-btn"], new Rectangle());
-            cancelVideoGenButton = new Button(state.buttons["cancel-btn"], new Rectangle());
-            cancelEditButton = new Button(state.buttons["cancel-btn"], new Rectangle());
+            injectButton = new Button("reload-btn", new Rectangle(),state.buttons);
+            editEquationButton = new Button("edit-btn", new Rectangle(),state.buttons);
+            saveEquationButton = new Button("yes-btn", new Rectangle(),state.buttons,Color.Green);
+            playButton = new Button("movie-btn", new Rectangle(), state.buttons);
+            playHDButton = new Button("hd-movie-btn", new Rectangle(), state.buttons);
+            exportGIFButton = new Button("download-btn", new Rectangle(), state.buttons);
+            exportPNGButton = new Button("download-btn", new Rectangle(), state.buttons);
+            cancelVideoGenButton = new Button("cancel-btn", new Rectangle(), state.buttons);
+            cancelEditButton = new Button("cancel-btn", new Rectangle(), state.buttons,Color.Red);
             panel = new SlidingPanel(Settings.panelTexture, new Rectangle(), new Rectangle(), 500.0);
         }
 
@@ -516,6 +514,7 @@ namespace GameLogic
             batch.Draw(smallImage, bounds, Color.White);
             if (bounds.Contains(state.mouseState.Position))
             {
+                batch.Draw(GraphUtils.GetTexture(g, new Color(0.0f, 0.0f, 0.0f, 0.75f)), injectButton.bounds, Color.White);
                 injectButton.Draw(batch, g, gameTime);
             }
 
@@ -533,9 +532,10 @@ namespace GameLogic
 
         public void PanelDraw(SpriteBatch batch, GraphicsDevice g, GameTime gameTime, InputState state, bool videoGenerating, bool videoPlaying)
         {
+            var btnSize = (int)(0.05f * Math.Min(g.Viewport.Width, g.Viewport.Height));
             panel.Draw(batch, gameTime, state);
             var panelBounds = panel.GetBounds(state);
-            var leftButtonBounds = FRect(panelBounds.X + panelBounds.Width * .1f, panelBounds.Y + panelBounds.Height * .25f, panelBounds.Width * .1f, panelBounds.Height * .5f);
+            var leftButtonBounds = FRect(panelBounds.X + panelBounds.Width * .1f, panelBounds.Y + panelBounds.Height * .25f,btnSize,btnSize);
 
             if (videoGenerating)
             {
@@ -551,13 +551,17 @@ namespace GameLogic
             {
                 var bounds = leftButtonBounds;
               
-                bounds.X += (int)(bounds.Width * 1.1f);
+                bounds.X += (int)(bounds.Width * 1.5f);
                 playButton.SetBounds(bounds);
                 playButton.Draw(batch, g, gameTime);
 
+                bounds.X += (int)(bounds.Width * 1.5f);
+                playHDButton.SetBounds(bounds);
+                playHDButton.Draw(batch, g, gameTime);
+
                 if (videoPlaying)
                 {
-                    bounds.X += (int)(bounds.Width * 1.1f);
+                    bounds.X += (int)(bounds.Width * 1.5f);
                     exportGIFButton.SetBounds(bounds);
                     exportGIFButton.Draw(batch, g, gameTime);
                 }
@@ -612,16 +616,17 @@ namespace GameLogic
         public void SetNewBounds(Rectangle bounds)
         {
             this.bounds = bounds;
+            var btnSize = (int)(0.05f * Math.Min(bounds.Width, bounds.Height));
 
             var textBounds = ScaleCentered(bounds, 0.75f);
             textBox.SetNewBounds(textBounds);
-            injectButton.SetBounds(FRect(bounds.X + bounds.Width * .025, bounds.Y + bounds.Height * .9, bounds.Width * .1, bounds.Height * .1));
-            saveEquationButton.SetBounds(FRect(textBounds.X, bounds.Height * .9f, bounds.Width * .1f, bounds.Height * .05f));            
-            cancelEditButton.SetBounds(FRect(textBounds.X + textBounds.Width - bounds.Width * .1f, bounds.Height * .9f, bounds.Width * .1f, bounds.Height * .05f));
+            injectButton.SetBounds(FRect(bounds.X, bounds.Y + bounds.Height - btnSize*4, btnSize*4,btnSize*4));
+            saveEquationButton.SetBounds(FRect(textBounds.X, textBounds.Y+textBounds.Height -btnSize, btnSize,btnSize));            
+            cancelEditButton.SetBounds(FRect(textBounds.X + textBounds.Width - btnSize, textBounds.Y + textBounds.Height - btnSize, btnSize,btnSize));
 
 
-            panel.activeBounds = FRect(0, bounds.Height * .85f, bounds.Width, bounds.Height * .15f);
-            panel.hiddenBounds = FRect(0, bounds.Height * 1.001, bounds.Width, bounds.Height * .15f);
+            panel.activeBounds = FRect(0, bounds.Height * .90f, bounds.Width, bounds.Height * .10f);
+            panel.hiddenBounds = FRect(0, bounds.Height * 1.001, bounds.Width, bounds.Height * .10f);
         }
 
         public Pic BreedWith(Pic partner, Random r, GameState state)

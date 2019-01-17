@@ -15,8 +15,11 @@ namespace GameLogic
         public const int CROSSOVER_ROOT_CHANCE = 4; // 1 in X
 
                         
-        public const int VIDEO_WIDTH = 480;
-        public const int VIDEO_HEIGHT = 270;
+        public const int VIDEO_WIDTH_LOW = 384;
+        public const int VIDEO_HEIGHT_LOW = 216;
+
+        public const int VIDEO_WIDTH_HI = 1280;
+        public const int VIDEO_HEIGHT_HI = 720;
 
         //note min gradients cannot be less than 2
         public const int MIN_GRADIENTS = 2;

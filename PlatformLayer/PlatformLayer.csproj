@@ -78,6 +78,7 @@
     <Content Include="Content\dna-btn.svg" />
     <Content Include="Content\download-btn.svg" />
     <Content Include="Content\edit-btn.svg" />
+    <Content Include="Content\hd-movie-btn.svg" />
     <Content Include="Content\image-btn.svg" />
     <Content Include="Content\movie-btn.svg" />
     <Content Include="Content\reload-btn.svg" />

@@ -42,6 +42,9 @@
 /processorParam:TextureFormat=Compressed
 /build:equation-font-hi.spritefont
 
+#begin hd-movie-btn.svg
+/copy:hd-movie-btn.svg
+
 #begin image-btn.svg
 /copy:image-btn.svg
 
