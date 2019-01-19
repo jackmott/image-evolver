@@ -250,8 +250,8 @@ namespace GameLogic
                         {
                             var octaves = (int)(Math.Abs(stack[sp - 4]) * 2.0f + 1.0f);
                             var (xf, yf) = FastNoise.GradientPerturbFractal(stack[sp], stack[sp - 1], 2f * stack[sp - 2], stack[sp - 3] / 3.0f, 1337, octaves, 2.0f, 0.5f, FastNoise.Interp.Quintic);
-                            stack[sp - 3] = xf;
-                            stack[sp - 4] = MathUtils.WrapMinMax(yf, -1.0f, 1.0f);
+                            stack[sp - 3] = xf;                            
+                            stack[sp - 4] = yf;
                             sp -= 3;
                         }
                         break;

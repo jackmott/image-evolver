@@ -1,6 +1,5 @@
 ﻿// todo - wconsider filter nodes attached to top level pic nodes (sepia, etc)
-// todo - does breed handle warp properly? I think not
-// todo - why does cursor sometimes not render?
+// todo - make warp work better with breeding
 // todo - refine the add image dialog
 
 
@@ -15,17 +14,15 @@ using System.Runtime.Serialization;
 using System.Xml;
 using static GameLogic.GraphUtils;
 using System.Threading;
-using System.Windows.Forms;
 using Svg;
+using Microsoft.Xna.Framework.Input;
 
 namespace GameLogic
 {
 
-
     public class GameLogic
     {
         public GameState state;
-
 
         public GameState SetState(string xml)
         {
@@ -36,8 +33,6 @@ namespace GameLogic
                 state = (GameState)formatter0.ReadObject(reader);
                 return state;
             }
-
-
         }
 
         public void LoadButtons()
@@ -94,7 +89,6 @@ namespace GameLogic
             state.g = g;
             state.w = window;
             state.inputState = new InputState();
-            
 
             Settings.selectedTexture = GraphUtils.GetTexture(g, Color.Cyan);
             Settings.panelTexture = GraphUtils.GetTexture(g, new Color(0.0f, 0.0f, 0.0f, 0.75f));
@@ -107,7 +101,7 @@ namespace GameLogic
             PickFonts(content, g);
             LoadButtons();
             state.imageAdder = new ImageAdder(state);
-            
+
 
             //Tests.BreedingPairs(g, window);
             //Tests.BreedingSelf(g, window);
@@ -221,7 +215,7 @@ namespace GameLogic
             else if (screen == Screen.IMAGE_ADDING)
             {
                 ChooseDraw(batch, gameTime);
-                state.imageAdder.Draw(batch,gameTime);
+                state.imageAdder.Draw(batch, gameTime);
             }
             else if (screen == Screen.GIF_EXPORTING)
             {
@@ -296,6 +290,11 @@ namespace GameLogic
             }
             else if (state.screen == Screen.IMAGE_ADDING)
             {
+                if (TextUtils.IsKey(Keys.Escape,state.inputState))
+                {
+                    state.screen = Screen.CHOOSE;
+                    return state;
+                }
                 state.imageAdder.Update(gameTime);
             }
             else if (state.screen == Screen.GIF_EXPORTING)
@@ -308,11 +307,16 @@ namespace GameLogic
                 return ChooseUpdate(gameTime);
             }
             else if (state.screen == Screen.ZOOM || state.screen == Screen.VIDEO_PLAYING)
-            {
+            {                
                 return ZoomUpdate(gameTime);
             }
             else if (state.screen == Screen.EDIT)
             {
+                if (TextUtils.IsKey(Keys.Escape, state.inputState))
+                {
+                    state.screen = Screen.ZOOM;
+                    return state;
+                }
                 return EditUpdate(gameTime);
             }
 
@@ -388,7 +392,7 @@ namespace GameLogic
             for (int i = 0; i < state.pictures.Length; i++)
             {
                 var pic = state.pictures[i];
-
+                pic.hover = pic.bounds.Contains(state.inputState.mouseState.Position);                
                 if (pic.WasLeftClicked(state.inputState))
                 {
                     pic.selected = !pic.selected;
@@ -503,16 +507,14 @@ namespace GameLogic
                 var store = new FrameStore(1, pic.bigImage.Width, pic.bigImage.Height);
                 store.PushFrame(pic.bigImage);
 
-
-
                 Stream myStream;
-                SaveFileDialog saveFileDialog1 = new SaveFileDialog();
+                System.Windows.Forms.SaveFileDialog saveFileDialog1 = new System.Windows.Forms.SaveFileDialog();
 
                 saveFileDialog1.Filter = "png images (*.png)|*.png";
                 saveFileDialog1.FilterIndex = 0;
                 saveFileDialog1.RestoreDirectory = false;
 
-                if (saveFileDialog1.ShowDialog() == DialogResult.OK)
+                if (saveFileDialog1.ShowDialog() == System.Windows.Forms.DialogResult.OK)
                 {
                     if ((myStream = saveFileDialog1.OpenFile()) != null)
                     {
@@ -522,7 +524,7 @@ namespace GameLogic
                 }
             }
 
-            if (state.zoomedPic.WasRightClicked(state.inputState))
+            if (state.zoomedPic.WasRightClicked(state.inputState) || TextUtils.IsKey(Keys.Escape,state.inputState))
             {
                 state.zoomedPic.imageCancellationSource.Cancel();
                 state.zoomedPic.imageCancellationSource = new CancellationTokenSource();
@@ -537,6 +539,8 @@ namespace GameLogic
 
             return state;
         }
+
+        
 
         public Pic GenTree(Random r)
         {

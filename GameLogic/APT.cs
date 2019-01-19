@@ -4,6 +4,11 @@ using System.Runtime.Serialization;
 
 namespace GameLogic
 {
+
+
+
+
+
     public enum NodeType : byte { EMPTY = 0, T, CONSTANT, X, Y, PICTURE, IF, ABS, WRAP, CLAMP, NEGATE, ADD, SUB, MUL, DIV, SIN, COS, LOG, ATAN, ATAN2, SQRT, FLOOR, CEIL, MAX, MIN, MOD, SQUARE, FBM, BILLOW, CELL1, WARP1 };
 
     [DataContract(IsReference = true)]
@@ -293,15 +298,23 @@ namespace GameLogic
        
         public AptNode BreedWith(AptNode partner, Random r, bool video)
         {
-            var (newNode, _) = partner.GetNthNode(r.Next(0, partner.Count()));
-            var (nodeToMutate, _) = this.GetNthNode(r.Next(0, this.Count()));
-            newNode.parent = nodeToMutate.parent;
+            var (newNode, _) = partner.GetNthNode(r.Next(0, partner.Count()));                                    
+            var (nodeToReplace, _) = this.GetNthNode(r.Next(0, this.Count()));
+
+            //TODO - this prevents things from getting screwed up by warp nodes
+            // But maybe we could allow crossover at warp nodes if we think of a clean way to handle it
+            if (newNode.type == NodeType.WARP1 || nodeToReplace.type == NodeType.WARP1)
+            {
+                return nodeToReplace;
+            }
+
+            newNode.parent = nodeToReplace.parent;
 
             if (newNode.parent != null)
             {
                 for (int i = 0; i < newNode.parent.children.Length; i++)
                 {
-                    if (newNode.parent.children[i] == nodeToMutate)
+                    if (newNode.parent.children[i] == nodeToReplace)
                     {
                         newNode.parent.children[i] = newNode;
                     }

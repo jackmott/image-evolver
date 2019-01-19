@@ -25,6 +25,7 @@ namespace GameLogic
     [DataContract]
     public class Pic : IDisposable
     {
+        public bool hover;
 
         public Rectangle bounds;
         public Texture2D[] videoFrames;
@@ -511,7 +512,7 @@ namespace GameLogic
                 batch.Draw(Settings.selectedTexture, rect, Color.White);
             }
             batch.Draw(smallImage, bounds, Color.White);
-            if (bounds.Contains(state.mouseState.Position))
+            if (hover)
             {
                 batch.Draw(GraphUtils.GetTexture(g, new Color(0.0f, 0.0f, 0.0f, 0.75f)), injectButton.bounds, Color.White);
                 injectButton.Draw(batch, g, gameTime);
