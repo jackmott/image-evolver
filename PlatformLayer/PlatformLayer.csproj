@@ -96,6 +96,8 @@
     <None Include="Content\equation-font.spritefont">
       <SubType>Designer</SubType>
     </None>
+    <None Include="Content\other-font-hi.spritefont" />
+    <None Include="Content\other-font.spritefont" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="LinqFaster">
@@ -105,7 +107,7 @@
       <Version>3.7.1.189</Version>
     </PackageReference>
     <PackageReference Include="SixLabors.ImageSharp">
-      <Version>1.0.0-beta0005</Version>
+      <Version>1.0.0-dev002328</Version>
     </PackageReference>
     <PackageReference Include="Svg">
       <Version>2.4.0</Version>

@@ -74,7 +74,7 @@ namespace GameLogic
     {
         public static int MeasureWidth(string s)
         {
-            return (int)Settings.font.MeasureString(s).X;
+            return (int)Settings.equationFont.MeasureString(s).X;
         }
 
         public static List<string> Wrap(string s, int width, Func<string, int> widthMeasure)

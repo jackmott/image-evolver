@@ -235,7 +235,7 @@ namespace GameLogic
 
         public void HandleMouse(InputState state)
         {
-            var letterSize = Settings.font.MeasureString("A");
+            var letterSize = Settings.equationFont.MeasureString("A");
             // Set the cursor position on press then release
             if (state.prevMouseState.LeftButton == ButtonState.Pressed && state.mouseState.LeftButton == ButtonState.Released)
             {
@@ -398,9 +398,7 @@ namespace GameLogic
         }
 
 
-        private void addLetter(char c, int y)
-        {
-        }
+   
 
         private void HandleInput(object sender, TextInputEventArgs e)
         {
@@ -469,7 +467,7 @@ namespace GameLogic
 
         public void Draw(SpriteBatch batch, GameTime gameTime)
         {
-            var letterSize = Settings.font.MeasureString("A");
+            var letterSize = Settings.equationFont.MeasureString("A");
             Color c = color;
 
             batch.Draw(pixelTex, bounds, new Color(0.0f, 0.0f, 0.0f, 0.75f));
@@ -509,14 +507,14 @@ namespace GameLogic
 
             if (error != null)
             {
-                batch.DrawString(Settings.font, error.Message, new Vector2(bounds.X + bounds.Width * .01f, bounds.Y + bounds.Height - letterSize.Y), Color.Red);
+                batch.DrawString(Settings.equationFont, error.Message, new Vector2(bounds.X + bounds.Width * .01f, bounds.Y + bounds.Height - letterSize.Y), Color.Red);
             }
 
             var maxLetters = MaxLetters(letterSize);
             for (int i = 0; i < contents.Count; i++)
             {
                 var text = contents[i].Substring(0, Math.Min(contents[i].Length,maxLetters));
-                batch.DrawString(Settings.font, text, new Vector2(bounds.X, bounds.Y + letterSize.Y * i), c);                
+                batch.DrawString(Settings.equationFont, text, new Vector2(bounds.X, bounds.Y + letterSize.Y * i), c);                
             }
             border.Draw(batch, c);
 

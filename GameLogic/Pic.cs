@@ -56,7 +56,7 @@ namespace GameLogic
         [DataMember]
         public Button injectButton;
         [DataMember]
-        public Button editEquationButton;        
+        public Button editEquationButton;
         [DataMember]
         public Button playButton;
         public Button playHDButton;
@@ -89,13 +89,13 @@ namespace GameLogic
 
         public Pic(PicType type, GraphicsDevice g, GameWindow w, GameState state)
         {
-            SharedConstructor(type, g, w,state);
+            SharedConstructor(type, g, w, state);
         }
 
-        public Pic(PicType type, Random rand, int min, int max, GraphicsDevice g, GameWindow w, bool video,GameState state)
+        public Pic(PicType type, Random rand, int min, int max, GraphicsDevice g, GameWindow w, bool video, GameState state)
         {
             this.video = video;
-            SharedConstructor(type, g, w,state);
+            SharedConstructor(type, g, w, state);
 
             for (int i = 0; i < Trees.Length; i++)
             {
@@ -108,7 +108,7 @@ namespace GameLogic
             {
 
                 var enum_size = Enum.GetNames(typeof(GradientType)).Length;
-                var gradType = (GradientType)rand.Next(0, enum_size);                
+                var gradType = (GradientType)rand.Next(0, enum_size);
                 float[] hues;
                 switch (gradType)
                 {
@@ -203,7 +203,7 @@ namespace GameLogic
             SetupTextbox();
         }
 
-        private void SharedConstructor(PicType type, GraphicsDevice g, GameWindow w,GameState state)
+        private void SharedConstructor(PicType type, GraphicsDevice g, GameWindow w, GameState state)
         {
             this.g = g;
             this.w = w;
@@ -227,7 +227,7 @@ namespace GameLogic
 
         public void GenBigImage()
         {
-            int chunkSize =  Math.Min(64, bounds.Height);
+            int chunkSize = Math.Min(64, bounds.Height);
             int lineCount = 0;
 
             while (lineCount < bounds.Height)
@@ -240,12 +240,12 @@ namespace GameLogic
                          bigImage = new Texture2D(g, bounds.Width, bounds.Height, false, SurfaceFormat.Color);
                          bigImage.SetData(new Color[bigImage.Width * bigImage.Height]); //will be transparent so smallImage will show beneath
                      }
-
-                     var imageData = task.Result;
-                     var start = imageData.start;
-                     var len = imageData.end - imageData.start;
-                     bigImage.SetData(0, new Rectangle(0, imageData.start, bigImage.Width, len), imageData.colors, 0, imageData.colors.Length);
-
+                    
+                         var imageData = task.Result;
+                         var start = imageData.start;
+                         var len = imageData.end - imageData.start;
+                         bigImage.SetData(0, new Rectangle(0, imageData.start, bigImage.Width, len), imageData.colors, 0, imageData.colors.Length);
+                    
                  }, TaskScheduler.FromCurrentSynchronizationContext());
                 lineCount += chunkSize;
                 chunkSize = (int)(chunkSize * 2);
@@ -257,17 +257,13 @@ namespace GameLogic
 
         public async Task GenSmallImageAsync()
         {
-            var result = await ImageGenAsync(bounds.Width, bounds.Height, 0, bounds.Height, -1.0f);
-
+            
+            var tempImage  = new Texture2D(g, bounds.Width, bounds.Height, false, SurfaceFormat.Color);
+            var result = await ImageGenAsync(bounds.Width, bounds.Height, 0, bounds.Height, -1.0f);            
+            var colors = result.colors;           
+            tempImage.SetData(colors);
             smallImage.Dispose(); // dispose of the old texture
-            smallImage = new Texture2D(g, bounds.Width, bounds.Height, false, SurfaceFormat.Color);
-            var colors = result.colors;
-
-            if (colors.Length != smallImage.Width * smallImage.Height)
-            {
-                Console.WriteLine("size mismatch");
-            }
-            smallImage.SetData(colors);
+            smallImage = tempImage;
 
         }
 
@@ -293,7 +289,9 @@ namespace GameLogic
             // Wait until this batch is done before firing off more, so we get progress bar updates
             Task.WhenAll(tasks).ContinueWith(task =>
             {
+
                 var frameDatas = task.Result;
+
                 foreach (var frameData in frameDatas)
                 {
                     var start = frameData.start;
@@ -303,6 +301,7 @@ namespace GameLogic
                     Transition.AddProgress(1);
                 }
                 GenVideoRec(state, w, h, index, t);
+
             }, TaskScheduler.FromCurrentSynchronizationContext());
         }
 
@@ -413,15 +412,15 @@ namespace GameLogic
 
         public void InitButtons(GameState state)
         {
-            injectButton = new Button("reload-btn", new Rectangle(),state.buttons);
-            editEquationButton = new Button("edit-btn", new Rectangle(),state.buttons);
-            saveEquationButton = new Button("yes-btn", new Rectangle(),state.buttons,Color.Green);
+            injectButton = new Button("reload-btn", new Rectangle(), state.buttons);
+            editEquationButton = new Button("edit-btn", new Rectangle(), state.buttons);
+            saveEquationButton = new Button("yes-btn", new Rectangle(), state.buttons, Color.Green);
             playButton = new Button("movie-btn", new Rectangle(), state.buttons);
             playHDButton = new Button("hd-movie-btn", new Rectangle(), state.buttons);
             exportGIFButton = new Button("download-btn", new Rectangle(), state.buttons);
             exportPNGButton = new Button("download-btn", new Rectangle(), state.buttons);
             cancelVideoGenButton = new Button("cancel-btn", new Rectangle(), state.buttons);
-            cancelEditButton = new Button("cancel-btn", new Rectangle(), state.buttons,Color.Red);
+            cancelEditButton = new Button("cancel-btn", new Rectangle(), state.buttons, Color.Red);
             panel = new SlidingPanel(Settings.panelTexture, new Rectangle(), new Rectangle(), 500.0);
         }
 
@@ -479,7 +478,7 @@ namespace GameLogic
 
         public Pic Clone(GameState state)
         {
-            Pic pic = new Pic(type, g, w,state);
+            Pic pic = new Pic(type, g, w, state);
             pic.video = video;
             if (colors != null)
             {
@@ -535,7 +534,7 @@ namespace GameLogic
             var btnSize = (int)(0.05f * Math.Min(g.Viewport.Width, g.Viewport.Height));
             panel.Draw(batch, gameTime, state);
             var panelBounds = panel.GetBounds(state);
-            var leftButtonBounds = FRect(panelBounds.X + panelBounds.Width * .1f, panelBounds.Y + panelBounds.Height * .25f,btnSize,btnSize);
+            var leftButtonBounds = FRect(panelBounds.X + panelBounds.Width * .1f, panelBounds.Y + panelBounds.Height * .25f, btnSize, btnSize);
 
             if (videoGenerating)
             {
@@ -550,7 +549,7 @@ namespace GameLogic
             if (video)
             {
                 var bounds = leftButtonBounds;
-              
+
                 bounds.X += (int)(bounds.Width * 1.5f);
                 playButton.SetBounds(bounds);
                 playButton.Draw(batch, g, gameTime);
@@ -592,10 +591,10 @@ namespace GameLogic
         }
 
         public void GifGeneratingDraw(SpriteBatch batch, GraphicsDevice g, GameWindow w, GameTime gameTime)
-        {            
+        {
             batch.Draw(smallImage, bounds, Color.White);
             batch.Draw(bigImage, bounds, Color.White);
-         
+
         }
 
         public void ZoomDraw(SpriteBatch batch, GraphicsDevice g, GameWindow w, GameTime gameTime, InputState state)
@@ -620,9 +619,9 @@ namespace GameLogic
 
             var textBounds = ScaleCentered(bounds, 0.75f);
             textBox.SetNewBounds(textBounds);
-            injectButton.SetBounds(FRect(bounds.X, bounds.Y + bounds.Height - btnSize*4, btnSize*4,btnSize*4));
-            saveEquationButton.SetBounds(FRect(textBounds.X, textBounds.Y+textBounds.Height -btnSize, btnSize,btnSize));            
-            cancelEditButton.SetBounds(FRect(textBounds.X + textBounds.Width - btnSize, textBounds.Y + textBounds.Height - btnSize, btnSize,btnSize));
+            injectButton.SetBounds(FRect(bounds.X, bounds.Y + bounds.Height - btnSize * 4, btnSize * 4, btnSize * 4));
+            saveEquationButton.SetBounds(FRect(textBounds.X, textBounds.Y + textBounds.Height - btnSize, btnSize, btnSize));
+            cancelEditButton.SetBounds(FRect(textBounds.X + textBounds.Width - btnSize, textBounds.Y + textBounds.Height - btnSize, btnSize, btnSize));
 
 
             panel.activeBounds = FRect(0, bounds.Height * .90f, bounds.Width, bounds.Height * .10f);
@@ -645,7 +644,7 @@ namespace GameLogic
                     result.colors = new Color[partner.colors.Length];
                     Array.Copy(partner.colors, result.colors, partner.colors.Length);
                     var newMachines = new StackMachine[1];
-                    var newTrees = new AptNode[1];                    
+                    var newTrees = new AptNode[1];
                     var (tree, machine) = result.GetRandomTree(r);
                     newTrees[0] = tree.Clone();
                     newMachines[0] = new StackMachine(newTrees[0]);
@@ -660,7 +659,7 @@ namespace GameLogic
                     result.colors = null;
                     var newMachines = new StackMachine[3];
                     var newTrees = new AptNode[3];
-                    var i = r.Next(0, newTrees.Length);                    
+                    var i = r.Next(0, newTrees.Length);
                     newTrees[i] = result.Trees[0].Clone();
                     newMachines[i] = new StackMachine(newTrees[i]);
                     for (i = 0; i < newTrees.Length; i++)
@@ -671,7 +670,7 @@ namespace GameLogic
                             newMachines[i] = new StackMachine(newTrees[i]);
                         }
                     }
-                    
+
                     result.Trees = newTrees;
                     result.Machines = newMachines;
                 }
@@ -803,7 +802,7 @@ namespace GameLogic
         private void GradientToTexture(int w, int h, int start, int end, float t, Color[] c, CancellationToken ct)
         {
             unsafe
-            {                
+            {
                 var stack = stackalloc float[Machines[0].nodeCount];
 
                 for (int y = start; y < end; y++)
@@ -827,18 +826,18 @@ namespace GameLogic
                             float distToStart = Math.Abs(-1.0f - pos[0]);
                             if (colorIndex < pos[0])
                             {
-                                pct = (distToEnd + (colorIndex - -1.0f )) / (distToEnd + distToStart);
+                                pct = (distToEnd + (colorIndex - -1.0f)) / (distToEnd + distToStart);
                             }
                             else
                             {
                                 pct = (colorIndex - pos[pos.Length - 1]) / (distToEnd + distToStart);
                             }
                         }
-                        else 
+                        else
                         {
-                            for (int i = 0; i < pos.Length-1; i++)
+                            for (int i = 0; i < pos.Length - 1; i++)
                             {
-                                if (colorIndex > pos[i] && colorIndex < pos[i+1])
+                                if (colorIndex > pos[i] && colorIndex < pos[i + 1])
                                 {
                                     c1 = colors[i];
                                     c2 = colors[i + 1];
@@ -848,7 +847,7 @@ namespace GameLogic
                                 }
                             }
                         }
-                        
+
                         c[yw + x] = Color.Lerp(c1, c2, pct);
 
                     }

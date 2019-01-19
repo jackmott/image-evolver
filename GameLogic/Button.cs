@@ -91,6 +91,16 @@ namespace GameLogic
             this.bounds = bounds;
         }
 
+        public int GetWidth()
+        {
+            return buttons[tex].Width;
+        }
+
+        public int GetHeight()
+        {
+            return buttons[tex].Height;
+        }
+
         public void Draw(SpriteBatch batch,GraphicsDevice g, GameTime gameTime)
         {
             batch.Draw(buttons[tex], bounds,color);                        

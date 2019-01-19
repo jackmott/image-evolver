@@ -1,6 +1,7 @@
 ﻿// todo - wconsider filter nodes attached to top level pic nodes (sepia, etc)
 // todo - does breed handle warp properly? I think not
-// todo - toggle button
+// todo - why does cursor sometimes not render?
+// todo - refine the add image dialog
 
 
 using Microsoft.Xna.Framework;
@@ -8,7 +9,6 @@ using Microsoft.Xna.Framework.Graphics;
 using System;
 using System.Collections.Generic;
 using JM.LinqFaster;
-using System.Linq;
 using System.IO;
 using Microsoft.Xna.Framework.Content;
 using System.Runtime.Serialization;
@@ -61,11 +61,11 @@ namespace GameLogic
             {
                 state.buttons = new Dictionary<string, Texture2D>();
             }
-            
+
             foreach (var (name, svg) in state.svgs)
             {
                 var size = (int)(Math.Min(state.g.Viewport.Width, state.g.Viewport.Width) * 0.1f);
-                var svgimg = svg.Draw(size,size);
+                var svgimg = svg.Draw(size, size);
                 Stream stream = new MemoryStream();
                 svgimg.Save(stream, System.Drawing.Imaging.ImageFormat.Png);
                 state.buttons.Add(name, Texture2D.FromStream(state.g, stream));
@@ -77,11 +77,13 @@ namespace GameLogic
         {
             if (g.Viewport.Height <= 1440)
             {
-                Settings.font = state.lowFont;
+                Settings.equationFont = state.lowFont;
+                Settings.otherFont = state.lowOtherFont;
             }
             else
             {
-                Settings.font = state.hiFont;
+                Settings.equationFont = state.hiFont;
+                Settings.otherFont = state.hiOtherFont;
             }
         }
 
@@ -93,40 +95,19 @@ namespace GameLogic
             state.w = window;
             state.inputState = new InputState();
             
-            
+
             Settings.selectedTexture = GraphUtils.GetTexture(g, Color.Cyan);
             Settings.panelTexture = GraphUtils.GetTexture(g, new Color(0.0f, 0.0f, 0.0f, 0.75f));
 
-            
-            state.lowFont = content.Load<SpriteFont>("equation-font");            
+            state.lowFont = content.Load<SpriteFont>("equation-font");
             state.hiFont = content.Load<SpriteFont>("equation-font-hi");
-            
-            PickFonts(content,g);
+            state.lowOtherFont = content.Load<SpriteFont>("other-font");
+            state.hiOtherFont = content.Load<SpriteFont>("other-font-hi");
+
+            PickFonts(content, g);
             LoadButtons();
-
-            DirectoryInfo d = new DirectoryInfo(AppDomain.CurrentDomain.BaseDirectory + @"\Assets");
-            var files = d.GetFiles("*.jpg").AsEnumerable().Concat(d.GetFiles("*.png"));
-            GameState.externalImages = new List<ExternalImage>();
-
-            foreach (var file in files)
-            {
-                try
-                {
-                    var fs = new FileStream(file.FullName, FileMode.Open);
-                    var tex = Texture2D.FromStream(g, fs);
-                    fs.Close();
-                    Color[] colors = new Color[tex.Width * tex.Height];
-                    tex.GetData(colors);
-                    ExternalImage img = new ExternalImage { filename = file.Name, data = colors, w = tex.Width, h = tex.Height };
-                    GameState.externalImages.Add(img);
-                    tex.Dispose();
-                }
-                catch (Exception e)
-                {
-                    //do something
-                    throw e;
-                }
-            }
+            state.imageAdder = new ImageAdder(state);
+            
 
             //Tests.BreedingPairs(g, window);
             //Tests.BreedingSelf(g, window);
@@ -153,12 +134,12 @@ namespace GameLogic
             int winW = g.Viewport.Width;
             int winH = g.Viewport.Height;
 
-            var btnSize = (int)(0.05f * Math.Min(winW,winH));
+            var btnSize = (int)(0.05f * Math.Min(winW, winH));
             state.undoButton = new Button("back-btn", FRect(winW * .01f, winH * .91f, btnSize, btnSize), state.buttons);
             state.reRollButton = new Button("reload-btn", FRect(winW * .201f, winH * .91f, btnSize, btnSize), state.buttons);
-            state.evolveButton = new Button("dna-btn", FRect(winW * .401f, winH * .91f, btnSize, btnSize), state.buttons);            
+            state.evolveButton = new Button("dna-btn", FRect(winW * .401f, winH * .91f, btnSize, btnSize), state.buttons);
             state.imageAddButton = new Button("image-btn", FRect(winW * .601f, winH * .91f, btnSize, btnSize), state.buttons);
-            state.videoModeButton = new ToggleButton("movie-btn",state.buttons, FRect(winW * .801f, winH * .91f,btnSize,btnSize),Color.Gray,Color.White);
+            state.videoModeButton = new ToggleButton("movie-btn", state.buttons, FRect(winW * .801f, winH * .91f, btnSize, btnSize), Color.Gray, Color.White);
 
 
             int UISpace = (int)(winH * 0.1f);
@@ -220,11 +201,11 @@ namespace GameLogic
             {
                 pic.imageCancellationSource.Cancel();
                 pic.imageCancellationSource = new CancellationTokenSource();
-            }            
+            }
             ResizeButtons();
-            PickFonts(state.content,state.g);
+            PickFonts(state.content, state.g);
             LayoutUI();
-            
+
         }
 
         public void Draw(SpriteBatch batch, GameTime gameTime)
@@ -240,7 +221,7 @@ namespace GameLogic
             else if (screen == Screen.IMAGE_ADDING)
             {
                 ChooseDraw(batch, gameTime);
-                ImageAdder.Draw(batch, state.g, state, gameTime);
+                state.imageAdder.Draw(batch,gameTime);
             }
             else if (screen == Screen.GIF_EXPORTING)
             {
@@ -312,6 +293,10 @@ namespace GameLogic
             {
                 Transition.Update(state);
                 return VideoGeneratingUpdate(gameTime);
+            }
+            else if (state.screen == Screen.IMAGE_ADDING)
+            {
+                state.imageAdder.Update(gameTime);
             }
             else if (state.screen == Screen.GIF_EXPORTING)
             {
@@ -388,8 +373,8 @@ namespace GameLogic
                     var first = breeders[state.r.Next(0, breeders.Length)];
                     var second = breeders[state.r.Next(0, breeders.Length)];
 
-                    var child = first.BreedWith(second, state.r,state);
-                    child = child.Mutate(state.r,state);
+                    var child = first.BreedWith(second, state.r, state);
+                    child = child.Mutate(state.r, state);
                     child.Optimize();
                     child.textBox.SetText(child.ToLisp());
                     nextGeneration[nextGenIndex] = child;
@@ -447,7 +432,7 @@ namespace GameLogic
                 try
                 {
                     lexer.BeginLexing();
-                    var p = lexer.ParsePic(state.g, state.w,state);
+                    var p = lexer.ParsePic(state.g, state.w, state);
                     state.zoomedPic.Trees = p.Trees;
                     state.zoomedPic.Machines = p.Machines;
                     state.zoomedPic.type = p.type;
@@ -500,7 +485,7 @@ namespace GameLogic
 
             if (state.zoomedPic.playButton.WasLeftClicked(state.inputState))
             {
-                state.zoomedPic.GenVideo(state,Settings.VIDEO_WIDTH_LOW,Settings.VIDEO_HEIGHT_LOW);
+                state.zoomedPic.GenVideo(state, Settings.VIDEO_WIDTH_LOW, Settings.VIDEO_HEIGHT_LOW);
             }
 
             if (state.zoomedPic.playHDButton.WasLeftClicked(state.inputState))
@@ -557,7 +542,7 @@ namespace GameLogic
         {
             int chooser = r.Next(0, 3);
             PicType type = (PicType)chooser;
-            return new Pic(type, r, Settings.MIN_GEN_SIZE, Settings.MAX_GEN_SIZE, state.g, state.w, state.videoMode,state);
+            return new Pic(type, r, Settings.MIN_GEN_SIZE, Settings.MAX_GEN_SIZE, state.g, state.w, state.videoMode, state);
         }
 
         public void ClearPics(Pic[] pics)

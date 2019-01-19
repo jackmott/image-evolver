@@ -51,6 +51,20 @@
 #begin movie-btn.svg
 /copy:movie-btn.svg
 
+#begin other-font.spritefont
+/importer:FontDescriptionImporter
+/processor:FontDescriptionProcessor
+/processorParam:PremultiplyAlpha=True
+/processorParam:TextureFormat=Compressed
+/build:other-font.spritefont
+
+#begin other-font-hi.spritefont
+/importer:FontDescriptionImporter
+/processor:FontDescriptionProcessor
+/processorParam:PremultiplyAlpha=True
+/processorParam:TextureFormat=Compressed
+/build:other-font-hi.spritefont
+
 #begin reload-btn.svg
 /copy:reload-btn.svg
 

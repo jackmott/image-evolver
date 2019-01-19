@@ -10,8 +10,9 @@ using Svg;
 namespace GameLogic
 {
     [DataContract]
-    public struct ExternalImage
-    {
+    public class ExternalImage
+    {        
+        public Button button;
         [DataMember]
         public string filename;
         [DataMember]
@@ -26,10 +27,13 @@ namespace GameLogic
     [DataContract]
     public class GameState
     {
+        public ImageAdder imageAdder;
         public (string name, SvgDocument)[] svgs;
         public Dictionary<string, Texture2D> buttons;
         public SpriteFont lowFont;
         public SpriteFont hiFont;
+        public SpriteFont lowOtherFont;
+        public SpriteFont hiOtherFont;
 
         public GraphicsDevice g;        
         public GameWindow w;
