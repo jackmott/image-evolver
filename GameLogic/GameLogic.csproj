@@ -85,7 +85,7 @@
       <Version>3.7.1.189</Version>
     </PackageReference>
     <PackageReference Include="SixLabors.ImageSharp">
-      <Version>1.0.0-dev002328</Version>
+      <Version>1.0.0-beta0005</Version>
     </PackageReference>
     <PackageReference Include="Svg">
       <Version>2.4.0</Version>

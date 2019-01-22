@@ -12,6 +12,7 @@ namespace GameLogic
     [DataContract]
     public class TextBox
     {
+        double lastCursor = 0;
         [DataMember]
         public string rawContents;
         [DataMember]
@@ -494,9 +495,11 @@ namespace GameLogic
                 }
             }
 
-            if (active && gameTime.TotalGameTime.Milliseconds % 250 == 0)
+            var cursorDelta = gameTime.TotalGameTime.TotalMilliseconds - lastCursor;
+            if (active &&  cursorDelta > 250)
             {
                 cursorOn = !cursorOn;
+                lastCursor = gameTime.TotalGameTime.TotalMilliseconds;
             }
             if (cursorOn)
             {
