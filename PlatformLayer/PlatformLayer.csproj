@@ -81,7 +81,9 @@
     <Content Include="Content\hd-movie-btn.svg" />
     <Content Include="Content\image-btn.svg" />
     <Content Include="Content\movie-btn.svg" />
-    <Content Include="Content\reload-btn.svg" />
+    <Content Include="Content\reload-btn.svg">
+      <SubType>Designer</SubType>
+    </Content>
     <Content Include="Content\yes-btn.svg" />
     <Content Include="Content\zoom-btn.svg" />
     <Content Include="Icon.ico" />
@@ -107,7 +109,7 @@
       <Version>3.7.1.189</Version>
     </PackageReference>
     <PackageReference Include="SixLabors.ImageSharp">
-      <Version>1.0.0-dev002328</Version>
+      <Version>1.0.0-beta0006</Version>
     </PackageReference>
     <PackageReference Include="Svg">
       <Version>2.4.0</Version>

@@ -128,18 +128,6 @@ namespace GameLogic
                 image.SaveAsPng(output);
         }
 
-        /// <summary>
-        /// Export frames from the store as a GIF.
-        /// </summary>
-        /// <param name="path">Path to write the GIF to.</param>
-        /// <param name="frameDelay">Delay between frames in units of 10ms.</param>
-        /// <param name="start">First frame to export.</param>
-        /// <param name="count">Number of frames to export.</param>
-        public void ExportGif(string path, int frameDelay, int start = 0, int count = -1)
-        {
-            using (var stream = File.OpenWrite(path))
-                ExportGif(stream, frameDelay, start, count);
-        }
 
         /// <summary>
         /// Export frames from the store as a GIF.
@@ -148,31 +136,23 @@ namespace GameLogic
         /// <param name="frameDelay">Delay between frames in units of 10ms.</param>
         /// <param name="start">First frame to export.</param>
         /// <param name="count">Number of frames to export.</param>
-        public void ExportGif(Stream output, int frameDelay, int start = 0, int count = -1)
+        public void ExportGif(Stream output, int frameDelay)
         {
-            if (start < 0)
-                throw new ArgumentOutOfRangeException();
-            if (start + count > FrameCount)
-                throw new ArgumentOutOfRangeException();
-
-            if (count < 0)
-                count = FrameCapacity;
-
             using (var image = new Image<Rgba32>(Width, Height))
             {
                 var frames = image.Frames;
-                for (var i = start + 1; i <= count; i++)
+                for (var i = 1; i < FrameCapacity; i++)
                 {
-                    var frameIndex = (_frameIndex + i) % FrameCapacity;
-                    ConvertColorData(Frames[frameIndex], _rgbaBuffer);
+                    ConvertColorData(Frames[i], _rgbaBuffer);
                     var frame = frames.AddFrame(_rgbaBuffer);
-                   // frame.MetaData.GetFormatMetaData().frameDelay = frameDelay;
-                    Transition.SetProgress(i/4);
+                    frame.MetaData.GetFormatMetaData(GifFormat.Instance).FrameDelay = frameDelay;
+                    Transition.SetProgress(i / 4);
                 }
 
                 // remove the frame created with image creation
                 frames.RemoveFrame(0);
                 var encoder = new GifEncoder();
+                encoder.ColorTableMode = GifColorTableMode.Local;
                 image.SaveAsGif(output, encoder);
             }
         }

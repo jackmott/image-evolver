@@ -344,7 +344,7 @@ namespace GameLogic
             delay *= 100.0f;
 
             Stream myStream = new MemoryStream(1024);
-            store.ExportGif(myStream, (int)delay);
+            store.ExportGif(myStream, (int)delay);            
             return myStream;
         }
 

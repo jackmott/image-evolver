@@ -59,7 +59,7 @@ namespace GameLogic
 
             foreach (var (name, svg) in state.svgs)
             {
-                var size = (int)(Math.Min(state.g.Viewport.Width, state.g.Viewport.Width) * 0.1f);
+                var size = (int)(Math.Min(state.g.Viewport.Width, state.g.Viewport.Width) * 0.075f);
                 var svgimg = svg.Draw(size, size);
                 Stream stream = new MemoryStream();
                 svgimg.Save(stream, System.Drawing.Imaging.ImageFormat.Png);
@@ -128,7 +128,7 @@ namespace GameLogic
             int winW = g.Viewport.Width;
             int winH = g.Viewport.Height;
 
-            var btnSize = (int)(0.05f * Math.Min(winW, winH));
+            var btnSize = (int)(0.075f * Math.Min(winW, winH));
             state.undoButton = new Button("back-btn", FRect(winW * .01f, winH * .91f, btnSize, btnSize), state.buttons);
             state.reRollButton = new Button("reload-btn", FRect(winW * .201f, winH * .91f, btnSize, btnSize), state.buttons);
             state.evolveButton = new Button("dna-btn", FRect(winW * .401f, winH * .91f, btnSize, btnSize), state.buttons);
